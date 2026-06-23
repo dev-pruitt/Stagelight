@@ -376,7 +376,7 @@ class Component extends DCLogic {
       if (!this._popup) this.setState({ authError: 'Popup blocked — allow popups for this page and try again.' });
     } catch (e) { this.setState({ authError: 'Spotify connect error: ' + (e && e.message || e) }); }
   };
-  exchangeSpotifyCode = async (code) => {
+  exchangeSpotifyCode = async (code) => { if (!code || this._spCodeUsed === code) return; this._spCodeUsed = code;
     try {
       const verifier = localStorage.getItem('sl_sp_verifier');
       const clientId = localStorage.getItem('sl_sp_clientid');
@@ -519,19 +519,19 @@ class Component extends DCLogic {
     try {
       const p = new URLSearchParams(location.search);
       const code = p.get('code'), error = p.get('error');
-      if (window.opener && window.opener !== window && (code || error)) {
-        window.opener.postMessage({ __sl_auth: 'spotify', code: code, error: error }, '*');
+      const isPopup = window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
+        try { if (window.opener && window.opener !== window) window.opener.postMessage({ __sl_auth: 'spotify', code: code, error: error }, '*'); } catch (e) {} try { localStorage.setItem('sl_sp_auth_msg', JSON.stringify({ code: code || '', error: error || '', t: Date.now() })); } catch (e) {} try { document.title = 'You can close this window'; } catch (e) {}
         window.close();
         return true;
       }
-      if (!window.opener && code && localStorage.getItem('sl_sp_verifier')) {
+      if (code && localStorage.getItem('sl_sp_verifier')) {
         this.exchangeSpotifyCode(code);
         history.replaceState({}, '', this.REDIRECT());
       }
     } catch (e) {}
     return false;
   };
-  onAuthMessage = (e) => {
+  onAuthStorage = (e) => { if (e.key !== 'sl_sp_auth_msg' || !e.newValue) return; var d; try { d = JSON.parse(e.newValue); } catch (x) { return; } try { localStorage.removeItem('sl_sp_auth_msg'); } catch (x) {} if (d && d.error) { this.setState({ authError: 'Spotify auth: ' + d.error }); return; } if (d && d.code) this.exchangeSpotifyCode(d.code); }; onAuthMessage = (e) => {
     const d = e.data; if (!d || d.__sl_auth !== 'spotify') return;
     if (d.error) { this.setState({ authError: 'Spotify auth: ' + d.error }); return; }
     if (d.code) this.exchangeSpotifyCode(d.code);
@@ -539,7 +539,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     if (this.handleAuthRedirect()) return;
-    window.addEventListener('message', this.onAuthMessage);
+    window.addEventListener('message', this.onAuthMessage); window.addEventListener('storage', this.onAuthStorage);
     try {
       const t = localStorage.getItem('sl_sp_token');
       if (t) { const exp = +localStorage.getItem('sl_sp_expires') || 0; this.setState((s) => ({ connected: { ...s.connected, spotify: true }, spToken: t, spExpires: exp, spClientId: localStorage.getItem('sl_sp_clientid') || '' })); this.initSpotifyPlayer(); }
@@ -564,7 +564,7 @@ class Component extends DCLogic {
   componentWillUnmount() {
     clearInterval(this._tick);
     window.removeEventListener('keydown', this._onKey);
-    window.removeEventListener('message', this.onAuthMessage);
+    window.removeEventListener('message', this.onAuthMessage); window.removeEventListener('storage', this.onAuthStorage);
     clearInterval(this._spFade); clearInterval(this._amFade);
     if (this.spPlayer) { try { this.spPlayer.disconnect(); } catch (e) {} }
     if (this.actx) try { this.actx.close(); } catch (e) {}
