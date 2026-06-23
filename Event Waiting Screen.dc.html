@@ -16,6 +16,8 @@
   ::-webkit-scrollbar-track{background:transparent;}
   input,button{font-family:inherit;}
   input:focus{outline:none;}
+  /* Operator-only Spotify setup field — hidden from end users (Client ID is baked in). */
+  input[placeholder='Spotify Client ID']{display:none!important;}
   @keyframes appFade{0%{transform:translateY(8px)}100%{transform:translateY(0)}}
   @keyframes appReveal{0%{transform:scale(1.035)}100%{transform:scale(1)}}
 </style>
@@ -361,7 +363,7 @@ class Component extends DCLogic {
 
   // ----- Spotify -----
   connectSpotify = async () => {
-    const clientId = (this.state.spClientId || '').trim();
+    const clientId = (this.state.spClientId || '26119e868a1d486cbae6ef197addfcd3').trim();
     if (!clientId) { this.setState({ authError: 'Paste your Spotify Client ID first.' }); return; }
     this.setState({ authError: '' });
     try {
@@ -471,7 +473,7 @@ class Component extends DCLogic {
       let results = [];
       if (this.state.source === 'spotify') {
         const token = await this.ensureSpToken();
-        const r = await fetch('https://api.spotify.com/v1/search?type=track&limit=12&q=' + encodeURIComponent(q), { headers: { Authorization: 'Bearer ' + token } });
+        const r = await fetch('https://api.spotify.com/v1/search?' + new URLSearchParams({ q: q, type: 'track', limit: '20', market: 'from_token' }).toString(), { headers: { Authorization: 'Bearer ' + token } });
         const j = await r.json();
         if (j.error) { this.setState({ searching: false, authError: 'Spotify: ' + (j.error.message || j.error) }); return; }
         results = ((j.tracks && j.tracks.items) || []).map((t) => ({ service: 'spotify', uri: t.uri, title: t.name, artist: (t.artists || []).map((a) => a.name).join(', '), cover: (t.album && t.album.images && t.album.images[0] && ('center/cover url(' + t.album.images[0].url + ')')) || 'linear-gradient(135deg,#1db954,#191414)', dur: this.fmt(Math.round((t.duration_ms || 0) / 1000)) }));
@@ -857,7 +859,7 @@ class Component extends DCLogic {
     const isSpotify = src === 'spotify';
 
     const cm = isSpotify
-      ? { title: 'Connect Spotify', note: 'Requires a Spotify Developer app (Client ID) and a Spotify Premium account for full-track playback in the browser.', placeholder: 'Spotify Client ID', btn: 'Connect Spotify', bg: '#1db954', label: 'Spotify connected', ready: st.spReady }
+      ? { title: 'Connect Spotify', note: 'Connect your Spotify Premium account to play full tracks during your event. A popup will ask you to approve access.', placeholder: 'Spotify Client ID', btn: 'Connect Spotify', bg: '#1db954', label: 'Spotify connected', ready: st.spReady }
       : { title: 'Connect Apple Music', note: 'Requires a MusicKit developer token (Apple Developer Program) and an active Apple Music subscription.', placeholder: 'Apple Music developer token (JWT)', btn: 'Connect Apple Music', bg: '#fa2d48', label: 'Apple Music connected', ready: connected };
 
     const selKey = (t) => t.service === 'spotify' ? ('s' + t.uri) : (t.service === 'apple' ? ('a' + t.id) : (t.service || '') + t.title);
@@ -895,7 +897,7 @@ class Component extends DCLogic {
       credPlaceholder: cm.placeholder, credValue: isSpotify ? st.spClientId : st.amDevToken,
       onCredInput: isSpotify ? this.setSpClientId : this.setAmDevToken,
       connectAction: isSpotify ? this.connectSpotify : this.connectApple,
-      showRedirect: isSpotify, redirectUri: this.REDIRECT(), copyRedirect: this.copyRedirect, copyLabel: st.copied ? 'Copied' : 'Copy',
+      showRedirect: false, redirectUri: this.REDIRECT(), copyRedirect: this.copyRedirect, copyLabel: st.copied ? 'Copied' : 'Copy',
       connectedLabel: cm.label, readyColor: cm.ready ? '#34c759' : '#ff9f0a',
       searchQuery: st.searchQuery, setSearchQuery: this.setSearchQuery, onSearchKey: this.onSearchKey, runSearch: this.runSearch,
       searchLabel: st.searching ? '\u2026' : 'Search', searchPlaceholder: 'Search ' + (isSpotify ? 'Spotify' : 'Apple Music') + '\u2026',
