@@ -45,14 +45,24 @@ verbatim. A mismatch (even a missing slash) is the #1 cause of auth failures.
 
 Under **Which API/SDKs are you planning to use?** tick **Web Playback SDK**.
 
-### 3. Connect
+### 3. Connect & pick a track
 
-1. Open the screen, scroll to **Music → Spotify**.
-2. Paste your **Client ID** and click **Connect Spotify**.
-3. Approve in the popup. Search, pick a track, hit **Begin presentation**.
+1. Open the screen, scroll to **Music → Spotify**, and click **Connect Spotify**
+   (the Client ID is baked into the build, so visitors don't see any setup fields).
+2. Approve in the popup.
+3. In Spotify, find a song → **Share → Copy Song Link**, then **paste the link**
+   into the box and hit **Add track**. Pick it and **Begin presentation**.
 
-No account? Use **Skip — use the demo library** for ambient placeholder tracks, or
-**Upload** a local audio file.
+> **Why paste a link instead of search?** As of Spotify's Nov 27 2024 API changes,
+> the **search/catalog endpoints require Extended Quota Mode**, which self-registered
+> developer apps don't have (search returns a misleading `Invalid limit` / empty
+> result). Playing a *known* track uses the **Player API**, which still works on a
+> Premium account — so we paste the track link rather than search. Title and artwork
+> are filled in from Spotify's public oEmbed and the Web Playback SDK, not the
+> restricted catalog API.
+
+No account or not Premium? Use **Skip — use the demo library** for ambient placeholder
+tracks, or **Upload** a local audio file — both work with no Spotify at all.
 
 ---
 

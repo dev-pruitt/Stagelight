@@ -417,7 +417,7 @@ class Component extends DCLogic {
       const player = new window.Spotify.Player({ name: 'Stagelight', volume: 0.0, getOAuthToken: (cb) => { this.ensureSpToken().then((t) => cb(t)); } });
       player.addListener('ready', ({ device_id }) => this.setState({ spDeviceId: device_id, spReady: true }));
       player.addListener('not_ready', () => this.setState({ spReady: false }));
-      ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach((ev) => player.addListener(ev, (e) => this.setState({ authError: 'Spotify: ' + (e && e.message || ev) })));
+      ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach((ev) => player.addListener(ev, (e) => this.setState({ authError: 'Spotify: ' + (e && e.message || ev) }))); player.addListener('player_state_changed', (st) => { var cur = this.state.track; if (!cur || cur.service !== 'spotify' || !st || !st.track_window || !st.track_window.current_track) return; var ct = st.track_window.current_track; var cover = (ct.album && ct.album.images && ct.album.images[0]) ? ('center/cover url(' + ct.album.images[0].url + ')') : cur.cover; var upd = Object.assign({}, cur, { title: ct.name || cur.title, artist: (ct.artists || []).map((a) => a.name).join(', ') || cur.artist, cover: cover, dur: this.fmt(Math.round((ct.duration_ms || 0) / 1000)) }); var results = (this.state.results || []).map((r) => (r.uri === upd.uri ? Object.assign({}, r, { title: upd.title, artist: upd.artist, cover: upd.cover, dur: upd.dur }) : r)); this.setState({ track: upd, results: results }); });
       await player.connect();
       this.spPlayer = player;
     } catch (e) { this.setState({ authError: 'Spotify player error: ' + (e && e.message || e) }); }
@@ -429,7 +429,7 @@ class Component extends DCLogic {
     await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + id, { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ uris: [uri] }) });
     if (this.spPlayer) { let v = 0; this.spPlayer.setVolume(0); clearInterval(this._spFade); this._spFade = setInterval(() => { v = Math.min(0.85, v + 0.05); this.spPlayer.setVolume(v); if (v >= 0.85) clearInterval(this._spFade); }, 120); }
   }
-  stopSpotify() { clearInterval(this._spFade); if (this.spPlayer) { try { this.spPlayer.pause(); } catch (e) {} } }
+  stopSpotify() { clearInterval(this._spFade); if (this.spPlayer) { try { this.spPlayer.pause(); } catch (e) {} } } parseSpotifyTrackId(s) { s = String(s || '').trim(); var t = s.split('track'); if (t.length < 2) return null; var m = t[t.length - 1].match(/[A-Za-z0-9]{22}/); return m ? m[0] : null; } addSpotifyLink() { var id = this.parseSpotifyTrackId(this.state.searchQuery); if (!id) { this.setState({ authError: 'Paste a Spotify track link, e.g. https://open.spotify.com/track/...  (in Spotify use Share then Copy Song Link).' }); return; } var uri = 'spotify:track:' + id; var tr = { service: 'spotify', uri: uri, title: 'Spotify track', artist: 'Loading...', cover: 'linear-gradient(135deg,#1db954,#191414)', dur: '' }; this.setState({ results: [Object.assign({}, tr)], authError: '' }); this.pickTrack(tr); this.hydrateSpotifyMeta(id, uri); } async hydrateSpotifyMeta(id, uri) { try { var r = await fetch('https://open.spotify.com/oembed?url=https://open.spotify.com/track/' + id); if (!r.ok) return; var j = await r.json(); var cover = j.thumbnail_url ? ('center/cover url(' + j.thumbnail_url + ')') : null; var patch = {}; if (j.title) patch.title = j.title; if (cover) patch.cover = cover; var cur = this.state.track; if (cur && cur.uri === uri) this.setState({ track: Object.assign({}, cur, patch), results: (this.state.results || []).map((x) => x.uri === uri ? Object.assign({}, x, patch) : x) }); } catch (e) {} }
 
   // ----- Apple Music -----
   connectApple = async () => {
@@ -467,7 +467,7 @@ class Component extends DCLogic {
 
   // ----- search / preview / auth plumbing -----
   runSearch = async () => {
-    const q = (this.state.searchQuery || '').trim(); if (!q) return;
+    const q = (this.state.searchQuery || '').trim(); if (!q) return; if (this.state.source === 'spotify') { this.addSpotifyLink(); return; }
     this.setState({ searching: true, authError: '' });
     try {
       let results = [];
@@ -900,8 +900,8 @@ class Component extends DCLogic {
       showRedirect: false, redirectUri: this.REDIRECT(), copyRedirect: this.copyRedirect, copyLabel: st.copied ? 'Copied' : 'Copy',
       connectedLabel: cm.label, readyColor: cm.ready ? '#34c759' : '#ff9f0a',
       searchQuery: st.searchQuery, setSearchQuery: this.setSearchQuery, onSearchKey: this.onSearchKey, runSearch: this.runSearch,
-      searchLabel: st.searching ? '\u2026' : 'Search', searchPlaceholder: 'Search ' + (isSpotify ? 'Spotify' : 'Apple Music') + '\u2026',
-      results, hasResults: results.length > 0, emptyResults: !st.searching && results.length === 0 && !!st.searchQuery, emptyMsg: 'No results \u2014 try another search.',
+      searchLabel: st.searching ? '\u2026' : (isSpotify ? 'Add track' : 'Search'), searchPlaceholder: isSpotify ? 'Paste a Spotify track link' : ('Search Apple Music' + '\u2026'),
+      results, hasResults: results.length > 0, emptyResults: !st.searching && results.length === 0 && !!st.searchQuery && !st.authError && !isSpotify, emptyMsg: 'No results \u2014 try another search.',
       demoLibrary: demoLib, toggleDemo: this.toggleDemo, disconnectSource: this.disconnectSource,
       onAudioChange: this.onAudioChange,
       track: st.track || this.EMPTY_TRACK, hasTrack: !!st.track, selectedSub,
