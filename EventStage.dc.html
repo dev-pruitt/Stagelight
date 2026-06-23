@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@keyframes stFloatA { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(9%,-8%) scale(1.2)} 100%{transform:translate(0,0) scale(1)} }
+@keyframes stFloatB { 0%{transform:translate(0,0) scale(1.12)} 50%{transform:translate(-10%,7%) scale(0.88)} 100%{transform:translate(0,0) scale(1.12)} }
+@keyframes stFloatC { 0%{transform:translate(0,0) scale(0.95)} 50%{transform:translate(7%,10%) scale(1.24)} 100%{transform:translate(0,0) scale(0.95)} }
+@keyframes stEq { 0%,100%{transform:scaleY(0.25)} 50%{transform:scaleY(1)} }
+@keyframes stPulse { 0%,100%{opacity:0.55} 50%{opacity:1} }
+@keyframes stHint { 0%{opacity:0} 12%{opacity:0.45} 72%{opacity:0.45} 100%{opacity:0} }
+@keyframes stRise { 0%{transform:translateY(16px)} 100%{transform:translateY(0)} }
+</style>
+</helmet>
+<div style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+  <sc-for list="{{ blobs }}" as="b" hint-placeholder-count="4">
+    <div style="{{ b.style }}"><div style="{{ b.inner }}"></div></div>
+  </sc-for>
+
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 26%, rgba(255,255,255,0) 72%, rgba(255,255,255,0.35));pointer-events:none;"></div>
+
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5cqh;padding:9cqmin;box-sizing:border-box;text-align:center;">
+
+    <sc-if value="{{ hasLogo }}" hint-placeholder-val="{{ true }}">
+      <img src="{{ logo }}" alt="logo" style="height:17cqmin;max-width:58cqw;object-fit:contain;animation:stRise 1.1s cubic-bezier(.2,.7,.2,1) both;" />
+    </sc-if>
+
+    <sc-if value="{{ showCountdown }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2.4cqh;animation:stRise 1.2s cubic-bezier(.2,.7,.2,1) both;">
+        <div style="font-size:2.1cqmin;text-transform:uppercase;letter-spacing:0.42em;font-weight:600;color:{{ ink }};opacity:0.42;padding-left:0.42em;">{{ label }}</div>
+        <div style="font-size:15cqmin;font-weight:200;font-variant-numeric:tabular-nums;line-height:0.95;color:{{ ink }};letter-spacing:0.01em;">{{ countdownText }}</div>
+        <div style="font-size:2.7cqmin;font-weight:400;color:{{ ink }};opacity:0.6;max-width:70cqw;">{{ title }}</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showAmbient }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2cqh;">
+        <div style="font-size:6.4cqmin;font-weight:300;color:{{ ink }};animation:stPulse 3.4s ease-in-out infinite;letter-spacing:0.005em;">{{ subtitle }}</div>
+        <div style="font-size:2.6cqmin;font-weight:400;color:{{ ink }};opacity:0.5;">{{ title }}</div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <sc-if value="{{ showNowPlaying }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);display:flex;align-items:center;gap:2.2cqmin;padding:1.5cqmin 3cqmin 1.5cqmin 1.5cqmin;background:rgba(255,255,255,0.62);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(0,0,0,0.05);border-radius:999px;box-shadow:0 2cqmin 6cqmin rgba(0,0,0,0.08);animation:stRise 1s cubic-bezier(.2,.7,.2,1) both;">
+      <div style="width:6.2cqmin;height:6.2cqmin;border-radius:1.6cqmin;background:{{ track.cover }};flex:none;box-shadow:0 1cqmin 2cqmin rgba(0,0,0,0.12);"></div>
+      <div style="display:flex;flex-direction:column;gap:0.5cqh;min-width:0;text-align:left;">
+        <div style="font-size:2.3cqmin;font-weight:600;color:{{ ink }};white-space:nowrap;">{{ track.title }}</div>
+        <div style="font-size:2cqmin;color:{{ ink }};opacity:0.5;white-space:nowrap;">{{ track.artist }}</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:0.6cqmin;height:4cqmin;margin-left:1.2cqmin;">
+        <div style="width:0.8cqmin;height:100%;background:{{ accent }};border-radius:1cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out infinite;animation-play-state:{{ eqPlay }};"></div>
+        <div style="width:0.8cqmin;height:100%;background:{{ accent }};border-radius:1cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out 0.25s infinite;animation-play-state:{{ eqPlay }};"></div>
+        <div style="width:0.8cqmin;height:100%;background:{{ accent }};border-radius:1cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out 0.5s infinite;animation-play-state:{{ eqPlay }};"></div>
+        <div style="width:0.8cqmin;height:100%;background:{{ accent }};border-radius:1cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out 0.15s infinite;animation-play-state:{{ eqPlay }};"></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showExitHint }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:5cqh;left:50%;transform:translateX(-50%);font-size:1.9cqmin;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;color:{{ ink }};opacity:0;animation:stHint 6.5s ease-in-out 1.2s both;">Press Esc to exit</div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:540},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#fbfbfd&quot;},&quot;accent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgb(10,132,255)&quot;},&quot;ink&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#1d1d1f&quot;},&quot;blobs&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[]},&quot;logo&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null},&quot;hasLogo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;We\u2019ll begin shortly&quot;},&quot;countdownText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;05:00&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Begins in&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showAmbient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;track&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;cover&quot;:&quot;linear-gradient(135deg,#a8edea,#fed6e3)&quot;,&quot;title&quot;:&quot;Weightless&quot;,&quot;artist&quot;:&quot;Marconi Union&quot;}},&quot;showNowPlaying&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;eqPlay&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;running&quot;},&quot;showExitHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false}}"></script>
+</body>
+</html>
