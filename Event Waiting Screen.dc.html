@@ -521,32 +521,65 @@ class Component extends DCLogic {
     try { var r = await fetch('https://open.spotify.com/oembed?url=https://open.spotify.com/track/' + id); if (!r.ok) return; var j = await r.json(); var patch = {}; if (j.title) patch.title = j.title; if (j.thumbnail_url) patch.cover = 'center/cover url(' + j.thumbnail_url + ')'; this.patchTrackByUri(uri, patch); } catch (e) {} }
 
   async addSpotifyPlaylist(id) {
-    const token = await this.ensureSpToken();
-    if (!token) { this.setState({ authError: 'Connect Spotify first, then paste a playlist link.' }); return; }
     this.setState({ searching: true, authError: '' });
-    try {
-      var fields = 'items(track(uri,name,artists(name),duration_ms,album(images))),next';
-      var url = 'https://api.spotify.com/v1/playlists/' + id + '/tracks?' + new URLSearchParams({ limit: '100', fields: fields }).toString();
-      var raw = [];
-      while (url && raw.length < 200) {
-        var r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
-        var j = await r.json();
-        if (j.error) { var es = j.error.status; this.setState({ searching: false, authError: es === 403 ? 'Spotify would not allow reading that playlist. Disconnect and reconnect Spotify (to grant playlist access), then use a playlist you created or a public one. Spotify-owned playlists like Discover Weekly cannot be imported.' : es === 404 ? 'That playlist was not found or is not accessible. Spotify editorial / algorithmic playlists (Discover Weekly, Daily Mix, etc.) cannot be imported via the API. Try a playlist you created.' : es === 401 ? 'Your Spotify session expired. Click Connect Spotify to sign in again.' : ('Spotify: ' + (j.error.message || j.error)) }); return; }
-        (j.items || []).forEach((it) => { if (it && it.track && it.track.uri) raw.push(it.track); });
-        url = j.next;
-      }
-      var existing = new Set((this.state.queue || []).map((x) => this.selKey(x)));
-      var fresh = [];
-      raw.forEach((t) => {
+    var fresh = null;
+    try { fresh = await this.playlistViaApi(id); } catch (e) { fresh = null; }
+    if (!fresh || !fresh.length) { try { fresh = await this.playlistViaEmbed(id); } catch (e) { fresh = null; } }
+    if (!fresh || !fresh.length) { this.setState({ searching: false, authError: 'Could not import that playlist. Double-check the link and that the playlist is public, then try again.' }); return; }
+    var existing = new Set((this.state.queue || []).map((x) => this.selKey(x)));
+    var add = [];
+    fresh.forEach((tr) => { var k = this.selKey(tr); if (!existing.has(k)) { existing.add(k); add.push(tr); } });
+    if (!add.length) { this.setState({ searching: false, authError: 'Those tracks are already in your playlist.' }); return; }
+    this.stopCurrentPreview();
+    var nq = (this.state.queue || []).concat(add);
+    this.setState({ queue: nq, currentIdx: nq.length - add.length, track: add[0], previewPlaying: false, searching: false, searchQuery: '', authError: '' });
+  }
+  async playlistViaApi(id) {
+    var token = await this.ensureSpToken();
+    if (!token) return null;
+    var fields = 'items(track(uri,name,artists(name),duration_ms,album(images))),next';
+    var url = 'https://api.spotify.com/v1/playlists/' + id + '/tracks?' + new URLSearchParams({ limit: '100', fields: fields }).toString();
+    var out = [];
+    while (url && out.length < 300) {
+      var r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+      var j = await r.json();
+      if (j.error) return null;
+      (j.items || []).forEach((it) => {
+        var t = it && it.track; if (!t || !t.uri) return;
         var sec = Math.round((t.duration_ms || 0) / 1000);
-        var tr = { service: 'spotify', uri: t.uri, title: t.name, artist: (t.artists || []).map((a) => a.name).join(', '), cover: (t.album && t.album.images && t.album.images[0] && ('center/cover url(' + t.album.images[0].url + ')')) || 'linear-gradient(135deg,#1db954,#191414)', secs: sec, dur: sec ? this.fmt(sec) : '' };
-        var k = this.selKey(tr); if (!existing.has(k)) { existing.add(k); fresh.push(tr); }
+        out.push({ service: 'spotify', uri: t.uri, title: t.name, artist: (t.artists || []).map((a) => a.name).join(', '), cover: (t.album && t.album.images && t.album.images[0] && ('center/cover url(' + t.album.images[0].url + ')')) || 'linear-gradient(135deg,#1db954,#191414)', secs: sec, dur: sec ? this.fmt(sec) : '' });
       });
-      if (!fresh.length) { this.setState({ searching: false, authError: 'No new tracks found in that playlist (private playlists need you to reconnect Spotify).' }); return; }
-      this.stopCurrentPreview();
-      var nq = (this.state.queue || []).concat(fresh);
-      this.setState({ queue: nq, currentIdx: nq.length - fresh.length, track: fresh[0], previewPlaying: false, searching: false, searchQuery: '', authError: '' });
-    } catch (e) { this.setState({ searching: false, authError: 'Playlist import failed: ' + (e && e.message || e) }); }
+      url = j.next;
+    }
+    return out.length ? out : null;
+  }
+  findTrackList(o) {
+    if (o && typeof o === 'object') {
+      if (Array.isArray(o.trackList)) return o.trackList;
+      for (var k in o) { var r = this.findTrackList(o[k]); if (r) return r; }
+    }
+    return null;
+  }
+  async playlistViaEmbed(id) {
+    // Spotify's public embed exposes the full track list with no auth/scope and works for playlists the Web API blocks.
+    // The embed page lacks CORS headers, so it is read through a public CORS reader.
+    var target = 'https://open.spotify.com/embed/playlist/' + id;
+    var readers = ['https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?url='];
+    var html = null;
+    for (var i = 0; i < readers.length; i++) {
+      try { var r = await fetch(readers[i] + encodeURIComponent(target)); if (r.ok) { var h = await r.text(); if (h && h.indexOf('__NEXT_DATA__') >= 0) { html = h; break; } } } catch (e) {}
+    }
+    if (!html) return null;
+    var m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if (!m) return null;
+    var data; try { data = JSON.parse(m[1]); } catch (e) { return null; }
+    var tl = this.findTrackList(data);
+    if (!tl) return null;
+    var out = tl.filter((t) => t && t.uri && t.uri.indexOf('spotify:track:') === 0).map((t) => {
+      var sec = Math.round((t.duration || 0) / 1000);
+      return { service: 'spotify', uri: t.uri, title: t.title || 'Spotify track', artist: String(t.subtitle || '').replace(/ /g, ' '), cover: 'linear-gradient(135deg,#1db954,#191414)', secs: sec, dur: sec ? this.fmt(sec) : '' };
+    });
+    return out.length ? out : null;
   }
 
   // ----- Apple Music -----
