@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon-256.png" alt="Stagelight" width="120" height="120">
+</p>
+
 # Stagelight — Event Waiting Screen
 
 A self-contained, browser-based "we'll begin shortly" countdown screen for events,
@@ -94,7 +98,6 @@ After editing the `.dc.html` source, re-export the standalone to refresh `index.
 
 - [ ] Apple Music (MusicKit) — scaffolded, needs a developer token.
 - [ ] Optional serverless token-exchange (for refresh tokens / non-Premium fallbacks).
-- [ ] Playlist queue instead of a single track.
 
 ## License
 
