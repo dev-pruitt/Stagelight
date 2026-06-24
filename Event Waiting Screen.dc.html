@@ -423,7 +423,7 @@ class Component extends DCLogic {
       const { verifier, challenge } = await this.pkce();
       localStorage.setItem('sl_sp_verifier', verifier);
       localStorage.setItem('sl_sp_clientid', clientId);
-      const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: this.REDIRECT(), code_challenge_method: 'S256', code_challenge: challenge, scope: this.SCOPES });
+      const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: this.REDIRECT(), code_challenge_method: 'S256', code_challenge: challenge, scope: this.SCOPES, state: 'sl_spotify_popup' });
       const w = 480, h = 740, left = Math.max(0, (screen.width - w) / 2), top = Math.max(0, (screen.height - h) / 2);
       this._popup = window.open('https://accounts.spotify.com/authorize?' + params.toString(), 'sl_spotify_auth', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top);
       if (!this._popup) this.setState({ authError: this.spotifyErr('popup') });
@@ -637,7 +637,7 @@ class Component extends DCLogic {
     try {
       const p = new URLSearchParams(location.search);
       const code = p.get('code'), error = p.get('error');
-      const isPopup = window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
+      const isPopup = p.get('state') === 'sl_spotify_popup' || window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
         try { if (window.opener && window.opener !== window) window.opener.postMessage({ __sl_auth: 'spotify', code: code, error: error }, '*'); } catch (e) {} try { localStorage.setItem('sl_sp_auth_msg', JSON.stringify({ code: code || '', error: error || '', t: Date.now() })); } catch (e) {} try { document.title = 'You can close this window'; } catch (e) {}
         window.close();
         return true;
