@@ -644,6 +644,9 @@ class Component extends DCLogic {
   };
 
   componentDidMount() {
+    // Always run on the canonical custom domain so the Spotify redirect_uri matches what's registered.
+    // (GitHub Pages should 301 github.io -> the custom domain; this is a belt-and-suspenders guard.)
+    try { var CANON = 'www.stagelight.t64.org'; if (CANON && /\.github\.io$/i.test(location.hostname) && location.hostname !== CANON) { location.replace('https://' + CANON + '/' + location.search + location.hash); return; } } catch (e) {}
     if (this.handleAuthRedirect()) return;
     window.addEventListener('message', this.onAuthMessage); window.addEventListener('storage', this.onAuthStorage);
     try {
