@@ -1077,7 +1077,7 @@ class Component extends DCLogic {
       credPlaceholder: cm.placeholder, credValue: isSpotify ? st.spClientId : st.amDevToken,
       onCredInput: isSpotify ? this.setSpClientId : this.setAmDevToken,
       connectAction: isSpotify ? this.connectSpotify : this.connectApple,
-      showRedirect: false, redirectUri: this.REDIRECT(), copyRedirect: this.copyRedirect, copyLabel: st.copied ? 'Copied' : 'Copy',
+      showRedirect: true, redirectUri: this.REDIRECT(), copyRedirect: this.copyRedirect, copyLabel: st.copied ? 'Copied' : 'Copy',
       connectedLabel: cm.label, readyColor: cm.ready ? '#34c759' : '#ff9f0a',
       searchQuery: st.searchQuery, setSearchQuery: this.setSearchQuery, onSearchKey: this.onSearchKey, runSearch: this.runSearch,
       searchLabel: st.searching ? '\u2026' : (isSpotify ? 'Add' : 'Search'), searchPlaceholder: isSpotify ? 'Paste a Spotify track or playlist link' : ('Search Apple Music' + '\u2026'),
