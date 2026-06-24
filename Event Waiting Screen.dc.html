@@ -531,7 +531,7 @@ class Component extends DCLogic {
       while (url && raw.length < 200) {
         var r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
         var j = await r.json();
-        if (j.error) { this.setState({ searching: false, authError: 'Spotify: ' + (j.error.message || j.error) }); return; }
+        if (j.error) { var es = j.error.status; this.setState({ searching: false, authError: es === 403 ? 'Spotify would not allow reading that playlist. Disconnect and reconnect Spotify (to grant playlist access), then use a playlist you created or a public one. Spotify-owned playlists like Discover Weekly cannot be imported.' : es === 404 ? 'That playlist was not found or is not accessible. Spotify editorial / algorithmic playlists (Discover Weekly, Daily Mix, etc.) cannot be imported via the API. Try a playlist you created.' : es === 401 ? 'Your Spotify session expired. Click Connect Spotify to sign in again.' : ('Spotify: ' + (j.error.message || j.error)) }); return; }
         (j.items || []).forEach((it) => { if (it && it.track && it.track.uri) raw.push(it.track); });
         url = j.next;
       }
