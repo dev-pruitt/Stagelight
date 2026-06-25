@@ -28,6 +28,10 @@
   <!-- ============ SETUP ============ -->
   <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ true }}">
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;animation:appFade .4s ease both;">
+    <div style="position:fixed;left:16px;bottom:14px;z-index:45;display:flex;flex-direction:column;gap:3px;font-size:11px;color:#6e6e73;background:rgba(255,255,255,0.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,0.06);border-radius:11px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+      <div style="font-weight:700;color:#1d1d1f;font-size:9.5px;text-transform:uppercase;letter-spacing:0.06em;">Hot keys</div>
+      <div style="display:flex;gap:11px;flex-wrap:wrap;"><span><b style="color:#1d1d1f;">Enter</b> Start</span><span><b style="color:#1d1d1f;">Space</b> Pause</span><span><b style="color:#1d1d1f;">Esc</b> Stop</span><span><b style="color:#1d1d1f;">&larr; &rarr;</b> Song</span></div>
+    </div>
 
     <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.7);backdrop-filter:blur(20px);">
       <div style="display:flex;align-items:center;gap:12px;">
@@ -35,7 +39,11 @@
         <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em;">Stagelight</div>
         <div style="font-size:13px;color:#86868b;font-weight:400;">Event waiting screen</div>
       </div>
-      <button onClick="{{ beginEvent }}" style="display:flex;align-items:center;gap:8px;padding:10px 22px;border:none;border-radius:980px;background:#0a84ff;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.35);transition:transform .15s ease,filter .15s ease;" style-hover="filter:brightness(1.05);transform:scale(1.02);">Begin presentation</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onClick="{{ toggleFs }}" title="Enter full screen when you begin" style="display:flex;align-items:center;gap:6px;border:1px solid {{ fsBorder }};background:{{ fsBg }};color:{{ fsColor }};border-radius:980px;padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s ease;">⛶ Full screen</button>
+        <button onClick="{{ resetSetup }}" style="border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:9px 16px;font-size:13px;font-weight:600;color:#1d1d1f;cursor:pointer;" style-hover="background:#f0f0f3;">Reset</button>
+        <button onClick="{{ beginEvent }}" style="display:flex;align-items:center;gap:8px;padding:10px 22px;border:none;border-radius:980px;background:#0a84ff;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.35);transition:transform .15s ease,filter .15s ease;" style-hover="filter:brightness(1.05);transform:scale(1.02);">Begin presentation</button>
+      </div>
     </div>
 
     <div style="flex:1;min-height:0;display:flex;">
@@ -346,6 +354,8 @@ class Component extends DCLogic {
     currentIdx: 0,
     autoMatch: true,
     playing: false,
+    paused: false,
+    fullscreenOnStart: true,
     // real-service auth
     spClientId: '26119e868a1d486cbae6ef197addfcd3',
     amDevToken: '',
@@ -643,12 +653,21 @@ class Component extends DCLogic {
       const dev = localStorage.getItem('sl_am_devtoken');
       if (dev) { this.setState({ amDevToken: dev }); this.rehydrateApple(dev); }
     } catch (e) {}
+    try { var saved = JSON.parse(localStorage.getItem('sl_setup') || 'null'); if (saved && typeof saved === 'object') this.setState(saved); } catch (e) {}
+    this._persistT = setInterval(() => { if (this.state.phase === 'setup') this.savePrefs(); }, 1500);
     this._tick = setInterval(() => {
-      if (this.state.phase === 'presenting') this.setState({ now: Date.now() });
+      if (this.state.phase === 'presenting' && !this.state.paused) this.setState({ now: Date.now() });
     }, 250);
     this._onKey = (e) => {
-      if (this.state.phase !== 'presenting') return;
+      const tag = (e.target && e.target.tagName) || '';
+      if (this.state.phase === 'setup') {
+        if (e.key === 'Enter' && !/INPUT|TEXTAREA/.test(tag)) { e.preventDefault(); this.beginEvent(); }
+        return;
+      }
       if (e.key === 'Escape') { this.exit(); return; }
+      if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); this.togglePause(); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); this.changeSong(1); return; }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); this.changeSong(-1); return; }
       if (e.key === 'Tab') {
         e.preventDefault();
         const t = Date.now();
@@ -659,7 +678,7 @@ class Component extends DCLogic {
     window.addEventListener('keydown', this._onKey);
   }
   componentWillUnmount() {
-    clearInterval(this._tick);
+    clearInterval(this._tick); clearInterval(this._persistT);
     window.removeEventListener('keydown', this._onKey);
     window.removeEventListener('message', this.onAuthMessage); window.removeEventListener('storage', this.onAuthStorage);
     clearInterval(this._spFade); clearInterval(this._amFade);
@@ -902,11 +921,56 @@ class Component extends DCLogic {
     this.voices = null;
   }
 
+  savePrefs() {
+    try {
+      var s = this.state;
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart });
+      if (data === this._lastPrefs) return;
+      this._lastPrefs = data;
+      localStorage.setItem('sl_setup', data);
+    } catch (e) {}
+  }
+  resetSetup = () => {
+    this.stopCurrentPreview();
+    try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: 0, showEvent: true, showNowPlaying: true, fullscreenOnStart: true, searchQuery: '', results: [], previewPlaying: false, authError: '' });
+  };
+  toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
+  togglePause = () => {
+    if (this.state.phase !== 'presenting') return;
+    if (!this.state.paused) {
+      this._pauseAt = Date.now();
+      this.setState({ paused: true, playing: false });
+      try { if (this.spPlayer) this.spPlayer.pause(); } catch (e) {}
+      try { if (this.audio) this.audio.pause(); } catch (e) {}
+      try { if (this.actx && this.actx.state === 'running') this.actx.suspend(); } catch (e) {}
+    } else {
+      this.setState({ target: this.state.target + (Date.now() - (this._pauseAt || Date.now())), now: Date.now(), paused: false, playing: true });
+      try { if (this.spPlayer) this.spPlayer.resume(); } catch (e) {}
+      try { if (this.audio && this.audio.src) { var p = this.audio.play(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
+      try { if (this.actx && this.actx.state === 'suspended') this.actx.resume(); } catch (e) {}
+    }
+  };
+  changeSong = (dir) => {
+    var q = this.state.queue || []; if (!q.length) return;
+    var i = this.state.currentIdx + dir; if (i < 0) i = 0; if (i > q.length - 1) i = q.length - 1;
+    if (i === this.state.currentIdx) return;
+    var t = q[i];
+    this.setState({ currentIdx: i, track: t, paused: false, playing: true });
+    if (this.state.phase === 'presenting') {
+      try {
+        if (t.service === 'spotify' && this.state.spReady) this.playSpotify(t.uri);
+        else if (t.service === 'apple' && this.state.connected.apple) this.playApple(t.id);
+        else if (t.url) this.playLocalAt(i);
+      } catch (e) {}
+    }
+    if (this.state.colorSource === 'album') this.applyAlbumPalette(t);
+  };
   beginEvent = () => {
     const target = Date.now() + this.countdownSecs() * 1000;
-    this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, currentIdx: 0, track: (this.state.queue[0] || this.state.track) });
+    this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, paused: false, currentIdx: 0, track: (this.state.queue[0] || this.state.track) });
     try { this.startAudio(); } catch (e) {}
-    try { if (this.root && this.root.requestFullscreen) { const r = this.root.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
+    try { if (this.state.fullscreenOnStart && this.root && this.root.requestFullscreen) { const r = this.root.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
   };
   exit = () => {
     this.stopAudio();
@@ -1111,7 +1175,8 @@ class Component extends DCLogic {
       showCountdown: presenting && !atZero && st.showEvent,
       showAmbient: atZero && st.showEvent,
       eqPlay: st.playing ? 'running' : 'paused',
-      beginEvent: this.beginEvent,
+      beginEvent: this.beginEvent, resetSetup: this.resetSetup, toggleFs: this.toggleFs,
+      fsBg: st.fullscreenOnStart ? 'rgba(10,132,255,0.10)' : '#fff', fsColor: st.fullscreenOnStart ? '#0a84ff' : '#86868b', fsBorder: st.fullscreenOnStart ? 'rgba(10,132,255,0.4)' : 'rgba(0,0,0,0.12)',
       setRoot: this.setRoot, setAudio: this.setAudio,
     };
   }
