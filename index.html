@@ -32,15 +32,21 @@ document.addEventListener('DOMContentLoaded', async function() {
   const loading = document.getElementById('__bundler_loading');
   function setStatus(msg) { if (loading) loading.textContent = msg; }
 
-  // Error sink persists across replaceWith since it's on window, not the DOM.
+  // Error sink: silent during first-load/unpack and for opaque cross-origin
+  // "Script error." noise; a genuine later error shows centered at the bottom for 60s.
+  var __sinkArmed = false;
+  setTimeout(function(){ __sinkArmed = true; }, 6000);
   window.addEventListener('error', function(e) {
+    if (!__sinkArmed) return;
+    var msg = String((e && (e.message || e.type)) || '').trim();
+    if (!msg || (/^script error\.?$/i.test(msg) && !(e && e.filename))) return;
     var p = document.body || document.documentElement;
     var d = document.getElementById('__bundler_err') || p.appendChild(document.createElement('div'));
     d.id = '__bundler_err';
-    d.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;font:12px/1.4 ui-monospace,monospace;background:#2a1215;color:#ff8a80;padding:10px 14px;border-radius:8px;border:1px solid #5c2b2e;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto';
-    d.textContent = (d.textContent ? d.textContent + String.fromCharCode(10) : '') +
-      '[bundle] ' + (e.message || e.type) +
-      (e.filename ? ' (' + e.filename.slice(0, 60) + ':' + e.lineno + ')' : '');
+    d.style.cssText = 'position:fixed;bottom:18px;left:50%;transform:translateX(-50%);max-width:80vw;font:12px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;background:rgba(20,20,22,0.92);color:#ff8a80;padding:9px 15px;border-radius:10px;border:1px solid rgba(255,138,128,0.25);box-shadow:0 6px 20px rgba(0,0,0,0.28);z-index:99999;white-space:pre-wrap;max-height:30vh;overflow:auto;text-align:center';
+    d.textContent = msg + (e && e.filename ? '  (' + e.filename.slice(0, 60) + ':' + e.lineno + ')' : '');
+    clearTimeout(window.__bundlerErrTimer);
+    window.__bundlerErrTimer = setTimeout(function(){ if (d && d.parentNode) d.parentNode.removeChild(d); }, 60000);
   }, true);
 
   try {
