@@ -28,7 +28,7 @@
   <!-- ============ SETUP ============ -->
   <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ true }}">
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;animation:appFade .4s ease both;">
-    <div style="position:fixed;left:16px;bottom:14px;z-index:45;display:flex;flex-direction:column;gap:3px;font-size:11px;color:#6e6e73;background:rgba(255,255,255,0.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,0.06);border-radius:11px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+    <div style="position:fixed;right:16px;bottom:14px;z-index:45;display:flex;flex-direction:column;gap:3px;font-size:11px;color:#6e6e73;background:rgba(255,255,255,0.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,0.06);border-radius:11px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
       <div style="font-weight:700;color:#1d1d1f;font-size:9.5px;text-transform:uppercase;letter-spacing:0.06em;">Hot keys</div>
       <div style="display:flex;gap:11px;flex-wrap:wrap;"><span><b style="color:#1d1d1f;">Enter</b> Start</span><span><b style="color:#1d1d1f;">Space</b> Pause</span><span><b style="color:#1d1d1f;">Esc</b> Stop</span><span><b style="color:#1d1d1f;">&larr; &rarr;</b> Song</span></div>
     </div>
@@ -303,7 +303,8 @@
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;background:radial-gradient(120% 120% at 50% 0%, #ffffff 0%, #ececef 100%);">
         <div style="position:relative;width:100%;max-width:780px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.06);">
           <dc-import name="EventStage" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%;"
-            bg="{{ bg }}" accent="{{ accent }}" ink="{{ ink }}" blobs="{{ blobs }}"
+            bg="{{ stageBg }}" accent="{{ accent }}" ink="{{ stageInk }}" blobs="{{ blobs }}"
+            shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}"
             logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
             countdown-text="{{ previewCountdown }}" label="{{ label }}" show-countdown="{{ showEvent }}" show-ambient="{{ false }}"
             track="{{ track }}" show-now-playing="{{ showNP }}" eq-play="paused" show-exit-hint="{{ false }}"></dc-import>
@@ -317,9 +318,10 @@
 
   <!-- ============ PRESENTATION ============ -->
   <sc-if value="{{ isPresenting }}" hint-placeholder-val="{{ false }}">
-  <div style="position:fixed;inset:0;z-index:50;background:{{ bg }};animation:appReveal .7s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="position:fixed;inset:0;z-index:50;background:{{ stageBg }};animation:appReveal .7s cubic-bezier(.2,.7,.2,1) both;">
     <dc-import name="EventStage" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%;"
-      bg="{{ bg }}" accent="{{ accent }}" ink="{{ ink }}" blobs="{{ liveBlobs }}"
+      bg="{{ stageBg }}" accent="{{ accent }}" ink="{{ stageInk }}" blobs="{{ liveBlobs }}"
+      shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}"
       logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
       countdown-text="{{ liveCountdown }}" label="{{ liveLabel }}" show-countdown="{{ showCountdown }}" show-ambient="{{ showAmbient }}"
       track="{{ track }}" show-now-playing="{{ showNP }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}"></dc-import>
@@ -330,7 +332,7 @@
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;eventTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;countdownMinutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:60},&quot;defaultDesign&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Soft Mesh&quot;,&quot;options&quot;:[&quot;Soft Mesh&quot;,&quot;Halo&quot;,&quot;Aurora&quot;,&quot;Field&quot;]}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;eventTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;countdownMinutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:60},&quot;defaultDesign&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Soft Mesh&quot;,&quot;options&quot;:[&quot;Soft Mesh&quot;,&quot;Halo&quot;,&quot;Aurora&quot;,&quot;Field&quot;,&quot;Aurora Flow&quot;]}}">
 class Component extends DCLogic {
   state = {
     phase: 'setup',
@@ -378,6 +380,7 @@ class Component extends DCLogic {
     { name: 'Halo', count: 4, op: 0.6, mode: 'halo' },
     { name: 'Aurora', count: 4, op: 0.5, mode: 'aurora' },
     { name: 'Field', count: 2, op: 0.62, mode: 'field' },
+    { name: 'Aurora Flow', count: 0, op: 0, mode: 'shader' },
   ];
 
   DEFAULT_PAL = { accent: 'rgb(10,132,255)', accent2: 'rgb(94,92,230)', accent3: 'rgb(50,173,230)', bg: '#fbfbfd', ink: '#1d1d1f' };
@@ -983,6 +986,7 @@ class Component extends DCLogic {
 
   buildBlobs(pal, seed, vidx, intensify) {
     const v = this.VARIANTS[vidx];
+    if (v.mode === 'shader') return [];
     const rng = this.mulberry(seed + vidx * 999);
     const cols = [pal.accent, pal.accent2, pal.accent3];
     const anims = ['stFloatA', 'stFloatB', 'stFloatC'];
@@ -1003,7 +1007,7 @@ class Component extends DCLogic {
       }
       const op = Math.min(0.85, v.op * k * (0.8 + rng() * 0.4));
       const blur = 7 + rng() * 7;
-      const dur = 11 + rng() * 8;
+      const dur = 5 + rng() * 4;
       const delay = -(rng() * 12);
       const colMatch = col.match(/[\d.]+/g);
       const c = colMatch ? colMatch.map(Number) : [120, 120, 200];
@@ -1049,6 +1053,17 @@ class Component extends DCLogic {
     const liveSec = Math.ceil((st.target - st.now) / 1000);
     const atZero = presenting && liveSec <= 0;
     if (this._liveKey !== baseKey + atZero) { this._liveKey = baseKey + atZero; this._liveBlobs = this.buildBlobs(pal, st.seed, st.variantIdx, atZero); }
+
+    // Aurora Flow (WebGL) design: dark immersive stage + palette-driven shader colors
+    const stVariant = this.VARIANTS[st.variantIdx] || this.VARIANTS[0];
+    const isShader = stVariant.mode === 'shader';
+    let stageBg = pal.bg, stageInk = pal.ink, shaderMode = '', shaderCols = '';
+    if (isShader) {
+      const aA = this.toArr(pal.accent), aB = this.toArr(pal.accent2), aC = this.toArr(pal.accent3);
+      const baseRgb = this.hslToRgb(this.rgbToHsl(aA[0], aA[1], aA[2])[0], 0.5, 0.05);
+      stageBg = this.toRgb(baseRgb); stageInk = 'rgb(244,245,248)'; shaderMode = 'aurora';
+      shaderCols = [baseRgb, aA, aB, aC].map((c) => c.map(Math.round).join(',')).join('|');
+    }
 
     const accentArr = (pal.accent.match(/[\d.]+/g) || [10, 132, 255]).map(Number);
     const accentShadow = 'rgba(' + accentArr[0] + ',' + accentArr[1] + ',' + accentArr[2] + ',0.35)';
@@ -1143,6 +1158,7 @@ class Component extends DCLogic {
       // design
       variants, shuffle: this.shuffle,
       blobs: this._blobs, liveBlobs: this._liveBlobs,
+      stageBg, stageInk, shaderMode, shaderCols,
       // music
       sources, showConnect, showSearch, showDemo, showUpload: isUpload,
       connectTitle: cm.title, connectNote: cm.note, connectBtnLabel: cm.btn, connectBtnBg: cm.bg,

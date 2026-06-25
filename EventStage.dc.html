@@ -9,9 +9,9 @@
 <x-dc>
 <helmet>
 <style>
-@keyframes stFloatA { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(9%,-8%) scale(1.2)} 100%{transform:translate(0,0) scale(1)} }
-@keyframes stFloatB { 0%{transform:translate(0,0) scale(1.12)} 50%{transform:translate(-10%,7%) scale(0.88)} 100%{transform:translate(0,0) scale(1.12)} }
-@keyframes stFloatC { 0%{transform:translate(0,0) scale(0.95)} 50%{transform:translate(7%,10%) scale(1.24)} 100%{transform:translate(0,0) scale(0.95)} }
+@keyframes stFloatA { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(17%,-15%) scale(1.32)} 100%{transform:translate(0,0) scale(1)} }
+@keyframes stFloatB { 0%{transform:translate(0,0) scale(1.14)} 50%{transform:translate(-19%,13%) scale(0.82)} 100%{transform:translate(0,0) scale(1.14)} }
+@keyframes stFloatC { 0%{transform:translate(0,0) scale(0.93)} 50%{transform:translate(14%,19%) scale(1.34)} 100%{transform:translate(0,0) scale(0.93)} }
 @keyframes stEq { 0%,100%{transform:scaleY(0.25)} 50%{transform:scaleY(1)} }
 @keyframes stPulse { 0%,100%{opacity:0.55} 50%{opacity:1} }
 @keyframes stHint { 0%{opacity:0} 12%{opacity:0.45} 72%{opacity:0.45} 100%{opacity:0} }
@@ -20,11 +20,17 @@
 </helmet>
 <div style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
 
+  <sc-if value="{{ shaderOn }}" hint-placeholder-val="{{ false }}">
+    <canvas ref="{{ setCanvas }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+  </sc-if>
+
   <sc-for list="{{ blobs }}" as="b" hint-placeholder-count="4">
     <div style="{{ b.style }}"><div style="{{ b.inner }}"></div></div>
   </sc-for>
 
+  <sc-if value="{{ blobOverlay }}" hint-placeholder-val="{{ true }}">
   <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 26%, rgba(255,255,255,0) 72%, rgba(255,255,255,0.35));pointer-events:none;"></div>
+  </sc-if>
 
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5cqh;padding:9cqmin;box-sizing:border-box;text-align:center;">
 
@@ -71,6 +77,168 @@
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:540},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#fbfbfd&quot;},&quot;accent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgb(10,132,255)&quot;},&quot;ink&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#1d1d1f&quot;},&quot;blobs&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[]},&quot;logo&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null},&quot;hasLogo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;We\u2019ll begin shortly&quot;},&quot;countdownText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;05:00&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Begins in&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showAmbient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;track&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;cover&quot;:&quot;linear-gradient(135deg,#a8edea,#fed6e3)&quot;,&quot;title&quot;:&quot;Weightless&quot;,&quot;artist&quot;:&quot;Marconi Union&quot;}},&quot;showNowPlaying&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;eqPlay&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;running&quot;},&quot;showExitHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false}}"></script>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:540},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#fbfbfd&quot;},&quot;accent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgb(10,132,255)&quot;},&quot;ink&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#1d1d1f&quot;},&quot;blobs&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[]},&quot;logo&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null},&quot;hasLogo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;We\u2019ll begin shortly&quot;},&quot;countdownText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;05:00&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Begins in&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showAmbient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;track&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;cover&quot;:&quot;linear-gradient(135deg,#a8edea,#fed6e3)&quot;,&quot;title&quot;:&quot;Weightless&quot;,&quot;artist&quot;:&quot;Marconi Union&quot;}},&quot;showNowPlaying&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;eqPlay&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;running&quot;},&quot;showExitHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;shader&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;},&quot;shaderCols&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props || {};
+    const on = p.shader === 'aurora';
+    return { setCanvas: this.setCanvas, shaderOn: on, blobOverlay: !on };
+  }
+
+  setCanvas = (el) => {
+    if (el === this._canvas) return;
+    if (this._canvas) this.teardownGL();
+    this._canvas = el || null;
+    if (el) this.initGL();
+  };
+
+  componentDidUpdate() {
+    if (this._gl && this.props && this.props.shader === 'aurora') this.setTarget(this.props.shaderCols);
+  }
+  componentWillUnmount() { this.teardownGL(); }
+
+  parseCols(str) {
+    const groups = String(str || '').split('|');
+    const lin = (n) => Math.pow(Math.max(0, Math.min(255, +n || 0)) / 255, 2.2);
+    const out = [];
+    for (let i = 0; i < 4; i++) {
+      const g = (groups[i] || '0,0,0').split(',');
+      out.push([lin(g[0]), lin(g[1]), lin(g[2])]);
+    }
+    return out;
+  }
+  setTarget(str) { this._tgt = this.parseCols(str); }
+
+  initGL() {
+    const canvas = this._canvas;
+    if (!canvas) return;
+    this._cur = this.parseCols(this.props && this.props.shaderCols);
+    this._tgt = this._cur.map((c) => c.slice());
+    let gl = null;
+    try {
+      const o = { antialias: false, alpha: false, depth: false, stencil: false, premultipliedAlpha: false, powerPreference: 'high-performance' };
+      gl = canvas.getContext('webgl2', o) || canvas.getContext('webgl', o);
+    } catch (e) { gl = null; }
+    if (!gl) { this.fallback(); return; }
+    this._gl = gl;
+
+    const VERT = 'attribute vec2 aPos;varying vec2 vUv;void main(){vUv=aPos*0.5+0.5;gl_Position=vec4(aPos,0.0,1.0);}';
+    const FRAG = [
+      'precision highp float;varying vec2 vUv;',
+      'uniform float uTime;uniform float uAspect;uniform int uOctaves;',
+      'uniform vec3 uBase;uniform vec3 uA;uniform vec3 uB;uniform vec3 uC;',
+      'vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}',
+      'vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}',
+      'vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}',
+      'float snoise(vec2 v){const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);',
+      'vec2 i=floor(v+dot(v,C.yy));vec2 x0=v-i+dot(i,C.xx);',
+      'vec2 i1=(x0.x>x0.y)?vec2(1.0,0.0):vec2(0.0,1.0);',
+      'vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;i=mod289(i);',
+      'vec3 p=permute(permute(i.y+vec3(0.0,i1.y,1.0))+i.x+vec3(0.0,i1.x,1.0));',
+      'vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.0);m=m*m;m=m*m;',
+      'vec3 x=2.0*fract(p*C.www)-1.0;vec3 h=abs(x)-0.5;vec3 ox=floor(x+0.5);vec3 a0=x-ox;',
+      'm*=1.79284291400159-0.85373472095314*(a0*a0+h*h);',
+      'vec3 g;g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;return 130.0*dot(m,g);}',
+      'float fbm(vec2 p){float v=0.0;float a=0.5;for(int i=0;i<3;i++){if(i>=uOctaves)break;v+=a*snoise(p);p*=2.02;a*=0.5;}return v;}',
+      'vec3 RRTAndODTFit(vec3 v){vec3 a=v*(v+0.0245786)-0.000090537;vec3 b=v*(0.983729*v+0.4329510)+0.238081;return a/b;}',
+      'vec3 aces(vec3 color){const mat3 mi=mat3(0.59719,0.07600,0.02840,0.35458,0.90834,0.13383,0.04823,0.01566,0.83777);',
+      'const mat3 mo=mat3(1.60475,-0.10208,-0.00327,-0.53108,1.10813,-0.07276,-0.07367,-0.00605,1.07602);',
+      'color*=1.0/0.6;color=mi*color;color=RRTAndODTFit(color);color=mo*color;return clamp(color,0.0,1.0);}',
+      'vec3 senc(vec3 c){return mix(pow(c,vec3(0.41666))*1.055-0.055,c*12.92,vec3(lessThanEqual(c,vec3(0.0031308))));}',
+      'void main(){vec2 uv=vUv;vec2 p=uv*2.0-1.0;p.x*=max(uAspect,1.0);p.y*=max(1.0/uAspect,1.0);',
+      'vec2 q=vec2(fbm(p*0.6+vec2(uTime*0.018,-uTime*0.012)),fbm(p*0.6+vec2(-uTime*0.016,uTime*0.014)));',
+      'float n1=fbm(p*0.9+q*1.2+vec2(uTime*0.02,0.0));float n2=fbm(p*1.1-q*0.8+vec2(-uTime*0.018,uTime*0.013));',
+      'float gMask=smoothstep(0.0,0.7,n1)*smoothstep(0.95,0.10,uv.x);',
+      'float grMask=smoothstep(0.0,0.7,n2)*smoothstep(0.05,0.90,uv.x);',
+      'float vMask=smoothstep(0.0,0.55,n1*n2)*(1.0-abs(uv.x-0.5)*1.6);',
+      'vec3 col=uBase;col+=uA*gMask*0.42;col+=uB*grMask*0.36;col+=uC*max(vMask,0.0)*0.30;',
+      'float vig=smoothstep(1.5,0.35,length(p));col*=0.30+0.70*vig;',
+      'col=senc(aces(col));gl_FragColor=vec4(col,1.0);}'
+    ].join('');
+
+    const mk = (t, s) => { const sh = gl.createShader(t); gl.shaderSource(sh, s); gl.compileShader(sh); return sh; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, mk(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, mk(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { this._gl = null; this.fallback(); return; }
+    gl.useProgram(prog);
+    this._prog = prog;
+
+    const quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(prog, 'aPos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    this._u = {
+      time: gl.getUniformLocation(prog, 'uTime'),
+      aspect: gl.getUniformLocation(prog, 'uAspect'),
+      oct: gl.getUniformLocation(prog, 'uOctaves'),
+      base: gl.getUniformLocation(prog, 'uBase'),
+      a: gl.getUniformLocation(prog, 'uA'),
+      b: gl.getUniformLocation(prog, 'uB'),
+      c: gl.getUniformLocation(prog, 'uC')
+    };
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+
+    const dm = navigator.deviceMemory;
+    const hi = !(typeof dm === 'number' && dm <= 4);
+    this._pr = Math.min(window.devicePixelRatio || 1, hi ? 1.75 : 1.0);
+    gl.uniform1i(this._u.oct, hi ? 3 : 2);
+
+    this._t = 0; this._last = 0;
+    this._resize = () => {
+      const par = canvas.parentNode;
+      const w = canvas.clientWidth || (par && par.clientWidth) || window.innerWidth;
+      const hh = canvas.clientHeight || (par && par.clientHeight) || window.innerHeight;
+      const bw = Math.max(1, Math.round(w * this._pr)), bh = Math.max(1, Math.round(hh * this._pr));
+      if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
+      gl.viewport(0, 0, bw, bh);
+      gl.uniform1f(this._u.aspect, w / Math.max(1, hh));
+    };
+    this._resize();
+    try { this._ro = new ResizeObserver(this._resize); this._ro.observe(canvas.parentNode || canvas); } catch (e) {}
+    window.addEventListener('resize', this._resize);
+    this._onVis = () => { if (!document.hidden && this._gl && this._raf == null) { this._last = 0; this._raf = requestAnimationFrame(this._loop); } };
+    document.addEventListener('visibilitychange', this._onVis);
+
+    this._loop = (now) => {
+      if (document.hidden || !this._gl) { this._raf = null; return; }
+      const dt = this._last ? Math.min((now - this._last) / 1000, 0.05) : 0;
+      this._last = now;
+      this._t += dt;
+      const k = Math.min(dt * 2.2, 1);
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) this._cur[i][j] += (this._tgt[i][j] - this._cur[i][j]) * k;
+      gl.uniform1f(this._u.time, this._t);
+      gl.uniform3f(this._u.base, this._cur[0][0], this._cur[0][1], this._cur[0][2]);
+      gl.uniform3f(this._u.a, this._cur[1][0], this._cur[1][1], this._cur[1][2]);
+      gl.uniform3f(this._u.b, this._cur[2][0], this._cur[2][1], this._cur[2][2]);
+      gl.uniform3f(this._u.c, this._cur[3][0], this._cur[3][1], this._cur[3][2]);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      this._raf = requestAnimationFrame(this._loop);
+    };
+    this._raf = requestAnimationFrame(this._loop);
+  }
+
+  fallback() {
+    const c = this._canvas; if (!c) return;
+    const t = this.parseCols(this.props && this.props.shaderCols);
+    const u = (a, al) => { const s = (x) => Math.round(Math.pow(Math.max(0, x), 1 / 2.2) * 255); return 'rgba(' + s(a[0]) + ',' + s(a[1]) + ',' + s(a[2]) + ',' + al + ')'; };
+    c.style.background = 'radial-gradient(900px 600px at 70% 40%,' + u(t[1], 0.34) + ',transparent 60%),radial-gradient(700px 500px at 20% 70%,' + u(t[2], 0.22) + ',transparent 62%),radial-gradient(800px 600px at 45% 82%,' + u(t[3], 0.18) + ',transparent 60%),' + u(t[0], 1);
+  }
+
+  teardownGL() {
+    if (this._raf != null) { cancelAnimationFrame(this._raf); this._raf = null; }
+    if (this._ro) { try { this._ro.disconnect(); } catch (e) {} this._ro = null; }
+    if (this._resize) window.removeEventListener('resize', this._resize);
+    if (this._onVis) document.removeEventListener('visibilitychange', this._onVis);
+    const gl = this._gl;
+    if (gl) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) {} }
+    this._gl = null; this._prog = null; this._u = null;
+    if (this._canvas) this._canvas.style.background = '';
+  }
+}
+</script>
 </body>
 </html>
