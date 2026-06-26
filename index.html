@@ -285,6 +285,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       applyToMedia();
       for (var j = 0; j < players.length; j++) { try { players[j].setVolume(volume); } catch (e) {} }
       try { localStorage.setItem(KEY, String(volume)); } catch (e) {}
+      try { window.dispatchEvent(new CustomEvent('stagelight:volume', { detail: { volume: volume } })); } catch (e) {}
     }
 
     // Media elements created later (e.g. after "Begin") inherit the current level.
@@ -339,6 +340,26 @@ document.addEventListener('DOMContentLoaded', async function() {
       if (e.key === 'ArrowUp') { nudge(1); e.preventDefault(); }
       else if (e.key === 'ArrowDown') { nudge(-1); e.preventDefault(); }
     }, true);
+
+    function patchHotKeys() {
+      var nodes = document.querySelectorAll('div');
+      for (var i = 0; i < nodes.length; i++) {
+        if ((nodes[i].textContent || '').trim() !== 'Hot keys') continue;
+        var row = nodes[i].nextElementSibling;
+        if (!row || row.getAttribute('data-sl-volume-hotkey')) return;
+        var span = document.createElement('span');
+        span.innerHTML = '<b style="color:#1d1d1f;">&uarr;/&darr;</b> Volume';
+        row.appendChild(span);
+        row.setAttribute('data-sl-volume-hotkey', '1');
+        return;
+      }
+    }
+    function startHotKeyPatch() {
+      if (!document.body) { setTimeout(startHotKeyPatch, 50); return; }
+      patchHotKeys();
+      new MutationObserver(patchHotKeys).observe(document.body, { childList: true, subtree: true });
+    }
+    startHotKeyPatch();
   })();
   </script>
 
