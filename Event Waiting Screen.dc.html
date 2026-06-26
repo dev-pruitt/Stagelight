@@ -656,7 +656,7 @@ class Component extends DCLogic {
       const dev = localStorage.getItem('sl_am_devtoken');
       if (dev) { this.setState({ amDevToken: dev }); this.rehydrateApple(dev); }
     } catch (e) {}
-    try { var saved = JSON.parse(localStorage.getItem('sl_setup') || 'null'); if (saved && typeof saved === 'object') this.setState(saved); } catch (e) {}
+    try { var saved = JSON.parse(localStorage.getItem('sl_setup') || 'null'); if (saved && typeof saved === 'object') this.setState(saved); else { var si = this.VARIANTS.findIndex(function (v) { return v.mode === 'shader'; }); if (si >= 0) this.setState({ variantIdx: si }); } } catch (e) {}
     this._persistT = setInterval(() => { if (this.state.phase === 'setup') this.savePrefs(); }, 1500);
     this._tick = setInterval(() => {
       if (this.state.phase === 'presenting' && !this.state.paused) this.setState({ now: Date.now() });
@@ -671,12 +671,6 @@ class Component extends DCLogic {
       if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); this.togglePause(); return; }
       if (e.key === 'ArrowRight') { e.preventDefault(); this.changeSong(1); return; }
       if (e.key === 'ArrowLeft') { e.preventDefault(); this.changeSong(-1); return; }
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        const t = Date.now();
-        if (this._lastTab && t - this._lastTab < 600) { this.exit(); this._lastTab = 0; }
-        else this._lastTab = t;
-      }
     };
     window.addEventListener('keydown', this._onKey);
   }
@@ -861,6 +855,7 @@ class Component extends DCLogic {
   startAudio() {
     const queue = this.state.queue || [];
     const cur = queue[this.state.currentIdx] || this.state.track;
+    if (!cur) return; // no music selected -> stay silent (no ambient bed)
     if (cur && cur.service === 'spotify' && this.state.spReady) { this.playSpotifyQueue(queue.filter((x) => x && x.service === 'spotify' && x.uri).map((x) => x.uri)); return; }
     if (cur && cur.service === 'apple' && this.state.connected.apple) { this.playApple(cur.id); return; }
     const firstLocal = queue.findIndex((x) => x && x.url);
@@ -936,7 +931,7 @@ class Component extends DCLogic {
   resetSetup = () => {
     this.stopCurrentPreview();
     try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
-    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: 0, showEvent: true, showNowPlaying: true, fullscreenOnStart: true, searchQuery: '', results: [], previewPlaying: false, authError: '' });
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, fullscreenOnStart: true, searchQuery: '', results: [], previewPlaying: false, authError: '' });
   };
   toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
   togglePause = () => {
