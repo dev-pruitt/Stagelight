@@ -381,10 +381,10 @@ class Component extends DCLogic {
     { name: 'Aurora', count: 4, op: 0.5, mode: 'aurora' },
     { name: 'Field', count: 2, op: 0.62, mode: 'field' },
     { name: 'Aurora Flow', count: 0, op: 0, mode: 'shader' },
-    { name: 'Stardrift', count: 24, op: 0.7, mode: 'starfield' },
-    { name: 'Spotlight Columns', count: 4, op: 0.5, mode: 'beams' },
-    { name: 'Drift Bands', count: 6, op: 0.5, mode: 'driftbands' },
     { name: 'Silk Drift', count: 0, op: 0, mode: 'shader', shader: 'silk' },
+    { name: 'Lava Cells', count: 0, op: 0, mode: 'shader', shader: 'metaball' },
+    { name: 'Stained Glass', count: 0, op: 0, mode: 'shader', shader: 'voronoi' },
+    { name: 'Vortex Gate', count: 0, op: 0, mode: 'shader', shader: 'tunnel' },
   ];
 
   DEFAULT_PAL = { accent: 'rgb(10,132,255)', accent2: 'rgb(94,92,230)', accent3: 'rgb(50,173,230)', bg: '#fbfbfd', ink: '#1d1d1f' };
@@ -1002,19 +1002,6 @@ class Component extends DCLogic {
         size = 40 + rng() * 30; left = rng() * 100; top = 18 + rng() * 64; scaleX = 1.9; rot = -18 + rng() * 36;
       } else if (v.mode === 'field') {
         size = 78 + rng() * 30; left = i === 0 ? 32 : 70; top = i === 0 ? 38 : 60;
-      } else if (v.mode === 'starfield') {
-        size = 1.6 + rng() * 3.4; left = rng() * 100; top = rng() * 100;
-        blur = 0.4 + rng() * 1.1; dur = 9 + rng() * 8;
-        anim = ['stDrift1', 'stDrift2', 'stDrift3'][i % 3]; willChange = 'transform,opacity';
-      } else if (v.mode === 'beams') {
-        size = 120 + rng() * 50; left = 14 + i * (72 / Math.max(1, v.count - 1)) + (-6 + rng() * 12);
-        top = -8 + rng() * 10; scaleX = 0.16 + rng() * 0.07;
-        anim = ['stBeamA', 'stBeamB', 'stBeamC'][i % 3]; originCss = 'transform-origin:50% 0%;';
-      } else if (v.mode === 'driftbands') {
-        size = 30 + rng() * 8; scaleX = 3.2 + rng() * 0.5; rot = -24;
-        const dt = (i + 0.5) / v.count;
-        left = 10 + dt * 80 + (rng() - 0.5) * 6; top = 16 + dt * 68 + (rng() - 0.5) * 6;
-        anim = ['stSweepA', 'stSweepB', 'stSweepC'][i % 3];
       } else {
         size = 34 + rng() * 34; left = rng() * 100; top = rng() * 100;
       }
