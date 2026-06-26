@@ -381,6 +381,10 @@ class Component extends DCLogic {
     { name: 'Aurora', count: 4, op: 0.5, mode: 'aurora' },
     { name: 'Field', count: 2, op: 0.62, mode: 'field' },
     { name: 'Aurora Flow', count: 0, op: 0, mode: 'shader' },
+    { name: 'Stardrift', count: 24, op: 0.7, mode: 'starfield' },
+    { name: 'Spotlight Columns', count: 4, op: 0.5, mode: 'beams' },
+    { name: 'Drift Bands', count: 6, op: 0.5, mode: 'driftbands' },
+    { name: 'Silk Drift', count: 0, op: 0, mode: 'shader', shader: 'silk' },
   ];
 
   DEFAULT_PAL = { accent: 'rgb(10,132,255)', accent2: 'rgb(94,92,230)', accent3: 'rgb(50,173,230)', bg: '#fbfbfd', ink: '#1d1d1f' };
@@ -990,6 +994,7 @@ class Component extends DCLogic {
     for (let i = 0; i < v.count; i++) {
       const col = cols[i % cols.length];
       let size, left, top, scaleX = 1, rot = 0;
+      let blur = 7 + rng() * 7, dur = 5 + rng() * 4, anim = anims[i % 3], originCss = '', willChange = 'transform';
       if (v.mode === 'halo') {
         if (i === 0) { size = 70; left = 50; top = 48; }
         else { size = 28 + rng() * 22; left = 12 + rng() * 76; top = 12 + rng() * 76; }
@@ -997,12 +1002,23 @@ class Component extends DCLogic {
         size = 40 + rng() * 30; left = rng() * 100; top = 18 + rng() * 64; scaleX = 1.9; rot = -18 + rng() * 36;
       } else if (v.mode === 'field') {
         size = 78 + rng() * 30; left = i === 0 ? 32 : 70; top = i === 0 ? 38 : 60;
+      } else if (v.mode === 'starfield') {
+        size = 1.6 + rng() * 3.4; left = rng() * 100; top = rng() * 100;
+        blur = 0.4 + rng() * 1.1; dur = 9 + rng() * 8;
+        anim = ['stDrift1', 'stDrift2', 'stDrift3'][i % 3]; willChange = 'transform,opacity';
+      } else if (v.mode === 'beams') {
+        size = 120 + rng() * 50; left = 14 + i * (72 / Math.max(1, v.count - 1)) + (-6 + rng() * 12);
+        top = -8 + rng() * 10; scaleX = 0.16 + rng() * 0.07;
+        anim = ['stBeamA', 'stBeamB', 'stBeamC'][i % 3]; originCss = 'transform-origin:50% 0%;';
+      } else if (v.mode === 'driftbands') {
+        size = 30 + rng() * 8; scaleX = 3.2 + rng() * 0.5; rot = -24;
+        const dt = (i + 0.5) / v.count;
+        left = 10 + dt * 80 + (rng() - 0.5) * 6; top = 16 + dt * 68 + (rng() - 0.5) * 6;
+        anim = ['stSweepA', 'stSweepB', 'stSweepC'][i % 3];
       } else {
         size = 34 + rng() * 34; left = rng() * 100; top = rng() * 100;
       }
       const op = Math.min(0.85, v.op * k * (0.8 + rng() * 0.4));
-      const blur = 7 + rng() * 7;
-      const dur = 5 + rng() * 4;
       const delay = -(rng() * 12);
       const colMatch = col.match(/[\d.]+/g);
       const c = colMatch ? colMatch.map(Number) : [120, 120, 200];
@@ -1010,8 +1026,8 @@ class Component extends DCLogic {
       out.push({
         style: 'position:absolute;width:' + size + 'cqmin;height:' + size + 'cqmin;left:' + left + '%;top:' + top + '%;'
           + 'transform:translate(-50%,-50%) scaleX(' + scaleX + ') rotate(' + rot + 'deg);',
-        inner: 'width:100%;height:100%;background:' + grad + ';filter:blur(' + blur + 'cqmin);border-radius:50%;'
-          + 'animation:' + anims[i % 3] + ' ' + dur + 's ease-in-out ' + delay + 's infinite;will-change:transform;'
+        inner: 'width:100%;height:100%;background:' + grad + ';filter:blur(' + blur + 'cqmin);border-radius:50%;' + originCss
+          + 'animation:' + anim + ' ' + dur + 's ease-in-out ' + delay + 's infinite;will-change:' + willChange + ';'
       });
     }
     return out;
@@ -1056,7 +1072,7 @@ class Component extends DCLogic {
     if (isShader) {
       const aA = this.toArr(pal.accent), aB = this.toArr(pal.accent2), aC = this.toArr(pal.accent3);
       const baseRgb = this.hslToRgb(this.rgbToHsl(aA[0], aA[1], aA[2])[0], 0.5, 0.05);
-      stageBg = this.toRgb(baseRgb); stageInk = 'rgb(244,245,248)'; shaderMode = 'aurora';
+      stageBg = this.toRgb(baseRgb); stageInk = 'rgb(244,245,248)'; shaderMode = stVariant.shader || 'aurora';
       shaderCols = [baseRgb, aA, aB, aC].map((c) => c.map(Math.round).join(',')).join('|');
     }
 
