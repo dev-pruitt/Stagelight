@@ -438,5 +438,99 @@ class Component extends DCLogic {
   // ... [rest of the script continues as before]
 }
 </script>
+
+<!-- Volume control: Up/Down arrows adjust playback volume (uploaded/demo audio
+     and Spotify Web Playback SDK) and flash an on-screen indicator. Lives
+     alongside the component so it is carried into the standalone export. -->
+<script>
+  (function () {
+    var STEP = 0.05;                 // 5% per keypress
+    var KEY = 'stagelight_volume';
+    var stored = parseFloat(localStorage.getItem(KEY));
+    var volume = (isFinite(stored) && stored >= 0 && stored <= 1) ? stored : 1;
+    var players = [];                // captured Spotify Web Playback SDK players
+
+    // Capture Spotify players by wrapping the SDK constructor, so we can drive
+    // their volume without reaching into the component's private state.
+    function hookSpotify() {
+      if (!window.Spotify || !window.Spotify.Player || window.Spotify.Player.__slHooked) return;
+      var Orig = window.Spotify.Player;
+      function Wrapped(opts) {
+        var inst = new Orig(opts);
+        players.push(inst);
+        try { inst.setVolume(volume); } catch (e) {}
+        return inst;
+      }
+      Wrapped.prototype = Orig.prototype;
+      Wrapped.__slHooked = true;
+      try { window.Spotify.Player = Wrapped; } catch (e) {}
+    }
+    setInterval(hookSpotify, 300);
+    hookSpotify();
+
+    function applyToMedia() {
+      var media = document.querySelectorAll('audio, video');
+      for (var i = 0; i < media.length; i++) { try { media[i].volume = volume; } catch (e) {} }
+    }
+    function apply() {
+      applyToMedia();
+      for (var j = 0; j < players.length; j++) { try { players[j].setVolume(volume); } catch (e) {} }
+      try { localStorage.setItem(KEY, String(volume)); } catch (e) {}
+    }
+
+    // Media elements created later (e.g. after "Begin") inherit the current level.
+    function startObserver() {
+      if (!document.body) { setTimeout(startObserver, 50); return; }
+      new MutationObserver(applyToMedia).observe(document.body, { childList: true, subtree: true });
+      applyToMedia();
+    }
+    startObserver();
+
+    var hideTimer = null;
+    function indicator() {
+      var el = document.getElementById('sl-vol');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'sl-vol';
+        el.style.cssText = 'position:fixed;left:50%;bottom:7%;transform:translateX(-50%) translateY(8px);z-index:100001;display:flex;align-items:center;gap:14px;padding:14px 22px;border-radius:18px;background:rgba(20,20,22,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 12px 40px rgba(0,0,0,0.4);font-family:-apple-system,BlinkMacSystemFont,sans-serif;opacity:0;transition:opacity .22s ease, transform .22s ease;pointer-events:none;';
+        el.innerHTML =
+          '<span id="sl-vol-icon" style="font-size:22px;line-height:1;width:26px;text-align:center;">🔊</span>' +
+          '<div style="width:200px;height:8px;border-radius:4px;background:rgba(255,255,255,0.22);overflow:hidden;">' +
+            '<div id="sl-vol-fill" style="height:100%;width:100%;border-radius:4px;background:#fff;transition:width .15s ease;"></div>' +
+          '</div>' +
+          '<span id="sl-vol-pct" style="min-width:42px;text-align:right;font-size:14px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;">100%</span>';
+        (document.body || document.documentElement).appendChild(el);
+      }
+      var pct = Math.round(volume * 100);
+      document.getElementById('sl-vol-fill').style.width = pct + '%';
+      document.getElementById('sl-vol-pct').textContent = pct + '%';
+      document.getElementById('sl-vol-icon').textContent = volume === 0 ? '🔇' : (volume <= 0.5 ? '🔉' : '🔊');
+      el.style.opacity = '1';
+      el.style.transform = 'translateX(-50%) translateY(0)';
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(function () {
+        el.style.opacity = '0';
+        el.style.transform = 'translateX(-50%) translateY(8px)';
+      }, 1600);
+    }
+
+    function isTyping(t) {
+      if (!t) return false;
+      var tag = (t.tagName || '').toLowerCase();
+      return tag === 'input' || tag === 'textarea' || tag === 'select' || t.isContentEditable;
+    }
+    function nudge(dir) {
+      volume = Math.max(0, Math.min(1, Math.round((volume + dir * STEP) * 100) / 100));
+      apply();
+      indicator();
+    }
+    window.addEventListener('keydown', function (e) {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isTyping(e.target)) return;
+      if (e.key === 'ArrowUp') { nudge(1); e.preventDefault(); }
+      else if (e.key === 'ArrowDown') { nudge(-1); e.preventDefault(); }
+    }, true);
+  })();
+</script>
 </body>
 </html>
