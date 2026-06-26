@@ -84,14 +84,55 @@
     <div style="position:absolute;top:5cqh;left:50%;transform:translateX(-50%);font-size:1.9cqmin;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;color:{{ ink }};opacity:0;animation:stHint 6.5s ease-in-out 1.2s both;">Press Esc to exit</div>
   </sc-if>
 
+  <!-- ============ ABOUT ============ -->
+  <button onClick="{{ openAbout }}" title="About Stagelight" style="position:absolute;top:3cqh;right:3cqw;z-index:110;display:flex;align-items:center;justify-content:center;width:3.4cqmin;height:3.4cqmin;border:0.18cqmin solid rgba(0,0,0,0.12);background:rgba(255,255,255,0.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:{{ ink }};border-radius:50%;font-size:2cqmin;font-weight:700;font-style:italic;font-family:Georgia,'Times New Roman',serif;cursor:pointer;line-height:1;padding:0;opacity:0.4;transition:opacity .15s ease;" style-hover="opacity:1;">i</button>
+
+  <sc-if value="{{ showAbout }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeAbout }}" style="position:absolute;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.34);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+    <div onClick="{{ stopAbout }}" style="position:relative;width:420px;max-width:calc(100% - 48px);background:#fbfbfd;border:1px solid rgba(0,0,0,0.08);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,0.32),0 2px 8px rgba(0,0,0,0.12);overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+      <!-- Title bar with macOS-style traffic lights -->
+      <div style="display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid rgba(0,0,0,0.06);background:rgba(255,255,255,0.6);">
+        <button onClick="{{ closeAbout }}" title="Close" style="width:13px;height:13px;border-radius:50%;border:none;background:#ff5f57;cursor:pointer;padding:0;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></button>
+        <span style="width:13px;height:13px;border-radius:50%;background:#febc2e;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></span>
+        <span style="width:13px;height:13px;border-radius:50%;background:#28c840;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></span>
+        <div style="flex:1;text-align:center;font-size:12.5px;font-weight:600;color:#86868b;margin-right:39px;">About</div>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:30px 32px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;">
+        <div style="width:66px;height:66px;border-radius:16px;background:{{ accent }};display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 6px 18px rgba(0,0,0,0.16);margin-bottom:8px;">🎬</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1d1d1f;">Stagelight</div>
+        <div style="font-size:13.5px;color:#86868b;">Event Waiting Screen · Version 1.0.0</div>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.55;color:#3a3a3c;max-width:320px;">A self-contained “we’ll begin shortly” countdown screen for events, all-hands, webinars, and launches. Drop in a logo, the theme adapts to it, set a countdown, and optionally play full-length tracks through your own Spotify account — no backend required.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px;">
+          <a href="https://www.stagelight.t64.org" target="_blank" rel="noopener" style="text-decoration:none;border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:8px 16px;font-size:13px;font-weight:600;color:#1d1d1f;">Website</a>
+          <button onClick="{{ closeAbout }}" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;color:#fff;background:#0a84ff;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.35);">Done</button>
+        </div>
+        <div style="margin-top:18px;font-size:11px;color:#a1a1a6;">MIT License · Built with the Design Components toolkit</div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:540},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#fbfbfd&quot;},&quot;accent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgb(10,132,255)&quot;},&quot;ink&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#1d1d1f&quot;},&quot;blobs&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[]},&quot;logo&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null},&quot;hasLogo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;We\u2019ll begin shortly&quot;},&quot;countdownText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;05:00&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Begins in&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showAmbient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;track&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;cover&quot;:&quot;linear-gradient(135deg,#a8edea,#fed6e3)&quot;,&quot;title&quot;:&quot;Weightless&quot;,&quot;artist&quot;:&quot;Marconi Union&quot;}},&quot;showNowPlaying&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;eqPlay&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;running&quot;},&quot;showExitHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;shader&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;},&quot;shaderCols&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;}}">
 class Component extends DCLogic {
+  state = { showAbout: false };
+
+  openAbout = () => this.setState({ showAbout: true });
+  closeAbout = () => this.setState({ showAbout: false });
+  stopAbout = (e) => { try { e.stopPropagation(); } catch (_) {} };
+
   renderVals() {
     const p = this.props || {};
     const on = !!p.shader;
-    return { setCanvas: this.setCanvas, shaderOn: on, blobOverlay: !on };
+    return {
+      setCanvas: this.setCanvas, shaderOn: on, blobOverlay: !on,
+      // about
+      showAbout: this.state.showAbout, openAbout: this.openAbout, closeAbout: this.closeAbout, stopAbout: this.stopAbout,
+    };
   }
 
   setCanvas = (el) => {
