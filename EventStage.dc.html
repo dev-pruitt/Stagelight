@@ -25,6 +25,7 @@
 @keyframes stSweepA { 0%{transform:translate(-14%,10%) scale(1);opacity:.55} 50%{transform:translate(16%,-11%) scale(1.04);opacity:1} 100%{transform:translate(-14%,10%) scale(1);opacity:.55} }
 @keyframes stSweepB { 0%{transform:translate(13%,-9%) scale(1.03);opacity:.6} 50%{transform:translate(-15%,11%) scale(.98);opacity:1} 100%{transform:translate(13%,-9%) scale(1.03);opacity:.6} }
 @keyframes stSweepC { 0%{transform:translate(-11%,-12%) scale(.99);opacity:.65} 50%{transform:translate(14%,12%) scale(1.05);opacity:1} 100%{transform:translate(-11%,-12%) scale(.99);opacity:.65} }
+@keyframes stMusicBob { 0%,100%{transform:rotate(-12deg) scale(1)} 50%{transform:rotate(12deg) scale(1.2)} }
 </style>
 </helmet>
 <div style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
@@ -80,6 +81,10 @@
     </div>
   </sc-if>
 
+  <sc-if value="{{ showNowPlaying }}" hint-placeholder-val="{{ false }}">
+    <div ref="{{ setMusicIcon }}" style="position:absolute;top:0;left:0;font-size:5cqmin;line-height:1;pointer-events:none;user-select:none;will-change:left,top;animation:stMusicBob 2.8s ease-in-out infinite;z-index:5;opacity:0.65;">🎵</div>
+  </sc-if>
+
   <sc-if value="{{ showExitHint }}" hint-placeholder-val="{{ false }}">
     <div style="position:absolute;top:5cqh;left:50%;transform:translateX(-50%);font-size:1.9cqmin;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;color:{{ ink }};opacity:0;animation:stHint 6.5s ease-in-out 1.2s both;">Press Esc to exit</div>
   </sc-if>
@@ -102,7 +107,7 @@
         <div style="width:66px;height:66px;border-radius:16px;background:{{ accent }};display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 6px 18px rgba(0,0,0,0.16);margin-bottom:8px;">🎬</div>
         <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1d1d1f;">Stagelight</div>
         <div style="font-size:13.5px;color:#86868b;">Event Waiting Screen · Version 1.0.0</div>
-        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.55;color:#3a3a3c;max-width:320px;">A self-contained “we’ll begin shortly” countdown screen for events, all-hands, webinars, and launches. Drop in a logo, the theme adapts to it, set a countdown, and optionally play full-length tracks through your own Spotify account — no backend required.</p>
+        <p style="margin:14px 0 0;font-size:13.5px;line-height:1.55;color:#3a3a3c;max-width:320px;">A self-contained "we'll begin shortly" countdown screen for events, all-hands, webinars, and launches. Drop in a logo, the theme adapts to it, set a countdown, and optionally play full-length tracks through your own Spotify account — no backend required.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px;">
           <button onClick="{{ closeAbout }}" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;color:#fff;background:#0a84ff;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.35);">Done</button>
         </div>
@@ -114,7 +119,7 @@
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:540},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#fbfbfd&quot;},&quot;accent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgb(10,132,255)&quot;},&quot;ink&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#1d1d1f&quot;},&quot;blobs&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[]},&quot;logo&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null},&quot;hasLogo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;We\u2019ll begin shortly&quot;},&quot;countdownText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;05:00&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Begins in&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showAmbient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;track&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;cover&quot;:&quot;linear-gradient(135deg,#a8edea,#fed6e3)&quot;,&quot;title&quot;:&quot;Weightless&quot;,&quot;artist&quot;:&quot;Marconi Union&quot;}},&quot;showNowPlaying&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;eqPlay&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;running&quot;},&quot;showExitHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;shader&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;},&quot;shaderCols&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:540},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#fbfbfd&quot;},&quot;accent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgb(10,132,255)&quot;},&quot;ink&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#1d1d1f&quot;},&quot;blobs&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[]},&quot;logo&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null},&quot;hasLogo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;We’ll begin shortly&quot;},&quot;countdownText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;05:00&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Begins in&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showAmbient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;track&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;cover&quot;:&quot;linear-gradient(135deg,#a8edea,#fed6e3)&quot;,&quot;title&quot;:&quot;Weightless&quot;,&quot;artist&quot;:&quot;Marconi Union&quot;}},&quot;showNowPlaying&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;eqPlay&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;running&quot;},&quot;showExitHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;shader&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;},&quot;shaderCols&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;}}">
 class Component extends DCLogic {
   state = { showAbout: false };
 
@@ -129,6 +134,8 @@ class Component extends DCLogic {
       setCanvas: this.setCanvas, shaderOn: on, blobOverlay: !on,
       // about
       showAbout: this.state.showAbout, openAbout: this.openAbout, closeAbout: this.closeAbout, stopAbout: this.stopAbout,
+      // floating music icon
+      setMusicIcon: this.setMusicIcon,
     };
   }
 
@@ -139,13 +146,53 @@ class Component extends DCLogic {
     if (el) this.initGL();
   };
 
+  setMusicIcon = (el) => {
+    if (el === this._musicIcon) return;
+    if (this._musicRaf != null) { cancelAnimationFrame(this._musicRaf); this._musicRaf = null; }
+    this._musicIcon = el || null;
+    if (!el) return;
+    const par = el.parentNode;
+    const pw = par ? par.clientWidth : 800;
+    const ph = par ? par.clientHeight : 450;
+    const spd = Math.min(pw, ph) * 0.0015;
+    const ang = Math.random() * Math.PI * 2;
+    this._mx = pw * 0.25 + Math.random() * pw * 0.5;
+    this._my = ph * 0.2 + Math.random() * ph * 0.5;
+    this._mvx = Math.cos(ang) * spd;
+    this._mvy = Math.sin(ang) * spd;
+    el.style.left = this._mx + 'px';
+    el.style.top = this._my + 'px';
+    const loop = () => {
+      const ico = this._musicIcon;
+      if (!ico) return;
+      const p = ico.parentNode;
+      const pw = p ? p.clientWidth : 800;
+      const ph = p ? p.clientHeight : 450;
+      const sz = ico.offsetWidth || Math.min(pw, ph) * 0.05;
+      this._mx += this._mvx;
+      this._my += this._mvy;
+      if (this._mx <= 0) { this._mx = 0; this._mvx = Math.abs(this._mvx); }
+      else if (this._mx + sz >= pw) { this._mx = pw - sz; this._mvx = -Math.abs(this._mvx); }
+      if (this._my <= 0) { this._my = 0; this._mvy = Math.abs(this._mvy); }
+      else if (this._my + sz >= ph) { this._my = ph - sz; this._mvy = -Math.abs(this._mvy); }
+      ico.style.left = this._mx + 'px';
+      ico.style.top = this._my + 'px';
+      this._musicRaf = requestAnimationFrame(loop);
+    };
+    this._musicRaf = requestAnimationFrame(loop);
+  };
+
   componentDidUpdate() {
     const sh = this.props && this.props.shader;
     if (!sh) return;
     if (this._canvas && sh !== this._shaderId) { this.teardownGL(); this.initGL(); return; }
     if (this._gl) this.setTarget(this.props.shaderCols);
   }
-  componentWillUnmount() { this.teardownGL(); }
+  componentWillUnmount() {
+    this.teardownGL();
+    if (this._musicRaf != null) { cancelAnimationFrame(this._musicRaf); this._musicRaf = null; }
+    this._musicIcon = null;
+  }
 
   parseCols(str) {
     const groups = String(str || '').split('|');
@@ -195,7 +242,7 @@ class Component extends DCLogic {
       'vec3 aces(vec3 color){const mat3 mi=mat3(0.59719,0.07600,0.02840,0.35458,0.90834,0.13383,0.04823,0.01566,0.83777);',
       'const mat3 mo=mat3(1.60475,-0.10208,-0.00327,-0.53108,1.10813,-0.07276,-0.07367,-0.00605,1.07602);',
       'color*=1.0/0.6;color=mi*color;color=RRTAndODTFit(color);color=mo*color;return clamp(color,0.0,1.0);}',
-      'vec3 senc(vec3 c){return mix(pow(c,vec3(0.41666))*1.055-0.055,c*12.92,vec3(lessThanEqual(c,vec3(0.0031308))));}'
+      'vec3 senc(vec3 c){return mix(pow(c,vec3(0.41666))*1.055-0.055,c*12.92,vec3(lessThanEqual(c,vec3(0.0031308))));}',
     ].join('');
     const AURORA_MAIN = [
       'void main(){vec2 uv=vUv;vec2 p=uv*2.0-1.0;p.x*=max(uAspect,1.0);p.y*=max(1.0/uAspect,1.0);',
@@ -206,7 +253,7 @@ class Component extends DCLogic {
       'float vMask=smoothstep(0.0,0.55,n1*n2)*(1.0-abs(uv.x-0.5)*1.6);',
       'vec3 col=uBase;col+=uA*gMask*0.42;col+=uB*grMask*0.36;col+=uC*max(vMask,0.0)*0.30;',
       'float vig=smoothstep(1.5,0.35,length(p));col*=0.30+0.70*vig;',
-      'col=senc(aces(col));gl_FragColor=vec4(col,1.0);}'
+      'col=senc(aces(col));gl_FragColor=vec4(col,1.0);}',
     ].join('');
     const SILK_MAIN = [
       'void main(){vec2 uv=vUv;vec2 p=uv*2.0-1.0;p.x*=max(uAspect,1.0);',
@@ -231,7 +278,7 @@ class Component extends DCLogic {
       'col+=(uC*0.5+vec3(0.5))*sheen*0.55;',
       'col*=0.78+0.22*smoothstep(1.1,0.1,uv.y);',
       'float vig=smoothstep(1.7,0.4,length(p));col*=0.32+0.68*vig;',
-      'col=senc(aces(col));gl_FragColor=vec4(col,1.0);}'
+      'col=senc(aces(col));gl_FragColor=vec4(col,1.0);}',
     ].join('');
     const FRAG = PRELUDE + (this._shaderId === 'silk' ? SILK_MAIN : AURORA_MAIN);
 
