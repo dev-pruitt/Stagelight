@@ -23,7 +23,7 @@
 </style>
 </helmet>
 
-<div ref="{{ setRoot }}" style="position:relative;width:100%;height:100vh;overflow:hidden;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
+<div ref="{{ setRoot }}" style="position:relative;width:100%;height:100vh;overflow:hidden;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;color:#1d1d1f;-webkit-font-smoothing:antialiased;">
 
   <!-- ============ SETUP ============ -->
   <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ true }}">
@@ -31,45 +31,48 @@
 
     <!-- ============ ABOUT ============ -->
     <sc-if value="{{ showAbout }}" hint-placeholder-val="{{ false }}">
-    <div onClick="{{ closeAbout }}" style="position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.34);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
-      <div onClick="{{ stopAbout }}" style="position:relative;width:420px;max-width:calc(100vw - 48px);background:#fbfbfd;border:1px solid rgba(0,0,0,0.08);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,0.16),0 2px 6px rgba(0,0,0,0.08);">
+    <div onClick="{{ closeAbout }}" style="position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.34);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:appFade .2s ease both;">
+      <div onClick="{{ stopAbout }}" style="position:relative;width:420px;max-width:calc(100vw - 48px);background:#fbfbfd;border:1px solid rgba(0,0,0,0.08);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,0.32),0 2px 8px rgba(0,0,0,0.12);overflow:hidden;animation:appReveal .22s ease both;">
 
         <!-- Title bar with macOS-style traffic lights -->
         <div style="display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid rgba(0,0,0,0.06);background:rgba(255,255,255,0.6);">
           <button onClick="{{ closeAbout }}" title="Close" style="width:13px;height:13px;border-radius:50%;border:none;background:#ff5f57;cursor:pointer;padding:0;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></button>
+          <span style="width:13px;height:13px;border-radius:50%;background:#febc2e;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></span>
+          <span style="width:13px;height:13px;border-radius:50%;background:#28c840;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></span>
           <div style="flex:1;text-align:center;font-size:12.5px;font-weight:600;color:#86868b;margin-right:39px;">About</div>
         </div>
 
         <!-- Body -->
         <div style="padding:30px 32px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;">
-          <div style="width:66px;height:66px;border-radius:16px;background:linear-gradient(135deg,{{ accent }},{{ accent2 }});display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 6px 18px rgba(0,0,0,0.12);">🎬</div>
+          <div style="width:66px;height:66px;border-radius:16px;background:linear-gradient(135deg,{{ accent }},{{ accent2 }});display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 6px 18px rgba(0,0,0,0.16);margin-bottom:8px;">🎬</div>
           <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#1d1d1f;">Stagelight</div>
           <div style="font-size:13.5px;color:#86868b;">Event Waiting Screen · Version 1.0.0</div>
-          <p style="margin:14px 0 0;font-size:13.5px;line-height:1.55;color:#3a3a3c;max-width:320px;">A self-contained "we'll begin shortly" countdown screen for events, all-hands, webinars, and more.</p>
+          <p style="margin:14px 0 0;font-size:13.5px;line-height:1.55;color:#3a3a3c;max-width:320px;">A self-contained “we’ll begin shortly” countdown screen for events, all-hands, webinars, and launches. Drop in a logo, the theme adapts to it, set a countdown, and optionally play full-length tracks through your own Spotify account — no backend required.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px;">
-            <button onClick="{{ closeAbout }}" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;color:#fff;background:#0a84ff;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.3);transition:box-shadow .15s;">Done</button>
+            <a href="https://www.stagelight.t64.org" target="_blank" rel="noopener" style="text-decoration:none;border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:8px 16px;font-size:13px;font-weight:600;color:#1d1d1f;">Website</a>
+            <button onClick="{{ closeAbout }}" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;color:#fff;background:#0a84ff;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.35);">Done</button>
           </div>
           <div style="margin-top:18px;font-size:11px;color:#a1a1a6;">MIT License · Built with the Design Components toolkit</div>
         </div>
       </div>
     </div>
     </sc-if>
-    <div style="position:fixed;right:16px;bottom:14px;z-index:45;display:flex;flex-direction:column;gap:3px;font-size:11px;color:#6e6e73;background:rgba(255,255,255,0.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;padding:12px 16px;border:1px solid rgba(255,255,255,0.5);">
+    <div style="position:fixed;right:16px;bottom:14px;z-index:45;display:flex;flex-direction:column;gap:3px;font-size:11px;color:#6e6e73;background:rgba(255,255,255,0.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,0.06);border-radius:11px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
       <div style="font-weight:700;color:#1d1d1f;font-size:9.5px;text-transform:uppercase;letter-spacing:0.06em;">Hot keys</div>
-      <div style="display:flex;gap:11px;flex-wrap:wrap;"><span><b style="color:#1d1d1f;">Enter</b> Start</span><span><b style="color:#1d1d1f;">Space</b> Pause</span><span><b style="color:#1d1d1f;">&larr;/&rarr;</b> Tracks</span><span><b style="color:#1d1d1f;">&uarr;/&darr;</b> Volume</span></div>
+      <div style="display:flex;gap:11px;flex-wrap:wrap;"><span><b style="color:#1d1d1f;">Enter</b> Start</span><span><b style="color:#1d1d1f;">Space</b> Pause</span><span><b style="color:#1d1d1f;">Esc</b> Stop</span><span><b style="color:#1d1d1f;">&larr; &rarr;</b> Song</span><span><b style="color:#1d1d1f;">&uarr; &darr;</b> Volume</span></div>
     </div>
 
-    <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);">
+    <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.7);backdrop-filter:blur(20px);">
       <div style="display:flex;align-items:center;gap:12px;">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAQKADAAQAAAABAAAA" alt="Stagelight" style="width:24px;height:24px;">
+        <img src="data:image/png;base64,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" alt="Stagelight" style="width:26px;height:26px;border-radius:7px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,0.12);" />
         <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em;">Stagelight</div>
+        <button onClick="{{ openAbout }}" title="About Stagelight" style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid rgba(0,0,0,0.12);background:#fff;color:#86868b;border-radius:50%;font-size:12px;font-weight:700;font-style:italic;font-family:Georgia,'Times New Roman',serif;cursor:pointer;line-height:1;padding:0;transition:all .15s ease;" style-hover="background:#f0f0f3;color:#1d1d1f;">i</button>
         <div style="font-size:13px;color:#86868b;font-weight:400;">Event waiting screen</div>
-        <button onClick="{{ openAbout }}" title="About Stagelight" style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:50%;color:#0a84ff;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;">i</button>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <button onClick="{{ toggleFs }}" title="Enter full screen when you begin" style="display:flex;align-items:center;gap:6px;border:1px solid {{ fsBorder }};background:{{ fsBg }};color:{{ fsColor }};border-radius:980px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;">{{ fsLabel }}</button>
-        <button onClick="{{ resetSetup }}" style="border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:9px 16px;font-size:13px;font-weight:600;color:#1d1d1f;cursor:pointer;transition:all .15s;">Reset</button>
-        <button onClick="{{ beginEvent }}" style="display:flex;align-items:center;gap:8px;padding:10px 22px;border:none;border-radius:980px;background:#0a84ff;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.3);transition:all .15s;">▶ Begin presentation</button>
+        <button onClick="{{ toggleFs }}" title="Enter full screen when you begin" style="display:flex;align-items:center;gap:6px;border:1px solid {{ fsBorder }};background:{{ fsBg }};color:{{ fsColor }};border-radius:980px;padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s ease;">⛶ Full screen</button>
+        <button onClick="{{ resetSetup }}" style="border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:9px 16px;font-size:13px;font-weight:600;color:#1d1d1f;cursor:pointer;" style-hover="background:#f0f0f3;">Reset</button>
+        <button onClick="{{ beginEvent }}" style="display:flex;align-items:center;gap:8px;padding:10px 22px;border:none;border-radius:980px;background:#0a84ff;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.35);transition:transform .15s ease,filter .15s ease;" style-hover="filter:brightness(1.05);transform:scale(1.02);">Begin presentation</button>
       </div>
     </div>
 
@@ -81,7 +84,7 @@
         <!-- Logo -->
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#86868b;">Logo</div>
-          <label onDrop="{{ onDrop }}" onDragOver="{{ onDragOver }}" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:128px;border:2px dashed rgba(0,0,0,0.12);border-radius:14px;background:#fff;cursor:pointer;transition:all .15s;">
+          <label onDrop="{{ onDrop }}" onDragOver="{{ onDragOver }}" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:128px;border:1.5px dashed rgba(0,0,0,0.18);border-radius:16px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease;" style-hover="border-color:{{ accent }};background:#fafaff;">
             <sc-if value="{{ hasLogo }}" hint-placeholder-val="{{ false }}">
               <img src="{{ logo }}" alt="logo" style="max-height:80px;max-width:80%;object-fit:contain;" />
             </sc-if>
@@ -95,7 +98,7 @@
             <input type="file" accept="image/*" onChange="{{ onLogoChange }}" style="position:absolute;inset:0;opacity:0;cursor:pointer;" />
           </label>
           <sc-if value="{{ hasLogo }}" hint-placeholder-val="{{ false }}">
-            <button onClick="{{ clearLogo }}" style="align-self:flex-start;border:none;background:none;color:#86868b;font-size:12.5px;cursor:pointer;padding:2px 0;transition:color .15s;" style-hover="color:#1d1d1f;">Remove logo</button>
+            <button onClick="{{ clearLogo }}" style="align-self:flex-start;border:none;background:none;color:#86868b;font-size:12.5px;cursor:pointer;padding:2px 0;" style-hover="color:#1d1d1f;">Remove logo</button>
           </sc-if>
         </div>
 
@@ -103,16 +106,16 @@
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#86868b;">Colors</div>
-            <button onClick="{{ resetColors }}" style="border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:5px 12px;font-size:12px;font-weight:600;color:#1d1d1f;cursor:pointer;transition:all .15s;">Reset</button>
+            <button onClick="{{ resetColors }}" style="border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:5px 12px;font-size:12px;font-weight:600;color:#1d1d1f;cursor:pointer;" style-hover="background:#f0f0f3;">Reset</button>
           </div>
           <div style="display:flex;gap:6px;padding:4px;background:#f0f0f3;border-radius:10px;">
-            <button onClick="{{ pickColorLogo }}" style="flex:1;padding:7px 0;border:none;border-radius:7px;background:{{ csLogoBg }};color:{{ csLogoColor }};font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;">From logo</button>
-            <button onClick="{{ pickColorAlbum }}" style="flex:1;padding:7px 0;border:none;border-radius:7px;background:{{ csAlbumBg }};color:{{ csAlbumColor }};font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;">From album</button>
+            <button onClick="{{ pickColorLogo }}" style="flex:1;padding:7px 0;border:none;border-radius:7px;background:{{ csLogoBg }};color:{{ csLogoColor }};font-size:12px;font-weight:600;cursor:pointer;box-shadow:{{ csLogoShadow }};transition:all .12s ease;">Logo</button>
+            <button onClick="{{ pickColorAlbum }}" style="flex:1;padding:7px 0;border:none;border-radius:7px;background:{{ csAlbumBg }};color:{{ csAlbumColor }};font-size:12px;font-weight:600;cursor:pointer;box-shadow:{{ csAlbumShadow }};transition:all .12s ease;">Album art</button>
           </div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;">
             <sc-for list="{{ colorSlots }}" as="c" hint-placeholder-count="4">
               <label style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;">
-                <div style="width:100%;height:46px;border-radius:11px;background:{{ c.color }};border:1px solid rgba(0,0,0,0.12);box-shadow:inset 0 1px 2px rgba(255,255,255,0.25);transition:transform .15s;"></div>
+                <div style="width:100%;height:46px;border-radius:11px;background:{{ c.color }};border:1px solid rgba(0,0,0,0.12);box-shadow:inset 0 1px 2px rgba(255,255,255,0.25);transition:transform .12s ease;" style-hover="transform:scale(1.05);"></div>
                 <span style="font-size:10.5px;color:#86868b;">{{ c.label }}</span>
                 <input type="color" value="{{ c.hex }}" onInput="{{ c.onChange }}" style="position:absolute;top:0;left:0;width:100%;height:46px;opacity:0;cursor:pointer;" />
               </label>
@@ -125,20 +128,20 @@
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#86868b;">Event details</div>
-            <button onClick="{{ toggleEvent }}" style="position:relative;width:42px;height:25px;border:none;border-radius:999px;background:{{ eventToggleBg }};cursor:pointer;transition:background .2s ease;">
+            <button onClick="{{ toggleEvent }}" style="position:relative;width:42px;height:25px;border:none;border-radius:999px;background:{{ eventToggleBg }};cursor:pointer;transition:background .2s ease;padding:0;flex:none;">
               <span style="position:absolute;top:2px;left:{{ eventKnobLeft }};width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left .2s ease;"></span>
             </button>
           </div>
           <div style="display:flex;flex-direction:column;gap:12px;opacity:{{ eventBodyOpacity }};transition:opacity .2s ease;">
-            <input value="{{ title }}" onInput="{{ setTitle }}" placeholder="Event title" style="width:100%;padding:11px 14px;border:1px solid rgba(0,0,0,0.12);border-radius:11px;font-size:14px;background:#fff;color:#1d1d1f;transition:all .15s;" />
-            <input value="{{ subtitle }}" onInput="{{ setSubtitle }}" placeholder="Message at zero (e.g. We'll begin shortly)" style="width:100%;padding:11px 14px;border:1px solid rgba(0,0,0,0.12);border-radius:11px;font-size:14px;background:#fff;color:#1d1d1f;transition:all .15s;" />
+            <input value="{{ title }}" onInput="{{ setTitle }}" placeholder="Event title" style="width:100%;padding:11px 14px;border:1px solid rgba(0,0,0,0.12);border-radius:11px;font-size:14px;background:#fff;color:#1d1d1f;" />
+            <input value="{{ subtitle }}" onInput="{{ setSubtitle }}" placeholder="Message at zero (e.g. We’ll begin shortly)" style="width:100%;padding:11px 14px;border:1px solid rgba(0,0,0,0.12);border-radius:11px;font-size:14px;background:#fff;color:#1d1d1f;" />
             <div style="display:flex;flex-direction:column;gap:8px;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                 <div style="font-size:12.5px;color:#86868b;">Starts in</div>
                 <sc-if value="{{ showAutoMatch }}" hint-placeholder-val="{{ false }}">
                   <div style="display:flex;align-items:center;gap:7px;">
                     <span style="font-size:11.5px;color:#86868b;">Match to playlist</span>
-                    <button onClick="{{ toggleAutoMatch }}" style="position:relative;width:42px;height:25px;border:none;border-radius:999px;background:{{ autoToggleBg }};cursor:pointer;transition:background .2s ease;">
+                    <button onClick="{{ toggleAutoMatch }}" style="position:relative;width:42px;height:25px;border:none;border-radius:999px;background:{{ autoToggleBg }};cursor:pointer;transition:background .2s ease;padding:0;flex:none;">
                       <span style="position:absolute;top:2px;left:{{ autoKnobLeft }};width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left .2s ease;"></span>
                     </button>
                   </div>
@@ -146,7 +149,7 @@
               </div>
               <div style="display:flex;gap:8px;">
                 <sc-for list="{{ presets }}" as="p" hint-placeholder-count="4">
-                  <button onClick="{{ p.onClick }}" style="flex:1;padding:10px 0;border:1px solid {{ p.border }};border-radius:11px;background:{{ p.bg }};color:{{ p.color }};font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s;">{{ p.label }}</button>
+                  <button onClick="{{ p.onClick }}" style="flex:1;padding:10px 0;border:1px solid {{ p.border }};border-radius:11px;background:{{ p.bg }};color:{{ p.color }};font-size:13.5px;font-weight:600;cursor:pointer;transition:all .12s ease;">{{ p.label }}</button>
                 </sc-for>
               </div>
               <div style="display:flex;align-items:center;gap:10px;margin-top:2px;opacity:{{ sliderOpacity }};">
@@ -164,11 +167,11 @@
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#86868b;">Design</div>
-            <button onClick="{{ shuffle }}" style="display:flex;align-items:center;gap:6px;border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:6px 13px;font-size:12.5px;font-weight:600;color:#1d1d1f;cursor:pointer;transition:all .15s;">🎲 Shuffle</button>
+            <button onClick="{{ shuffle }}" style="display:flex;align-items:center;gap:6px;border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:980px;padding:6px 13px;font-size:12.5px;font-weight:600;color:#1d1d1f;cursor:pointer;transition:all .12s ease;" style-hover="background:#f0f0f3;">↻ Shuffle</button>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <sc-for list="{{ variants }}" as="v" hint-placeholder-count="4">
-              <button onClick="{{ v.onClick }}" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1.5px solid {{ v.border }};border-radius:12px;background:{{ v.bg }};cursor:pointer;transition:all .15s;">
+              <button onClick="{{ v.onClick }}" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1.5px solid {{ v.border }};border-radius:12px;background:{{ v.bg }};cursor:pointer;text-align:left;transition:all .12s ease;">
                 <div style="width:22px;height:22px;border-radius:6px;background:{{ v.swatch }};flex:none;"></div>
                 <span style="font-size:13px;font-weight:600;color:{{ v.color }};">{{ v.name }}</span>
               </button>
@@ -182,17 +185,17 @@
             <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#86868b;">Music</div>
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-size:11.5px;color:#86868b;">Show on screen</span>
-              <button onClick="{{ toggleNowPlaying }}" style="position:relative;width:42px;height:25px;border:none;border-radius:999px;background:{{ npToggleBg }};cursor:pointer;transition:background .2s ease;">
+              <button onClick="{{ toggleNowPlaying }}" style="position:relative;width:42px;height:25px;border:none;border-radius:999px;background:{{ npToggleBg }};cursor:pointer;transition:background .2s ease;padding:0;flex:none;">
                 <span style="position:absolute;top:2px;left:{{ npKnobLeft }};width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left .2s ease;"></span>
               </button>
             </div>
           </div>
           <div style="display:flex;gap:6px;padding:4px;background:#f0f0f3;border-radius:12px;">
             <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
-              <button onClick="{{ s.onClick }}" disabled="{{ s.soon }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 0;border:none;border-radius:9px;background:{{ s.bg }};color:{{ s.color }};font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;opacity:{{ s.opacity }};">
+              <button onClick="{{ s.onClick }}" disabled="{{ s.soon }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 0;border:none;border-radius:9px;background:{{ s.bg }};color:{{ s.color }};font-size:12.5px;font-weight:600;cursor:{{ s.cursor }};box-shadow:{{ s.shadow }};transition:all .12s ease;">
                 <span>{{ s.label }}</span>
                 <sc-if value="{{ s.soon }}" hint-placeholder-val="{{ false }}">
-                  <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#fff;background:#c7c7cc;border-radius:5px;padding:2px 5px;line-height:1;">{{ s.soon }}</span>
+                  <span style="font-size:8.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#fff;background:#c7c7cc;border-radius:5px;padding:2px 5px;line-height:1;">{{ s.badge }}</span>
                 </sc-if>
               </button>
             </sc-for>
@@ -203,36 +206,36 @@
               <div style="font-size:13.5px;font-weight:600;">{{ connectTitle }}</div>
               <div style="font-size:11.5px;color:#86868b;line-height:1.45;">{{ connectNote }}</div>
               <sc-if value="{{ showCred }}" hint-placeholder-val="{{ false }}">
-              <input value="{{ credValue }}" onInput="{{ onCredInput }}" placeholder="{{ credPlaceholder }}" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,0.14);border-radius:10px;font-size:13px;background:#fbfbfd;color:#1d1d1f;transition:all .15s;" />
+              <input value="{{ credValue }}" onInput="{{ onCredInput }}" placeholder="{{ credPlaceholder }}" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,0.14);border-radius:10px;font-size:12.5px;background:#fbfbfd;color:#1d1d1f;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;" />
               </sc-if>
               <sc-if value="{{ showRedirect }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;flex-direction:column;gap:5px;">
                   <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1a6;font-weight:600;">Add this exact redirect URI in your Spotify app settings</div>
                   <div style="display:flex;align-items:center;gap:6px;">
-                    <code style="flex:1;min-width:0;padding:8px 10px;background:#f0f0f3;border-radius:8px;font-size:11px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;">{{ redirectUri }}</code>
-                    <button onClick="{{ copyRedirect }}" style="flex:none;border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:8px;padding:8px 11px;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s;">{{ copyLabel }}</button>
+                    <code style="flex:1;min-width:0;padding:8px 10px;background:#f0f0f3;border-radius:8px;font-size:11px;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">{{ redirectUri }}</code>
+                    <button onClick="{{ copyRedirect }}" style="flex:none;border:1px solid rgba(0,0,0,0.12);background:#fff;border-radius:8px;padding:8px 11px;font-size:11.5px;font-weight:600;cursor:pointer;color:#1d1d1f;" style-hover="background:#f0f0f3;">{{ copyLabel }}</button>
                   </div>
                 </div>
               </sc-if>
-              <button onClick="{{ connectAction }}" style="padding:9px 20px;border:none;border-radius:980px;background:{{ connectBtnBg }};color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;">{{ connectBtnLabel }}</button>
-              <button onClick="{{ toggleDemo }}" style="align-self:flex-start;border:none;background:none;color:#86868b;font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;transition:color .15s;">Skip for now</button>
+              <button onClick="{{ connectAction }}" style="padding:9px 20px;border:none;border-radius:980px;background:{{ connectBtnBg }};color:#fff;font-size:13px;font-weight:600;cursor:pointer;align-self:flex-start;">{{ connectBtnLabel }}</button>
+              <button onClick="{{ toggleDemo }}" style="align-self:flex-start;border:none;background:none;color:#86868b;font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;">Skip — use the demo library</button>
             </div>
           </sc-if>
 
           <sc-if value="{{ showSearch }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1d1d1f;font-weight:600;"><span style="width:7px;height:7px;border-radius:50%;background:{{ readyColor }};"></span>{{ readyText }}</div>
-                <button onClick="{{ disconnectSource }}" style="border:none;background:none;color:#86868b;font-size:11.5px;cursor:pointer;padding:0;transition:color .15s;" style-hover="color:#1d1d1f;">Disconnect</button>
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1d1d1f;font-weight:600;"><span style="width:7px;height:7px;border-radius:50%;background:{{ readyColor }};"></span>{{ connectedLabel }}</div>
+                <button onClick="{{ disconnectSource }}" style="border:none;background:none;color:#86868b;font-size:11.5px;cursor:pointer;padding:0;" style-hover="color:#1d1d1f;">Disconnect</button>
               </div>
               <div style="display:flex;gap:6px;">
-                <input value="{{ searchQuery }}" onInput="{{ setSearchQuery }}" onKeyDown="{{ onSearchKey }}" placeholder="{{ searchPlaceholder }}" style="flex:1;min-width:0;padding:10px 12px;border:1px solid rgba(0,0,0,0.12);border-radius:10px;font-size:13px;background:#fff;color:#1d1d1f;transition:all .15s;" />
-                <button onClick="{{ runSearch }}" style="flex:none;border:none;border-radius:10px;background:{{ accent }};color:#fff;font-size:13px;font-weight:600;padding:0 16px;cursor:pointer;transition:all .15s;">Search</button>
+                <input value="{{ searchQuery }}" onInput="{{ setSearchQuery }}" onKeyDown="{{ onSearchKey }}" placeholder="{{ searchPlaceholder }}" style="flex:1;min-width:0;padding:10px 12px;border:1px solid rgba(0,0,0,0.14);border-radius:10px;font-size:13px;background:#fff;color:#1d1d1f;" />
+                <button onClick="{{ runSearch }}" style="flex:none;border:none;border-radius:10px;background:{{ accent }};color:#fff;font-size:13px;font-weight:600;padding:0 16px;cursor:pointer;">{{ searchLabel }}</button>
               </div>
               <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;flex-direction:column;gap:2px;border:1px solid rgba(0,0,0,0.08);border-radius:14px;background:#fff;overflow:hidden;max-height:262px;overflow-y:auto;">
                   <sc-for list="{{ results }}" as="t" hint-placeholder-count="3">
-                    <button onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:12px;padding:9px 12px;border:none;background:{{ t.bg }};cursor:pointer;text-align:left;transition:background .15s;">
+                    <button onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:12px;padding:9px 12px;border:none;background:{{ t.bg }};cursor:pointer;text-align:left;transition:background .12s ease;" style-hover="background:#f5f5f7;">
                       <div style="width:38px;height:38px;border-radius:8px;background:{{ t.cover }};flex:none;box-shadow:0 1px 3px rgba(0,0,0,0.12);"></div>
                       <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
                         <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.title }}</div>
@@ -254,11 +257,11 @@
             <div style="display:flex;flex-direction:column;gap:8px;">
               <div style="display:flex;align-items:center;justify-content:space-between;">
                 <div style="font-size:11.5px;color:#86868b;">Demo library · no account needed</div>
-                <button onClick="{{ toggleDemo }}" style="border:none;background:none;color:{{ accent }};font-size:11.5px;cursor:pointer;padding:0;font-weight:600;transition:opacity .15s;">Connect for real</button>
+                <button onClick="{{ toggleDemo }}" style="border:none;background:none;color:{{ accent }};font-size:11.5px;cursor:pointer;padding:0;font-weight:600;">Connect for real</button>
               </div>
               <div style="display:flex;flex-direction:column;gap:2px;border:1px solid rgba(0,0,0,0.08);border-radius:14px;background:#fff;overflow:hidden;">
                 <sc-for list="{{ demoLibrary }}" as="t" hint-placeholder-count="5">
-                  <button onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:12px;padding:9px 12px;border:none;background:{{ t.bg }};cursor:pointer;text-align:left;transition:background .15s;">
+                  <button onClick="{{ t.onClick }}" style="display:flex;align-items:center;gap:12px;padding:9px 12px;border:none;background:{{ t.bg }};cursor:pointer;text-align:left;transition:background .12s ease;" style-hover="background:#f5f5f7;">
                     <div style="width:38px;height:38px;border-radius:8px;background:{{ t.cover }};flex:none;box-shadow:0 1px 3px rgba(0,0,0,0.12);"></div>
                     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
                       <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.title }}</div>
@@ -273,7 +276,7 @@
           </sc-if>
 
           <sc-if value="{{ showUpload }}" hint-placeholder-val="{{ false }}">
-            <label style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 16px;border:1.5px dashed rgba(0,0,0,0.18);border-radius:14px;background:#fff;cursor:pointer;text-align:center;transition:all .15s;">
+            <label style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 16px;border:1.5px dashed rgba(0,0,0,0.18);border-radius:14px;background:#fff;cursor:pointer;text-align:center;" style-hover="border-color:{{ accent }};">
               <div style="font-size:13px;font-weight:600;">Upload an audio file</div>
               <div style="font-size:11.5px;color:#86868b;">Plays for real, in sync with the countdown</div>
               <input type="file" accept="audio/*" onChange="{{ onAudioChange }}" style="display:none;" />
@@ -297,10 +300,10 @@
                     </div>
                     <div style="font-size:11px;color:#86868b;font-variant-numeric:tabular-nums;flex:none;">{{ q.dur }}</div>
                     <div style="display:flex;flex-direction:column;gap:1px;flex:none;">
-                      <button onClick="{{ q.onUp }}" disabled="{{ q.upDisabled }}" style="width:20px;height:13px;border:none;background:none;color:{{ q.upColor }};font-size:9px;line-height:1;cursor:pointer;transition:color .15s;">▲</button>
-                      <button onClick="{{ q.onDown }}" disabled="{{ q.downDisabled }}" style="width:20px;height:13px;border:none;background:none;color:{{ q.downColor }};font-size:9px;line-height:1;cursor:pointer;transition:color .15s;">▼</button>
+                      <button onClick="{{ q.onUp }}" disabled="{{ q.upDisabled }}" style="width:20px;height:13px;border:none;background:none;color:{{ q.upColor }};font-size:9px;line-height:1;cursor:pointer;padding:0;">▲</button>
+                      <button onClick="{{ q.onDown }}" disabled="{{ q.downDisabled }}" style="width:20px;height:13px;border:none;background:none;color:{{ q.downColor }};font-size:9px;line-height:1;cursor:pointer;padding:0;">▼</button>
                     </div>
-                    <button onClick="{{ q.onRemove }}" style="flex:none;width:22px;height:22px;border:none;border-radius:50%;background:#f0f0f3;color:#86868b;font-size:13px;line-height:1;cursor:pointer;transition:all .15s;">×</button>
+                    <button onClick="{{ q.onRemove }}" style="flex:none;width:22px;height:22px;border:none;border-radius:50%;background:#f0f0f3;color:#86868b;font-size:13px;line-height:1;cursor:pointer;" style-hover="background:#e5e5ea;color:#1d1d1f;">×</button>
                   </div>
                 </sc-for>
               </div>
@@ -311,7 +314,7 @@
                     <div style="font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ track.title }}</div>
                     <div style="font-size:10.5px;color:#86868b;">Preview · {{ selectedSub }}</div>
                   </div>
-                  <button onClick="{{ togglePreview }}" style="flex:none;display:flex;align-items:center;gap:6px;border:1px solid {{ accent }};background:#fff;color:{{ accent }};border-radius:980px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;">{{ previewLabel }}</button>
+                  <button onClick="{{ togglePreview }}" style="flex:none;display:flex;align-items:center;gap:6px;border:1px solid {{ accent }};background:#fff;color:{{ accent }};border-radius:980px;padding:6px 13px;font-size:11.5px;font-weight:600;cursor:pointer;">{{ previewLabel }}</button>
                 </div>
               </sc-if>
             </div>
@@ -327,8 +330,8 @@
       </div>
 
       <!-- Live preview -->
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;background:radial-gradient(120% 120% at 50% 0%, #ffffff 0%, #f5f5f7 100%);">
-        <div style="position:relative;width:100%;max-width:780px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08);border:1px solid rgba(255,255,255,0.5);">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;background:radial-gradient(120% 120% at 50% 0%, #ffffff 0%, #ececef 100%);">
+        <div style="position:relative;width:100%;max-width:780px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.06);">
           <dc-import name="EventStage" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%;"
             bg="{{ stageBg }}" accent="{{ accent }}" ink="{{ stageInk }}" blobs="{{ blobs }}"
             shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}"
@@ -359,7 +362,7 @@
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;eventTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;countdownMinutes&quot;:{&quot;editor&quot;:&quot;number&quot;,&quot;default&quot;:5}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;eventTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;countdownMinutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:60},&quot;defaultDesign&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Soft Mesh&quot;,&quot;options&quot;:[&quot;Soft Mesh&quot;,&quot;Halo&quot;,&quot;Aurora&quot;,&quot;Field&quot;,&quot;Aurora Flow&quot;]}}">
 class Component extends DCLogic {
   state = {
     phase: 'setup',
@@ -372,7 +375,7 @@ class Component extends DCLogic {
     variantIdx: 0,
     seed: 1234,
     title: 'Team All-Hands',
-    subtitle: 'We'll begin shortly',
+    subtitle: 'We\u2019ll begin shortly',
     minutes: 5,
     target: 0,
     now: Date.now(),
@@ -385,6 +388,7 @@ class Component extends DCLogic {
     playing: false,
     paused: false,
     fullscreenOnStart: true,
+    // real-service auth
     spClientId: '26119e868a1d486cbae6ef197addfcd3',
     amDevToken: '',
     spToken: null,
@@ -435,123 +439,854 @@ class Component extends DCLogic {
   SCOPES = 'streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state playlist-read-private playlist-read-collaborative';
   REDIRECT() { return location.origin + location.pathname; }
 
-  // ... [rest of the script continues as before]
-}
-</script>
+  loadScript(src) {
+    return new Promise((res, rej) => {
+      if (document.querySelector('script[data-sl="' + src + '"]')) return res();
+      const s = document.createElement('script');
+      s.src = src; s.async = true; s.setAttribute('data-sl', src);
+      s.onload = () => res(); s.onerror = () => rej(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
+    });
+  }
+  b64url(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  async pkce() {
+    const arr = new Uint8Array(48); crypto.getRandomValues(arr);
+    const verifier = this.b64url(arr.buffer);
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+    return { verifier, challenge: this.b64url(digest) };
+  }
 
-<!-- Volume control: Up/Down arrows adjust playback volume (uploaded/demo audio
-     and Spotify Web Playback SDK) and flash an on-screen indicator. Lives
-     alongside the component so it is carried into the standalone export. -->
-<script>
-  (function () {
-    var STEP = 0.05;                 // 5% per keypress
-    var KEY = 'stagelight_volume';
-    var stored = parseFloat(localStorage.getItem(KEY));
-    var volume = (isFinite(stored) && stored >= 0 && stored <= 1) ? stored : 1;
-    var players = [];                // captured Spotify Web Playback SDK players
-
-    // Capture Spotify players by wrapping the SDK constructor, so we can drive
-    // their volume without reaching into the component's private state.
-    function hookSpotify() {
-      if (!window.Spotify || !window.Spotify.Player || window.Spotify.Player.__slHooked) return;
-      var Orig = window.Spotify.Player;
-      function Wrapped(opts) {
-        var inst = new Orig(opts);
-        players.push(inst);
-        try { inst.setVolume(volume); } catch (e) {}
-        return inst;
+  // ----- Spotify -----
+  spotifyErr(raw) {
+    var s = String((raw && raw.message) || raw || '').toLowerCase();
+    if (/premium|account_error/.test(s)) return 'Spotify needs a Premium account to play full songs. You can use the demo library or upload your own audio instead.';
+    if (/access_denied|cancel/.test(s)) return 'Spotify sign-in was cancelled. Try again, or use the demo library or upload below.';
+    if (/not registered|dashboard|forbidden|invalid client|user may not|403/.test(s)) return 'This Spotify account does not have access yet. Ask the organizer to add it, or use the demo library or upload below.';
+    if (/popup|blocked/.test(s)) return 'Your browser blocked the Spotify popup. Allow popups for this page and try again.';
+    if (/initialization_error/.test(s)) return 'Spotify could not start in this browser. Try a desktop browser like Chrome, or use the demo library or upload below.';
+    if (/token|expired|refresh|invalid_grant|authentication_error/.test(s)) return 'Your Spotify session expired. Click Connect Spotify to sign in again.';
+    return 'Could not connect to Spotify. Try again, or use the demo library or upload below.';
+  }
+  connectSpotify = async () => {
+    const clientId = (this.state.spClientId || '26119e868a1d486cbae6ef197addfcd3').trim();
+    if (!clientId) { this.setState({ authError: 'Paste your Spotify Client ID first.' }); return; }
+    this.setState({ authError: '' });
+    try {
+      const { verifier, challenge } = await this.pkce();
+      localStorage.setItem('sl_sp_verifier', verifier);
+      localStorage.setItem('sl_sp_clientid', clientId);
+      const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: this.REDIRECT(), code_challenge_method: 'S256', code_challenge: challenge, scope: this.SCOPES, state: 'sl_spotify_popup' });
+      const w = 480, h = 740, left = Math.max(0, (screen.width - w) / 2), top = Math.max(0, (screen.height - h) / 2);
+      this._popup = window.open('https://accounts.spotify.com/authorize?' + params.toString(), 'sl_spotify_auth', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top);
+      if (!this._popup) this.setState({ authError: this.spotifyErr('popup') });
+    } catch (e) { this.setState({ authError: 'Spotify connect error: ' + (e && e.message || e) }); }
+  };
+  exchangeSpotifyCode = async (code) => { if (!code || this._spCodeUsed === code) return; this._spCodeUsed = code;
+    try {
+      const verifier = localStorage.getItem('sl_sp_verifier');
+      const clientId = localStorage.getItem('sl_sp_clientid');
+      const body = new URLSearchParams({ client_id: clientId, grant_type: 'authorization_code', code: code, redirect_uri: this.REDIRECT(), code_verifier: verifier });
+      const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body });
+      const j = await r.json();
+      if (j.error) { this.setState({ authError: this.spotifyErr(j.error_description || j.error) }); return; }
+      const exp = Date.now() + (j.expires_in || 3600) * 1000;
+      localStorage.setItem('sl_sp_token', j.access_token); localStorage.setItem('sl_sp_expires', String(exp));
+      if (j.refresh_token) localStorage.setItem('sl_sp_refresh', j.refresh_token);
+      this.setState((s) => ({ connected: { ...s.connected, spotify: true }, spToken: j.access_token, spExpires: exp, source: 'spotify', useDemo: false }));
+      this.initSpotifyPlayer();
+    } catch (e) { this.setState({ authError: 'Spotify token exchange failed: ' + (e && e.message || e) }); }
+  };
+  async ensureSpToken() {
+    if (this.state.spToken && Date.now() < this.state.spExpires - 8000) return this.state.spToken;
+    const refresh = localStorage.getItem('sl_sp_refresh'); const clientId = localStorage.getItem('sl_sp_clientid');
+    if (!refresh || !clientId) return this.state.spToken;
+    try {
+      const body = new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refresh, client_id: clientId });
+      const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body });
+      const j = await r.json();
+      if (j.access_token) {
+        const exp = Date.now() + (j.expires_in || 3600) * 1000;
+        localStorage.setItem('sl_sp_token', j.access_token); localStorage.setItem('sl_sp_expires', String(exp));
+        if (j.refresh_token) localStorage.setItem('sl_sp_refresh', j.refresh_token);
+        this.setState({ spToken: j.access_token, spExpires: exp });
+        return j.access_token;
       }
-      Wrapped.prototype = Orig.prototype;
-      Wrapped.__slHooked = true;
-      try { window.Spotify.Player = Wrapped; } catch (e) {}
+    } catch (e) {}
+    return this.state.spToken;
+  }
+  initSpotifyPlayer = async () => {
+    try {
+      await this.loadScript('https://sdk.scdn.co/spotify-player.js');
+      if (!window.Spotify) await new Promise((res) => { window.onSpotifyWebPlaybackSDKReady = res; });
+      if (this.spPlayer) return;
+      const player = new window.Spotify.Player({ name: 'Stagelight', volume: 0.0, getOAuthToken: (cb) => { this.ensureSpToken().then((t) => cb(t)); } });
+      player.addListener('ready', ({ device_id }) => this.setState({ spDeviceId: device_id, spReady: true }));
+      player.addListener('not_ready', () => this.setState({ spReady: false }));
+      ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach((ev) => player.addListener(ev, (e) => this.setState({ authError: this.spotifyErr((e && e.message) || ev) }))); player.addListener('player_state_changed', (st) => {
+        if (!st || !st.track_window || !st.track_window.current_track) return;
+        var ct = st.track_window.current_track; var uri = ct.uri;
+        var sec = Math.round((ct.duration_ms || 0) / 1000);
+        var patch = { title: ct.name, artist: (ct.artists || []).map((a) => a.name).join(', '), dur: sec ? this.fmt(sec) : '', secs: sec };
+        var img = ct.album && ct.album.images && ct.album.images[0];
+        if (img) patch.cover = 'center/cover url(' + img.url + ')';
+        this.setState((s) => {
+          var apply = (x) => (x && x.uri === uri ? Object.assign({}, x, patch) : x);
+          var nq = (s.queue || []).map(apply);
+          var idx = nq.findIndex((x) => x && x.uri === uri);
+          var presenting = s.phase === 'presenting';
+          // While presenting, follow Spotify's own queue advancement so "Now playing" stays in sync.
+          var track = (presenting && idx >= 0) ? nq[idx] : ((s.track && s.track.uri === uri) ? Object.assign({}, s.track, patch) : s.track);
+          return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: (presenting && idx >= 0) ? idx : s.currentIdx };
+        });
+        if (this.state.colorSource === 'album' && patch.cover) this.applyAlbumPalette({ cover: patch.cover });
+      });
+      await player.connect();
+      this.spPlayer = player;
+    } catch (e) { this.setState({ authError: 'Spotify player error: ' + (e && e.message || e) }); }
+  };
+  spotifyVolume() {
+    var stored = parseFloat(localStorage.getItem('stagelight_volume'));
+    return (isFinite(stored) && stored >= 0 && stored <= 1) ? stored : 1;
+  }
+  setSpotifyVolume(v) {
+    if (!this.spPlayer) return;
+    try { this.spPlayer.setVolume(Math.max(0, Math.min(1, v))); } catch (e) {}
+  }
+  showVolumeIndicator(v) {
+    var el = document.getElementById('sl-vol');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'sl-vol';
+      el.style.cssText = 'position:fixed;left:50%;bottom:7%;transform:translateX(-50%) translateY(8px);z-index:100001;display:flex;align-items:center;gap:14px;padding:14px 22px;border-radius:18px;background:rgba(20,20,22,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 12px 40px rgba(0,0,0,0.4);font-family:-apple-system,BlinkMacSystemFont,sans-serif;opacity:0;transition:opacity .22s ease, transform .22s ease;pointer-events:none;';
+      el.innerHTML = '<span id="sl-vol-icon" style="font-size:22px;line-height:1;width:26px;text-align:center;">Vol</span><div style="width:200px;height:8px;border-radius:4px;background:rgba(255,255,255,0.22);overflow:hidden;"><div id="sl-vol-fill" style="height:100%;width:100%;border-radius:4px;background:#fff;transition:width .15s ease;"></div></div><span id="sl-vol-pct" style="min-width:42px;text-align:right;font-size:14px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;">100%</span>';
+      (document.body || document.documentElement).appendChild(el);
     }
-    setInterval(hookSpotify, 300);
-    hookSpotify();
-
-    function applyToMedia() {
-      var media = document.querySelectorAll('audio, video');
-      for (var i = 0; i < media.length; i++) { try { media[i].volume = volume; } catch (e) {} }
+    var pct = Math.round(v * 100);
+    document.getElementById('sl-vol-fill').style.width = pct + '%';
+    document.getElementById('sl-vol-pct').textContent = pct + '%';
+    document.getElementById('sl-vol-icon').textContent = v === 0 ? 'Mute' : 'Vol';
+    el.style.opacity = '1';
+    el.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(this._volHideTimer);
+    this._volHideTimer = setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(-50%) translateY(8px)'; }, 1600);
+  }
+  nudgeSpotifyVolume(dir) {
+    var next = Math.max(0, Math.min(1, Math.round((this.spotifyVolume() + dir * 0.05) * 100) / 100));
+    try { localStorage.setItem('stagelight_volume', String(next)); } catch (e) {}
+    clearInterval(this._spFade);
+    this.setSpotifyVolume(next);
+    if (this.audio && !this.audio.paused) { try { this.audio.volume = next; } catch (e) {} }
+    this.showVolumeIndicator(next);
+  }
+  attachSpotifyVolumeControl() {
+    if (this._spotifyVolumeAttached) return;
+    this._spotifyVolumeAttached = true;
+    this._onStagelightVolume = (e) => this.setSpotifyVolume(e.detail && typeof e.detail.volume === 'number' ? e.detail.volume : this.spotifyVolume());
+    window.addEventListener('stagelight:volume', this._onStagelightVolume);
+  }
+  async playSpotify(uri) {
+    const token = await this.ensureSpToken(); const id = this.state.spDeviceId;
+    if (!id) { this.setState({ authError: 'Spotify player not ready yet — give it a moment, then try again.' }); return; }
+    this.attachSpotifyVolumeControl();
+    if (this.spPlayer && this.spPlayer.activateElement) { try { await this.spPlayer.activateElement(); } catch (e) {} }
+    await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + id, { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ uris: [uri] }) });
+    if (this.spPlayer) {
+      let v = 0;
+      const target = this.spotifyVolume();
+      this.setSpotifyVolume(0);
+      clearInterval(this._spFade);
+      this._spFade = setInterval(() => {
+        const liveTarget = this.spotifyVolume();
+        v = Math.min(liveTarget, v + 0.05);
+        this.setSpotifyVolume(v);
+        if (v >= liveTarget) clearInterval(this._spFade);
+      }, 120);
     }
-    function apply() {
-      applyToMedia();
-      for (var j = 0; j < players.length; j++) { try { players[j].setVolume(volume); } catch (e) {} }
-      try { localStorage.setItem(KEY, String(volume)); } catch (e) {}
-      try { window.dispatchEvent(new CustomEvent('stagelight:volume', { detail: { volume: volume } })); } catch (e) {}
-    }
-
-    // Media elements created later (e.g. after "Begin") inherit the current level.
-    function startObserver() {
-      if (!document.body) { setTimeout(startObserver, 50); return; }
-      new MutationObserver(applyToMedia).observe(document.body, { childList: true, subtree: true });
-      applyToMedia();
-    }
-    startObserver();
-
-    var hideTimer = null;
-    function indicator() {
-      var el = document.getElementById('sl-vol');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = 'sl-vol';
-        el.style.cssText = 'position:fixed;left:50%;bottom:7%;transform:translateX(-50%) translateY(8px);z-index:100001;display:flex;align-items:center;gap:14px;padding:14px 22px;border-radius:18px;background:rgba(20,20,22,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 12px 40px rgba(0,0,0,0.4);font-family:-apple-system,BlinkMacSystemFont,sans-serif;opacity:0;transition:opacity .22s ease, transform .22s ease;pointer-events:none;';
-        el.innerHTML =
-          '<span id="sl-vol-icon" style="font-size:22px;line-height:1;width:26px;text-align:center;">🔊</span>' +
-          '<div style="width:200px;height:8px;border-radius:4px;background:rgba(255,255,255,0.22);overflow:hidden;">' +
-            '<div id="sl-vol-fill" style="height:100%;width:100%;border-radius:4px;background:#fff;transition:width .15s ease;"></div>' +
-          '</div>' +
-          '<span id="sl-vol-pct" style="min-width:42px;text-align:right;font-size:14px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;">100%</span>';
-        (document.body || document.documentElement).appendChild(el);
+  }
+  stopSpotify() { clearInterval(this._spFade); if (this.spPlayer) { try { this.spPlayer.pause(); } catch (e) {} } } parseSpotifyTrackId(s) { s = String(s || '').trim(); var t = s.split('track'); if (t.length < 2) return null; var m = t[t.length - 1].match(/[A-Za-z0-9]{22}/); return m ? m[0] : null; } addSpotifyLink() { var id = this.parseSpotifyTrackId(this.state.searchQuery); if (!id) { this.setState({ authError: 'Paste a Spotify track link, e.g. https://open.spotify.com/track/...  (in Spotify use Share then Copy Song Link).' }); return; } var uri = 'spotify:track:' + id; var tr = { service: 'spotify', uri: uri, title: 'Spotify track', artist: 'Loading...', cover: 'linear-gradient(135deg,#1db954,#191414)', dur: '' }; var dedup = (this.state.results || []).filter((x) => x.uri !== uri); this.setState({ results: [Object.assign({}, tr)].concat(dedup), authError: '', searchQuery: '' }); this.addTrack(tr); this.hydrateSpotifyMeta(id, uri); } async hydrateSpotifyMeta(id, uri) {
+    // Prefer the Web API track endpoint (works for a known id without Extended Quota) — it returns the duration so the timer can auto-match.
+    try {
+      var token = await this.ensureSpToken();
+      if (token) {
+        var tr = await fetch('https://api.spotify.com/v1/tracks/' + id, { headers: { Authorization: 'Bearer ' + token } });
+        if (tr.ok) {
+          var t = await tr.json();
+          if (t && t.name) {
+            var sec = Math.round((t.duration_ms || 0) / 1000);
+            var p = { title: t.name, artist: (t.artists || []).map((a) => a.name).join(', '), secs: sec, dur: sec ? this.fmt(sec) : '' };
+            var img = t.album && t.album.images && t.album.images[0];
+            if (img) p.cover = 'center/cover url(' + img.url + ')';
+            this.patchTrackByUri(uri, p);
+            return;
+          }
+        }
       }
-      var pct = Math.round(volume * 100);
-      document.getElementById('sl-vol-fill').style.width = pct + '%';
-      document.getElementById('sl-vol-pct').textContent = pct + '%';
-      document.getElementById('sl-vol-icon').textContent = volume === 0 ? '🔇' : (volume <= 0.5 ? '🔉' : '🔊');
-      el.style.opacity = '1';
-      el.style.transform = 'translateX(-50%) translateY(0)';
-      clearTimeout(hideTimer);
-      hideTimer = setTimeout(function () {
-        el.style.opacity = '0';
-        el.style.transform = 'translateX(-50%) translateY(8px)';
-      }, 1600);
-    }
+    } catch (e) {}
+    // Fallback: public oEmbed (title + artwork only, no duration).
+    try { var r = await fetch('https://open.spotify.com/oembed?url=https://open.spotify.com/track/' + id); if (!r.ok) return; var j = await r.json(); var patch = {}; if (j.title) patch.title = j.title; if (j.thumbnail_url) patch.cover = 'center/cover url(' + j.thumbnail_url + ')'; this.patchTrackByUri(uri, patch); } catch (e) {} }
 
-    function isTyping(t) {
-      if (!t) return false;
-      var tag = (t.tagName || '').toLowerCase();
-      return tag === 'input' || tag === 'textarea' || tag === 'select' || t.isContentEditable;
-    }
-    function nudge(dir) {
-      volume = Math.max(0, Math.min(1, Math.round((volume + dir * STEP) * 100) / 100));
-      apply();
-      indicator();
-    }
-    window.addEventListener('keydown', function (e) {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isTyping(e.target)) return;
-      if (e.key === 'ArrowUp') { nudge(1); e.preventDefault(); }
-      else if (e.key === 'ArrowDown') { nudge(-1); e.preventDefault(); }
-    }, true);
+  // ----- Apple Music -----
+  connectApple = async () => {
+    const dev = (this.state.amDevToken || '').trim();
+    if (!dev) { this.setState({ authError: 'Paste your Apple Music developer token first.' }); return; }
+    this.setState({ authError: '' });
+    try {
+      await this.loadScript('https://js-cdn.music.apple.com/musickit/v3/musickit.js');
+      if (!window.MusicKit) await new Promise((res) => document.addEventListener('musickitloaded', res, { once: true }));
+      await window.MusicKit.configure({ developerToken: dev, app: { name: 'Stagelight', build: '1.0.0' } });
+      const music = window.MusicKit.getInstance();
+      await music.authorize();
+      localStorage.setItem('sl_am_devtoken', dev);
+      this.setState((s) => ({ connected: { ...s.connected, apple: true }, amStorefront: music.storefrontId || 'us', source: 'apple', useDemo: false }));
+    } catch (e) { this.setState({ authError: 'Apple Music connect failed: ' + (e && e.message || e) }); }
+  };
+  rehydrateApple = async (dev) => {
+    try {
+      await this.loadScript('https://js-cdn.music.apple.com/musickit/v3/musickit.js');
+      if (!window.MusicKit) await new Promise((res) => document.addEventListener('musickitloaded', res, { once: true }));
+      await window.MusicKit.configure({ developerToken: dev, app: { name: 'Stagelight', build: '1.0.0' } });
+      const music = window.MusicKit.getInstance();
+      if (music.isAuthorized) this.setState((s) => ({ connected: { ...s.connected, apple: true }, amStorefront: music.storefrontId || 'us' }));
+    } catch (e) {}
+  };
+  async playApple(id) {
+    try {
+      const music = window.MusicKit.getInstance();
+      await music.setQueue({ song: id });
+      music.volume = 0; await music.play();
+      let v = 0; clearInterval(this._amFade); this._amFade = setInterval(() => { v = Math.min(0.92, v + 0.06); music.volume = v; if (v >= 0.92) clearInterval(this._amFade); }, 120);
+    } catch (e) { this.setState({ authError: 'Apple playback error: ' + (e && e.message || e) }); }
+  }
+  stopApple() { clearInterval(this._amFade); try { if (window.MusicKit) window.MusicKit.getInstance().pause(); } catch (e) {} }
 
-    function patchHotKeys() {
-      var nodes = document.querySelectorAll('div');
-      for (var i = 0; i < nodes.length; i++) {
-        if ((nodes[i].textContent || '').trim() !== 'Hot keys') continue;
-        var row = nodes[i].nextElementSibling;
-        if (!row || row.getAttribute('data-sl-volume-hotkey')) return;
-        var span = document.createElement('span');
-        span.innerHTML = '<b style="color:#1d1d1f;">&uarr;/&darr;</b> Volume';
-        row.appendChild(span);
-        row.setAttribute('data-sl-volume-hotkey', '1');
+  // ----- search / preview / auth plumbing -----
+  runSearch = async () => {
+    const q = (this.state.searchQuery || '').trim(); if (!q) return; if (this.state.source === 'spotify') { this.addSpotifyLink(); return; }
+    this.setState({ searching: true, authError: '' });
+    try {
+      let results = [];
+      if (this.state.source === 'spotify') {
+        const token = await this.ensureSpToken();
+        const r = await fetch('https://api.spotify.com/v1/search?' + new URLSearchParams({ q: q, type: 'track', limit: '20' }).toString(), { headers: { Authorization: 'Bearer ' + token } });
+        const j = await r.json();
+        if (j.error) { var em = (j.error.message || j.error) + ''; this.setState({ searching: false, authError: /limit|quota|forbidden/i.test(em) ? 'Spotify search is unavailable here — new Spotify developer apps no longer get catalog/search access from Spotify. Use the demo library or the Upload tab instead.' : ('Spotify: ' + em) }); return; }
+        results = ((j.tracks && j.tracks.items) || []).map((t) => ({ service: 'spotify', uri: t.uri, title: t.name, artist: (t.artists || []).map((a) => a.name).join(', '), cover: (t.album && t.album.images && t.album.images[0] && ('center/cover url(' + t.album.images[0].url + ')')) || 'linear-gradient(135deg,#1db954,#191414)', secs: Math.round((t.duration_ms || 0) / 1000), dur: this.fmt(Math.round((t.duration_ms || 0) / 1000)) }));
+      } else if (this.state.source === 'apple') {
+        const music = window.MusicKit.getInstance();
+        const res = await music.api.music('/v1/catalog/' + this.state.amStorefront + '/search', { term: q, types: 'songs', limit: 12 });
+        const songs = (res && res.data && res.data.results && res.data.results.songs && res.data.results.songs.data) || [];
+        results = songs.map((s) => { const a = s.attributes || {}; const url = a.artwork && a.artwork.url ? a.artwork.url.replace('{w}', '160').replace('{h}', '160') : null; return { service: 'apple', id: s.id, title: a.name, artist: a.artistName, cover: url ? ('center/cover url(' + url + ')') : 'linear-gradient(135deg,#fa2d48,#fb5c74)', secs: Math.round((a.durationInMillis || 0) / 1000), dur: this.fmt(Math.round((a.durationInMillis || 0) / 1000)) }; });
+      }
+      this.setState({ results: results, searching: false });
+    } catch (e) { this.setState({ searching: false, authError: 'Search failed: ' + (e && e.message || e) }); }
+  };
+  togglePreview = async () => {
+    const tr = this.state.track; if (!tr) return;
+    if (this.state.previewPlaying) {
+      if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} }
+      this.setState({ previewPlaying: false }); return;
+    }
+    if (tr.service === 'spotify') await this.playSpotify(tr.uri);
+    else if (tr.service === 'apple') await this.playApple(tr.id);
+    else if (tr.url && this.audio) { this.audio.src = tr.url; this.audio.volume = 0.85; try { this.audio.play(); } catch (e) {} }
+    this.setState({ previewPlaying: true });
+  };
+  disconnectSource = () => {
+    const src = this.state.source;
+    if (src === 'spotify') {
+      ['sl_sp_token', 'sl_sp_refresh', 'sl_sp_expires', 'sl_sp_verifier'].forEach((k) => localStorage.removeItem(k));
+      if (this.spPlayer) { try { this.spPlayer.disconnect(); } catch (e) {} this.spPlayer = null; }
+      this.setState((s) => ({ connected: { ...s.connected, spotify: false }, spReady: false, spDeviceId: null, spToken: null, results: [] }));
+    } else if (src === 'apple') {
+      localStorage.removeItem('sl_am_devtoken');
+      try { if (window.MusicKit) window.MusicKit.getInstance().unauthorize(); } catch (e) {}
+      this.setState((s) => ({ connected: { ...s.connected, apple: false }, results: [] }));
+    }
+  };
+  setSpClientId = (e) => this.setState({ spClientId: e.target.value });
+  setAmDevToken = (e) => this.setState({ amDevToken: e.target.value });
+  setSearchQuery = (e) => this.setState({ searchQuery: e.target.value });
+  onSearchKey = (e) => { if (e.key === 'Enter') this.runSearch(); };
+  toggleDemo = () => this.setState((s) => ({ useDemo: !s.useDemo, authError: '' }));
+  copyRedirect = () => { try { navigator.clipboard.writeText(this.REDIRECT()); } catch (e) {} this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1400); };
+  handleAuthRedirect = () => {
+    try {
+      const p = new URLSearchParams(location.search);
+      const code = p.get('code'), error = p.get('error');
+      const isPopup = p.get('state') === 'sl_spotify_popup' || window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
+        try { if (window.opener && window.opener !== window) window.opener.postMessage({ __sl_auth: 'spotify', code: code, error: error }, '*'); } catch (e) {} try { localStorage.setItem('sl_sp_auth_msg', JSON.stringify({ code: code || '', error: error || '', t: Date.now() })); } catch (e) {} try { document.title = 'You can close this window'; } catch (e) {}
+        window.close();
+        return true;
+      }
+      if (code && localStorage.getItem('sl_sp_verifier')) {
+        this.exchangeSpotifyCode(code);
+        history.replaceState({}, '', this.REDIRECT());
+      }
+    } catch (e) {}
+    return false;
+  };
+  onAuthStorage = (e) => { if (e.key !== 'sl_sp_auth_msg' || !e.newValue) return; var d; try { d = JSON.parse(e.newValue); } catch (x) { return; } try { localStorage.removeItem('sl_sp_auth_msg'); } catch (x) {} if (d && d.error) { this.setState({ authError: this.spotifyErr(d.error) }); return; } if (d && d.code) this.exchangeSpotifyCode(d.code); }; onAuthMessage = (e) => {
+    const d = e.data; if (!d || d.__sl_auth !== 'spotify') return;
+    if (d.error) { this.setState({ authError: this.spotifyErr(d.error) }); return; }
+    if (d.code) this.exchangeSpotifyCode(d.code);
+  };
+
+  componentDidMount() {
+    // Always run on the canonical custom domain so the Spotify redirect_uri matches what's registered.
+    // (GitHub Pages should 301 github.io -> the custom domain; this is a belt-and-suspenders guard.)
+    try { var CANON = 'www.stagelight.t64.org'; if (CANON && /\.github\.io$/i.test(location.hostname) && location.hostname !== CANON) { location.replace('https://' + CANON + '/' + location.search + location.hash); return; } } catch (e) {}
+    if (this.handleAuthRedirect()) return;
+    window.addEventListener('message', this.onAuthMessage); window.addEventListener('storage', this.onAuthStorage);
+    try {
+      const t = localStorage.getItem('sl_sp_token');
+      if (t) { const exp = +localStorage.getItem('sl_sp_expires') || 0; this.setState((s) => ({ connected: { ...s.connected, spotify: true }, spToken: t, spExpires: exp, spClientId: localStorage.getItem('sl_sp_clientid') || '' })); this.initSpotifyPlayer(); }
+      const dev = localStorage.getItem('sl_am_devtoken');
+      if (dev) { this.setState({ amDevToken: dev }); this.rehydrateApple(dev); }
+    } catch (e) {}
+    try { var saved = JSON.parse(localStorage.getItem('sl_setup') || 'null'); if (saved && typeof saved === 'object') this.setState(saved); else { var si = this.VARIANTS.findIndex(function (v) { return v.mode === 'shader'; }); if (si >= 0) this.setState({ variantIdx: si }); } } catch (e) {}
+    this._persistT = setInterval(() => { if (this.state.phase === 'setup') this.savePrefs(); }, 1500);
+    this._tick = setInterval(() => {
+      if (this.state.phase === 'presenting' && !this.state.paused) this.setState({ now: Date.now() });
+    }, 250);
+    this._onKey = (e) => {
+      const tag = (e.target && e.target.tagName) || '';
+      if (this.state.phase === 'setup') {
+        if (e.key === 'Enter' && !/INPUT|TEXTAREA/.test(tag)) { e.preventDefault(); this.beginEvent(); }
         return;
       }
+      if (e.key === 'Escape') { this.exit(); return; }
+      if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); this.togglePause(); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); this.nudgeSpotifyVolume(1); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); this.nudgeSpotifyVolume(-1); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); this.changeSong(1); return; }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); this.changeSong(-1); return; }
+    };
+    window.addEventListener('keydown', this._onKey);
+  }
+  componentWillUnmount() {
+    clearInterval(this._tick); clearInterval(this._persistT);
+    window.removeEventListener('keydown', this._onKey);
+    window.removeEventListener('message', this.onAuthMessage); window.removeEventListener('storage', this.onAuthStorage);
+    if (this._onStagelightVolume) window.removeEventListener('stagelight:volume', this._onStagelightVolume);
+    clearTimeout(this._volHideTimer);
+    clearInterval(this._spFade); clearInterval(this._amFade);
+    if (this.spPlayer) { try { this.spPlayer.disconnect(); } catch (e) {} }
+    if (this.actx) try { this.actx.close(); } catch (e) {}
+  }
+
+  setRoot = (el) => { this.root = el; };
+  setAudio = (el) => { this.audio = el; };
+
+
+  // ---------- color ----------
+  rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    let h = 0, s = 0; const l = (mx + mn) / 2;
+    if (mx !== mn) {
+      const d = mx - mn;
+      s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+      if (mx === r) h = (g - b) / d + (g < b ? 6 : 0);
+      else if (mx === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h /= 6;
     }
-    function startHotKeyPatch() {
-      if (!document.body) { setTimeout(startHotKeyPatch, 50); return; }
-      patchHotKeys();
-      new MutationObserver(patchHotKeys).observe(document.body, { childList: true, subtree: true });
+    return [h * 360, s, l];
+  }
+  hslToRgb(h, s, l) {
+    h /= 360;
+    const hue = (p, q, t) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    let r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue(p, q, h + 1 / 3); g = hue(p, q, h); b = hue(p, q, h - 1 / 3);
     }
-    startHotKeyPatch();
-  })();
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  }
+  toRgb(a) { return 'rgb(' + a[0] + ',' + a[1] + ',' + a[2] + ')'; }
+  rgba(a, al) { return 'rgba(' + a[0] + ',' + a[1] + ',' + a[2] + ',' + al + ')'; }
+  toArr(c) { const m = (c || '').match(/[\d.]+/g); return m ? m.slice(0, 3).map(Number) : [128, 128, 128]; }
+  hexToRgbStr(h) { const n = parseInt(h.slice(1), 16); return 'rgb(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ')'; }
+  toHex(c) { const a = this.toArr(c); return '#' + a.map((x) => Math.round(x).toString(16).padStart(2, '0')).join(''); }
+
+  derivePalette(r, g, b) {
+    const [h, s] = this.rgbToHsl(r, g, b);
+    const S = Math.min(0.85, Math.max(0.5, s));
+    return {
+      accent: this.toRgb(this.hslToRgb(h, S, 0.55)),
+      accent2: this.toRgb(this.hslToRgb((h + 32) % 360, S, 0.6)),
+      accent3: this.toRgb(this.hslToRgb((h + 328) % 360, S, 0.6)),
+      bg: this.toRgb(this.hslToRgb(h, 0.18, 0.975)),
+      ink: this.toRgb(this.hslToRgb(h, 0.22, 0.13)),
+    };
+  }
+
+  paletteFromSrc(src, cb) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      const w = 64, scale = w / img.width, hh = Math.max(1, Math.round(img.height * scale));
+      c.width = w; c.height = hh;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, hh);
+      let data;
+      try { data = ctx.getImageData(0, 0, w, hh).data; } catch (e) { cb(null); return; }
+      const buckets = {};
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3]; if (a < 130) continue;
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        if (r > 244 && g > 244 && b > 244) continue;
+        if (r < 14 && g < 14 && b < 14) continue;
+        const [, sat, lum] = this.rgbToHsl(r, g, b);
+        if (lum > 0.93 || lum < 0.07) continue;
+        const key = (r >> 4) + '-' + (g >> 4) + '-' + (b >> 4);
+        const wt = 1 + sat * 2.5;
+        if (!buckets[key]) buckets[key] = { r: 0, g: 0, b: 0, n: 0, w: 0 };
+        const bk = buckets[key];
+        bk.r += r; bk.g += g; bk.b += b; bk.n++; bk.w += wt;
+      }
+      let best = null;
+      for (const k in buckets) { if (!best || buckets[k].w > best.w) best = buckets[k]; }
+      cb(best ? this.derivePalette(best.r / best.n, best.g / best.n, best.b / best.n) : null);
+    };
+    img.onerror = () => cb(null);
+    img.src = src;
+  }
+  handleImage(src) { this.paletteFromSrc(src, (pal) => this.setState({ logo: src, palette: pal })); }
+  applyAlbumPalette(track) {
+    var t = track || (this.state.queue && this.state.queue[this.state.currentIdx]) || this.state.track;
+    if (!t || !t.cover) return;
+    var m = String(t.cover).match(/url\(([^)]+)\)/);
+    if (!m) return;
+    var url = m[1].replace(/^['"]|['"]$/g, '');
+    this.paletteFromSrc(url, (pal) => { if (pal && this.state.colorSource === 'album') this.setState({ palette: pal }); });
+  }
+  setColorSource = (src) => {
+    this.setState({ colorSource: src });
+    if (src === 'album') { this.applyAlbumPalette(); }
+    else if (this.state.logo) { this.paletteFromSrc(this.state.logo, (pal) => { if (this.state.colorSource !== 'album') this.setState({ palette: pal }); }); }
+    else { this.setState({ palette: null }); }
+  };
+
+  readFile(file, cb) {
+    if (!file) return;
+    const fr = new FileReader();
+    fr.onload = () => cb(fr.result);
+    fr.readAsDataURL(file);
+  }
+
+  onLogoChange = (e) => { const f = e.target.files && e.target.files[0]; this.readFile(f, (d) => this.handleImage(d)); };
+  onDragOver = (e) => { e.preventDefault(); };
+  onDrop = (e) => { e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; this.readFile(f, (d) => this.handleImage(d)); };
+  clearLogo = () => this.setState({ logo: null, palette: null });
+  setColor = (slot) => (e) => { const v = this.hexToRgbStr(e.target.value); this.setState((s) => ({ overrides: { ...s.overrides, [slot]: v } })); };
+  resetColors = () => this.setState({ overrides: {} });
+  toggleEvent = () => this.setState((s) => ({ showEvent: !s.showEvent }));
+  toggleNowPlaying = () => this.setState((s) => ({ showNowPlaying: !s.showNowPlaying }));
+
+  setTitle = (e) => this.setState({ title: e.target.value });
+  setSubtitle = (e) => this.setState({ subtitle: e.target.value });
+  setMinutes = (e) => this.setState({ minutes: parseInt(e.target.value, 10) || 1, autoMatch: false });
+  toggleAutoMatch = () => this.setState((s) => ({ autoMatch: !s.autoMatch }));
+
+  shuffle = () => this.setState((s) => ({ seed: (s.seed * 1103515245 + 12345) & 0x7fffffff, variantIdx: Math.random() < 0.55 ? (s.variantIdx + 1) % this.VARIANTS.length : s.variantIdx }));
+  setVariant = (i) => this.setState({ variantIdx: i });
+
+  setSource = (src) => this.setState({ source: src, results: [], searchQuery: '', authError: '' });
+  stopCurrentPreview() { const tr = this.state.track; if (tr) { if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} } } }
+  addTrack = (t) => {
+    const queue = this.state.queue || [];
+    const key = this.selKey(t);
+    if (queue.findIndex((q) => this.selKey(q) === key) >= 0) { this.removeFromQueue(key); return; }
+    const nq = queue.concat([t]);
+    this.stopCurrentPreview();
+    this.setState({ queue: nq, currentIdx: nq.length - 1, track: t, previewPlaying: false });
+    if (this.state.colorSource === 'album') this.applyAlbumPalette(t);
+  };
+  removeFromQueue = (key) => {
+    const queue = this.state.queue || [];
+    const idx = queue.findIndex((q) => this.selKey(q) === key);
+    if (idx < 0) return;
+    const wasCurrent = idx === this.state.currentIdx;
+    if (wasCurrent) this.stopCurrentPreview();
+    const nq = queue.slice(0, idx).concat(queue.slice(idx + 1));
+    let ci = this.state.currentIdx; if (idx < ci) ci--; if (ci >= nq.length) ci = nq.length - 1; if (ci < 0) ci = 0;
+    this.setState({ queue: nq, currentIdx: ci, track: nq[ci] || null, previewPlaying: wasCurrent ? false : this.state.previewPlaying });
+  };
+  moveTrack = (from, to) => {
+    const q = (this.state.queue || []).slice();
+    if (from < 0 || from >= q.length || to < 0 || to >= q.length) return;
+    const curKey = q[this.state.currentIdx] ? this.selKey(q[this.state.currentIdx]) : null;
+    const [m] = q.splice(from, 1); q.splice(to, 0, m);
+    let ci = curKey ? q.findIndex((x) => this.selKey(x) === curKey) : this.state.currentIdx;
+    if (ci < 0) ci = 0;
+    this.setState({ queue: q, currentIdx: ci });
+  };
+  pickTrack = (t) => this.addTrack(t);
+  onAudioChange = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const tr = { service: 'local', title: f.name.replace(/\.[^.]+$/, ''), artist: 'Local file', dur: '', secs: 0, cover: 'linear-gradient(135deg,#bdc3c7,#2c3e50)', url };
+    this.addTrack(tr);
+    // Read the file's real duration so the countdown can auto-match it.
+    try { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => { const sec = Math.round(a.duration || 0); if (sec > 0) this.patchTrackByUrl(url, { secs: sec, dur: this.fmt(sec) }); }; a.src = url; } catch (e2) {}
+  };
+
+  // ---------- audio engine ----------
+  startAudio() {
+    const queue = this.state.queue || [];
+    const cur = queue[this.state.currentIdx] || this.state.track;
+    if (!cur) return; // no music selected -> stay silent (no ambient bed)
+    if (cur && cur.service === 'spotify' && this.state.spReady) { this.playSpotifyQueue(queue.filter((x) => x && x.service === 'spotify' && x.uri).map((x) => x.uri)); return; }
+    if (cur && cur.service === 'apple' && this.state.connected.apple) { this.playApple(cur.id); return; }
+    const firstLocal = queue.findIndex((x) => x && x.url);
+    if (firstLocal >= 0 && this.audio) { this.playLocalAt(firstLocal); return; }
+    try {
+      if (!this.actx) this.actx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = this.actx; if (ctx.state === 'suspended') ctx.resume();
+      this.master = ctx.createGain(); this.master.gain.value = 0; this.master.connect(ctx.destination);
+      const freqs = [110, 164.81, 220, 277.18];
+      this.voices = freqs.map((f, i) => {
+        const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+        const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 1.004;
+        const g = ctx.createGain(); g.gain.value = 0.16;
+        const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 1100;
+        o.connect(g); o2.connect(g); g.connect(filt); filt.connect(this.master);
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.04 + i * 0.017;
+        const lg = ctx.createGain(); lg.gain.value = 0.06; lfo.connect(lg); lg.connect(g.gain);
+        o.start(); o2.start(); lfo.start();
+        return { o, o2, lfo };
+      });
+      this.master.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 4);
+    } catch (e) {}
+  }
+  async playSpotifyQueue(uris) {
+    if (!uris || !uris.length) { return; }
+    await this.playSpotify(uris[0]);
+    // Add the rest to Spotify's own playback queue; the Web Playback SDK auto-advances and player_state_changed keeps "Now playing" in sync.
+    try {
+      const token = await this.ensureSpToken(); const id = this.state.spDeviceId;
+      for (let i = 1; i < uris.length; i++) {
+        await fetch('https://api.spotify.com/v1/me/player/queue?' + new URLSearchParams({ uri: uris[i], device_id: id }).toString(), { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+      }
+    } catch (e) {}
+  }
+  playLocalAt(i) {
+    const q = this.state.queue || []; const t = q[i];
+    if (!t || !t.url || !this.audio) return;
+    const moreLocal = q.filter((x) => x && x.url).length > 1;
+    this.audio.loop = !moreLocal;
+    this.audio.onended = moreLocal ? (() => { let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++; if (n < q.length) this.playLocalAt(n); }) : null;
+    this.audio.src = t.url; this.audio.volume = 0; this.audio.currentTime = 0;
+    const p = this.audio.play(); if (p && p.catch) p.catch(() => {});
+    let v = 0; clearInterval(this._fade);
+    this._fade = setInterval(() => { v = Math.min(0.85, v + 0.05); this.audio.volume = v; if (v >= 0.85) clearInterval(this._fade); }, 120);
+    this.setState({ currentIdx: i, track: t });
+  }
+  stopAudio() {
+    clearInterval(this._fade);
+    this.stopSpotify(); this.stopApple();
+    if (this.audio) { try { this.audio.pause(); } catch (e) {} }
+    if (this.actx && this.master) {
+      try {
+        const t = this.actx.currentTime;
+        this.master.gain.cancelScheduledValues(t);
+        this.master.gain.setValueAtTime(this.master.gain.value, t);
+        this.master.gain.linearRampToValueAtTime(0, t + 0.8);
+        const vs = this.voices || [];
+        setTimeout(() => { vs.forEach((v) => { try { v.o.stop(); v.o2.stop(); v.lfo.stop(); } catch (e) {} }); }, 900);
+      } catch (e) {}
+    }
+    this.voices = null;
+  }
+
+  savePrefs() {
+    try {
+      var s = this.state;
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart });
+      if (data === this._lastPrefs) return;
+      this._lastPrefs = data;
+      localStorage.setItem('sl_setup', data);
+    } catch (e) {}
+  }
+  resetSetup = () => {
+    this.stopCurrentPreview();
+    try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, fullscreenOnStart: true, searchQuery: '', results: [], previewPlaying: false, authError: '' });
+  };
+  toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
+  openAbout = () => this.setState({ showAbout: true });
+  closeAbout = () => this.setState({ showAbout: false });
+  stopAbout = (e) => { try { e.stopPropagation(); } catch (_) {} };
+  togglePause = () => {
+    if (this.state.phase !== 'presenting') return;
+    if (!this.state.paused) {
+      this._pauseAt = Date.now();
+      this.setState({ paused: true, playing: false });
+      try { if (this.spPlayer) this.spPlayer.pause(); } catch (e) {}
+      try { if (this.audio) this.audio.pause(); } catch (e) {}
+      try { if (this.actx && this.actx.state === 'running') this.actx.suspend(); } catch (e) {}
+    } else {
+      this.setState({ target: this.state.target + (Date.now() - (this._pauseAt || Date.now())), now: Date.now(), paused: false, playing: true });
+      try { if (this.spPlayer) this.spPlayer.resume(); } catch (e) {}
+      try { if (this.audio && this.audio.src) { var p = this.audio.play(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
+      try { if (this.actx && this.actx.state === 'suspended') this.actx.resume(); } catch (e) {}
+    }
+  };
+  changeSong = (dir) => {
+    var q = this.state.queue || []; if (!q.length) return;
+    var i = this.state.currentIdx + dir; if (i < 0) i = 0; if (i > q.length - 1) i = q.length - 1;
+    if (i === this.state.currentIdx) return;
+    var t = q[i];
+    this.setState({ currentIdx: i, track: t, paused: false, playing: true });
+    if (this.state.phase === 'presenting') {
+      try {
+        if (t.service === 'spotify' && this.state.spReady) this.playSpotify(t.uri);
+        else if (t.service === 'apple' && this.state.connected.apple) this.playApple(t.id);
+        else if (t.url) this.playLocalAt(i);
+      } catch (e) {}
+    }
+    if (this.state.colorSource === 'album') this.applyAlbumPalette(t);
+  };
+  beginEvent = () => {
+    const target = Date.now() + this.countdownSecs() * 1000;
+    this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, paused: false, currentIdx: 0, track: (this.state.queue[0] || this.state.track) });
+    try { this.startAudio(); } catch (e) {}
+    try { if (this.state.fullscreenOnStart && this.root && this.root.requestFullscreen) { const r = this.root.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
+  };
+  exit = () => {
+    this.stopAudio();
+    if (document.fullscreenElement && document.exitFullscreen) { try { document.exitFullscreen().catch(() => {}); } catch (e) {} }
+    this.setState({ phase: 'setup', playing: false });
+  };
+
+  // ---------- blobs ----------
+  mulberry(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+  buildBlobs(pal, seed, vidx, intensify) {
+    const v = this.VARIANTS[vidx];
+    if (v.mode === 'shader') return [];
+    const rng = this.mulberry(seed + vidx * 999);
+    const cols = [pal.accent, pal.accent2, pal.accent3];
+    const anims = ['stFloatA', 'stFloatB', 'stFloatC'];
+    const out = [];
+    const k = intensify ? 1.32 : 1;
+    for (let i = 0; i < v.count; i++) {
+      const col = cols[i % cols.length];
+      let size, left, top, scaleX = 1, rot = 0;
+      let blur = 7 + rng() * 7, dur = 5 + rng() * 4, anim = anims[i % 3], originCss = '', willChange = 'transform';
+      if (v.mode === 'halo') {
+        if (i === 0) { size = 70; left = 50; top = 48; }
+        else { size = 28 + rng() * 22; left = 12 + rng() * 76; top = 12 + rng() * 76; }
+      } else if (v.mode === 'aurora') {
+        size = 40 + rng() * 30; left = rng() * 100; top = 18 + rng() * 64; scaleX = 1.9; rot = -18 + rng() * 36;
+      } else if (v.mode === 'field') {
+        size = 78 + rng() * 30; left = i === 0 ? 32 : 70; top = i === 0 ? 38 : 60;
+      } else {
+        size = 34 + rng() * 34; left = rng() * 100; top = rng() * 100;
+      }
+      const op = Math.min(0.85, v.op * k * (0.8 + rng() * 0.4));
+      const delay = -(rng() * 12);
+      const colMatch = col.match(/[\d.]+/g);
+      const c = colMatch ? colMatch.map(Number) : [120, 120, 200];
+      const grad = 'radial-gradient(circle, rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + op + ') 0%, rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',0) 68%)';
+      out.push({
+        style: 'position:absolute;width:' + size + 'cqmin;height:' + size + 'cqmin;left:' + left + '%;top:' + top + '%;'
+          + 'transform:translate(-50%,-50%) scaleX(' + scaleX + ') rotate(' + rot + 'deg);',
+        inner: 'width:100%;height:100%;background:' + grad + ';filter:blur(' + blur + 'cqmin);border-radius:50%;' + originCss
+          + 'animation:' + anim + ' ' + dur + 's ease-in-out ' + delay + 's infinite;will-change:' + willChange + ';'
+      });
+    }
+    return out;
+  }
+
+  fmt(totalSec) {
+    if (totalSec < 0) totalSec = 0;
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return h > 0 ? h + ':' + pad(m) + ':' + pad(s) : pad(m) + ':' + pad(s);
+  }
+
+  // ---------- playlist helpers ----------
+  parseDur(str) { const p = String(str || '').split(':').map((n) => parseInt(n, 10) || 0); let s = 0; for (let i = 0; i < p.length; i++) s = s * 60 + p[i]; return s; }
+  trackSecs(t) { return t ? (typeof t.secs === 'number' && t.secs > 0 ? t.secs : this.parseDur(t.dur)) : 0; }
+  selKey(t) { return !t ? '' : (t.service === 'spotify' ? ('s' + t.uri) : (t.service === 'apple' ? ('a' + t.id) : ((t.service || '') + (t.url || t.title)))); }
+  queueSecs() { return (this.state.queue || []).reduce((a, t) => a + this.trackSecs(t), 0); }
+  countdownSecs() { const total = this.queueSecs(); return (this.state.autoMatch && this.state.queue.length && total > 0) ? total : this.state.minutes * 60; }
+  patchTrackByUri(uri, patch) { const upd = (list) => (list || []).map((x) => (x && x.uri === uri ? Object.assign({}, x, patch) : x)); this.setState((s) => ({ track: (s.track && s.track.uri === uri) ? Object.assign({}, s.track, patch) : s.track, results: upd(s.results), queue: upd(s.queue) })); if (this.state.colorSource === 'album' && patch.cover) { var cur = (this.state.queue && this.state.queue[this.state.currentIdx]) || this.state.track; if (cur && cur.uri === uri) this.applyAlbumPalette({ cover: patch.cover }); } }
+  patchTrackByUrl(url, patch) { const upd = (list) => (list || []).map((x) => (x && x.url === url ? Object.assign({}, x, patch) : x)); this.setState((s) => ({ track: (s.track && s.track.url === url) ? Object.assign({}, s.track, patch) : s.track, queue: upd(s.queue) })); }
+
+  renderVals() {
+    const st = this.state;
+    const base = st.palette || this.DEFAULT_PAL;
+    const pal = Object.assign({}, base, st.overrides);
+
+    // memoized blobs
+    const baseKey = JSON.stringify(pal) + '|' + st.seed + '|' + st.variantIdx;
+    if (this._bk !== baseKey) { this._bk = baseKey; this._blobs = this.buildBlobs(pal, st.seed, st.variantIdx, false); }
+
+    const presenting = st.phase === 'presenting';
+    const liveSec = Math.ceil((st.target - st.now) / 1000);
+    const atZero = presenting && liveSec <= 0;
+    if (this._liveKey !== baseKey + atZero) { this._liveKey = baseKey + atZero; this._liveBlobs = this.buildBlobs(pal, st.seed, st.variantIdx, atZero); }
+
+    // Aurora Flow (WebGL) design: dark immersive stage + palette-driven shader colors
+    const stVariant = this.VARIANTS[st.variantIdx] || this.VARIANTS[0];
+    const isShader = stVariant.mode === 'shader';
+    let stageBg = pal.bg, stageInk = pal.ink, shaderMode = '', shaderCols = '';
+    if (isShader) {
+      const aA = this.toArr(pal.accent), aB = this.toArr(pal.accent2), aC = this.toArr(pal.accent3);
+      const baseRgb = this.hslToRgb(this.rgbToHsl(aA[0], aA[1], aA[2])[0], 0.5, 0.05);
+      stageBg = this.toRgb(baseRgb); stageInk = 'rgb(244,245,248)'; shaderMode = stVariant.shader || 'aurora';
+      shaderCols = [baseRgb, aA, aB, aC].map((c) => c.map(Math.round).join(',')).join('|');
+    }
+
+    const accentArr = (pal.accent.match(/[\d.]+/g) || [10, 132, 255]).map(Number);
+    const accentShadow = 'rgba(' + accentArr[0] + ',' + accentArr[1] + ',' + accentArr[2] + ',0.35)';
+
+    const colorSlots = [
+      { key: 'accent', label: 'Primary' },
+      { key: 'accent2', label: 'Secondary' },
+      { key: 'accent3', label: 'Tertiary' },
+      { key: 'bg', label: 'Background' },
+    ].map((c) => ({ label: c.label, color: pal[c.key], hex: this.toHex(pal[c.key]), onChange: this.setColor(c.key) }));
+
+    const manualSel = (m) => !st.autoMatch && st.minutes === m;
+    const presets = [5, 10, 15, 30].map((m) => ({
+      label: m + 'm', onClick: () => this.setState({ minutes: m, autoMatch: false }),
+      bg: manualSel(m) ? pal.accent : '#fff',
+      color: manualSel(m) ? '#fff' : '#1d1d1f',
+      border: manualSel(m) ? pal.accent : 'rgba(0,0,0,0.12)',
+    }));
+
+    const variants = this.VARIANTS.map((v, i) => ({
+      name: v.name, onClick: () => this.setVariant(i),
+      border: st.variantIdx === i ? pal.accent : 'rgba(0,0,0,0.1)',
+      bg: st.variantIdx === i ? this.rgba(accentArr, 0.06) : '#fff',
+      color: st.variantIdx === i ? '#1d1d1f' : '#1d1d1f',
+      swatch: 'linear-gradient(135deg,' + pal.accent + ',' + pal.accent2 + ')',
+    }));
+
+    const srcDefs = [{ id: 'spotify', label: 'Spotify' }, { id: 'apple', label: 'Apple Music', soon: true }, { id: 'upload', label: 'Upload' }];
+    const sources = srcDefs.map((s) => ({
+      label: s.label, soon: !!s.soon, onClick: s.soon ? (() => {}) : (() => this.setSource(s.id)),
+      cursor: s.soon ? 'not-allowed' : 'pointer',
+      bg: st.source === s.id ? '#fff' : 'transparent',
+      color: s.soon ? '#c7c7cc' : (st.source === s.id ? '#1d1d1f' : '#86868b'),
+      shadow: st.source === s.id ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+      badge: s.soon ? 'Soon' : '',
+    }));
+
+    const src = st.source;
+    const isUpload = src === 'upload';
+    const connected = !isUpload && st.connected[src];
+    const showConnect = !isUpload && !connected && !st.useDemo;
+    const showSearch = !isUpload && connected;
+    const showDemo = !isUpload && !connected && st.useDemo;
+    const isSpotify = src === 'spotify';
+
+    const cm = isSpotify
+      ? { title: 'Connect Spotify', note: 'Sign in with your Spotify Premium account to play full songs during your event. A small popup will ask you to approve access — no password is shared with us. No Premium account? Use the demo library or upload your own audio below.', placeholder: 'Spotify Client ID', btn: 'Connect Spotify', bg: '#1db954', label: 'Spotify connected', ready: st.spReady }
+      : { title: 'Connect Apple Music', note: 'Requires a MusicKit developer token (Apple Developer Program) and an active Apple Music subscription.', placeholder: 'Apple Music developer token (JWT)', btn: 'Connect Apple Music', bg: '#fa2d48', label: 'Apple Music connected', ready: connected };
+
+    // Highlight any track that's already in the playlist. The results/demo rows below compare
+    // curKey === selKey(t); returning the same sentinel for queued tracks lights them all up.
+    const queueKeys = new Set((st.queue || []).map((t) => this.selKey(t)));
+    const curKey = true;
+    const selKey = (t) => queueKeys.has(this.selKey(t));
+    const results = st.results.map((t) => ({ ...t, onClick: () => this.pickTrack(t), bg: curKey === selKey(t) ? this.rgba(accentArr, 0.08) : '#fff', check: curKey === selKey(t) ? '\u2713' : '' }));
+    const demoLib = (isSpotify ? this.SPOTIFY : this.APPLE).map((t) => { const obj = { ...t, service: 'mock' }; return { ...obj, onClick: () => this.pickTrack(obj), bg: curKey === selKey(obj) ? this.rgba(accentArr, 0.08) : '#fff', check: curKey === selKey(obj) ? '\u2713' : '' }; });
+
+    const svcSub = { spotify: 'Spotify', apple: 'Apple Music', local: 'Local file', mock: 'Demo library' };
+    const npTrack = (st.queue && st.queue[st.currentIdx]) || st.track;
+    const selectedSub = npTrack ? (svcSub[npTrack.service] || npTrack.artist || '') : '';
+    const canPreview = !!npTrack && ((npTrack.service === 'spotify' && st.spReady) || (npTrack.service === 'apple' && st.connected.apple) || (npTrack.service === 'local'));
+    const qlen = (st.queue || []).length;
+    const queueList = (st.queue || []).map((t, i) => { const key = this.selKey(t); const s = this.trackSecs(t); return { num: String(i + 1), cover: t.cover, title: t.title, sub: svcSub[t.service] || t.artist || '', dur: t.dur || (s ? this.fmt(s) : '··:··'), numColor: i === st.currentIdx ? pal.accent : '#a1a1a6', upDisabled: i <= 0, downDisabled: i >= qlen - 1, upColor: i > 0 ? '#86868b' : '#d1d1d6', downColor: i < qlen - 1 ? '#86868b' : '#d1d1d6', onUp: () => this.moveTrack(i, i - 1), onDown: () => this.moveTrack(i, i + 1), onRemove: () => this.removeFromQueue(key) }; });
+    const totalSecs = this.queueSecs();
+    const cdSecs = this.countdownSecs();
+    const autoMatchOn = st.autoMatch && (st.queue || []).length > 0 && totalSecs > 0;
+
+    return {
+      // chrome
+      accent: pal.accent, accent2: pal.accent2, accent3: pal.accent3, bg: pal.bg, ink: pal.ink,
+      accentShadow,
+      // logo
+      logo: st.logo, hasLogo: !!st.logo, noLogo: !st.logo,
+      clearLogo: this.clearLogo, onLogoChange: this.onLogoChange, onDrop: this.onDrop, onDragOver: this.onDragOver,
+      // colors
+      colorSlots, resetColors: this.resetColors,
+      pickColorLogo: () => this.setColorSource('logo'), pickColorAlbum: () => this.setColorSource('album'),
+      csLogoBg: st.colorSource === 'logo' ? '#fff' : 'transparent', csLogoColor: st.colorSource === 'logo' ? '#1d1d1f' : '#86868b', csLogoShadow: st.colorSource === 'logo' ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+      csAlbumBg: st.colorSource === 'album' ? '#fff' : 'transparent', csAlbumColor: st.colorSource === 'album' ? '#1d1d1f' : '#86868b', csAlbumShadow: st.colorSource === 'album' ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+      colorNote: st.colorSource === 'album' ? 'Colors follow the current song album art.' : 'Auto-picked from your logo. Tap a swatch to override.',
+      // event
+      title: st.title, subtitle: st.subtitle, minutes: st.minutes,
+      setTitle: this.setTitle, setSubtitle: this.setSubtitle, setMinutes: this.setMinutes,
+      presets,
+      showAutoMatch: (st.queue || []).length > 0, autoMatchOn, toggleAutoMatch: this.toggleAutoMatch,
+      autoToggleBg: autoMatchOn ? pal.accent : '#d1d1d6', autoKnobLeft: autoMatchOn ? '19px' : '2px',
+      matchedTime: this.fmt(totalSecs), sliderOpacity: autoMatchOn ? 0.45 : 1, sliderDisabled: autoMatchOn,
+      toggleEvent: this.toggleEvent,
+      eventToggleBg: st.showEvent ? pal.accent : '#d1d1d6',
+      eventKnobLeft: st.showEvent ? '19px' : '2px',
+      eventBodyOpacity: st.showEvent ? 1 : 0.4,
+      // design
+      variants, shuffle: this.shuffle,
+      blobs: this._blobs, liveBlobs: this._liveBlobs,
+      stageBg, stageInk, shaderMode, shaderCols,
+      // music
+      sources, showConnect, showSearch, showDemo, showUpload: isUpload,
+      connectTitle: cm.title, connectNote: cm.note, connectBtnLabel: cm.btn, connectBtnBg: cm.bg,
+      credPlaceholder: cm.placeholder, credValue: isSpotify ? st.spClientId : st.amDevToken, showCred: !isSpotify,
+      onCredInput: isSpotify ? this.setSpClientId : this.setAmDevToken,
+      connectAction: isSpotify ? this.connectSpotify : this.connectApple,
+      showRedirect: false, redirectUri: this.REDIRECT(), copyRedirect: this.copyRedirect, copyLabel: st.copied ? 'Copied' : 'Copy',
+      connectedLabel: cm.label, readyColor: cm.ready ? '#34c759' : '#ff9f0a',
+      searchQuery: st.searchQuery, setSearchQuery: this.setSearchQuery, onSearchKey: this.onSearchKey, runSearch: this.runSearch,
+      searchLabel: st.searching ? '\u2026' : (isSpotify ? 'Add track' : 'Search'), searchPlaceholder: isSpotify ? 'Paste a Spotify track link' : ('Search Apple Music' + '\u2026'),
+      results, hasResults: results.length > 0, emptyResults: !st.searching && results.length === 0 && !!st.searchQuery && !st.authError && !isSpotify, emptyMsg: 'No results \u2014 try another search.',
+      demoLibrary: demoLib, toggleDemo: this.toggleDemo, disconnectSource: this.disconnectSource,
+      onAudioChange: this.onAudioChange,
+      track: npTrack || this.EMPTY_TRACK, hasTrack: !!npTrack, selectedSub,
+      queueList, hasQueue: queueList.length > 0, queueCount: queueList.length, queueTotal: this.fmt(totalSecs),
+      canPreview, togglePreview: this.togglePreview, previewLabel: st.previewPlaying ? '\u23f8 Stop' : '\u25b6 Preview',
+      authError: st.authError,
+      musicFootnote: 'Connected accounts play full tracks through the official Spotify / Apple Music players. The demo library and generated ambient bed need no account.',
+      showNP: !!npTrack && st.showNowPlaying,
+      toggleNowPlaying: this.toggleNowPlaying,
+      npToggleBg: st.showNowPlaying ? pal.accent : '#d1d1d6',
+      npKnobLeft: st.showNowPlaying ? '19px' : '2px',
+      // preview / live
+      previewCountdown: this.fmt(cdSecs), label: 'Begins in',
+      showEvent: st.showEvent,
+      presOpacity: presenting ? 1 : 0, presPointer: presenting ? 'auto' : 'none',
+      isSetup: !presenting, isPresenting: presenting,
+      liveCountdown: atZero ? '' : this.fmt(Math.max(0, liveSec)),
+      liveLabel: 'Begins in',
+      showCountdown: presenting && !atZero && st.showEvent,
+      showAmbient: atZero && st.showEvent,
+      eqPlay: st.playing ? 'running' : 'paused',
+      beginEvent: this.beginEvent, resetSetup: this.resetSetup, toggleFs: this.toggleFs,
+      fsBg: st.fullscreenOnStart ? 'rgba(10,132,255,0.10)' : '#fff', fsColor: st.fullscreenOnStart ? '#0a84ff' : '#86868b', fsBorder: st.fullscreenOnStart ? 'rgba(10,132,255,0.4)' : 'rgba(0,0,0,0.12)',
+      setRoot: this.setRoot, setAudio: this.setAudio,
+      // about
+      showAbout: st.showAbout, openAbout: this.openAbout, closeAbout: this.closeAbout, stopAbout: this.stopAbout,
+    };
+  }
+}
 </script>
 </body>
 </html>
