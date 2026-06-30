@@ -184,9 +184,13 @@
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#86868b;">Music</div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:11.5px;color:#86868b;">Show on screen</span>
+              <span style="font-size:11.5px;color:#86868b;">Now playing</span>
               <button onClick="{{ toggleNowPlaying }}" style="position:relative;width:42px;height:25px;border:none;border-radius:999px;background:{{ npToggleBg }};cursor:pointer;transition:background .2s ease;padding:0;flex:none;">
                 <span style="position:absolute;top:2px;left:{{ npKnobLeft }};width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left .2s ease;"></span>
+              </button>
+              <span style="font-size:11.5px;color:#86868b;margin-left:6px;">Music icon</span>
+              <button onClick="{{ toggleMusicIcon }}" style="position:relative;width:42px;height:25px;border:none;border-radius:999px;background:{{ miToggleBg }};cursor:pointer;transition:background .2s ease;padding:0;flex:none;">
+                <span style="position:absolute;top:2px;left:{{ miKnobLeft }};width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left .2s ease;"></span>
               </button>
             </div>
           </div>
@@ -337,7 +341,7 @@
             shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}"
             logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
             countdown-text="{{ previewCountdown }}" label="{{ label }}" show-countdown="{{ showEvent }}" show-ambient="{{ false }}"
-            track="{{ track }}" show-now-playing="{{ showNP }}" eq-play="paused" show-exit-hint="{{ false }}"></dc-import>
+            track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="paused" show-exit-hint="{{ false }}"></dc-import>
         </div>
         <div style="font-size:12.5px;color:#86868b;">Live preview · 16:9 · adapts to your logo</div>
       </div>
@@ -354,7 +358,7 @@
       shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}"
       logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
       countdown-text="{{ liveCountdown }}" label="{{ liveLabel }}" show-countdown="{{ showCountdown }}" show-ambient="{{ showAmbient }}"
-      track="{{ track }}" show-now-playing="{{ showNP }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}"></dc-import>
+      track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}"></dc-import>
   </div>
   </sc-if>
 
@@ -372,6 +376,7 @@ class Component extends DCLogic {
     colorSource: 'logo',
     showEvent: true,
     showNowPlaying: true,
+    showMusicIcon: true,
     variantIdx: 0,
     seed: 1234,
     title: 'Team All-Hands',
@@ -892,6 +897,7 @@ class Component extends DCLogic {
   resetColors = () => this.setState({ overrides: {} });
   toggleEvent = () => this.setState((s) => ({ showEvent: !s.showEvent }));
   toggleNowPlaying = () => this.setState((s) => ({ showNowPlaying: !s.showNowPlaying }));
+  toggleMusicIcon = () => this.setState((s) => ({ showMusicIcon: !s.showMusicIcon }));
 
   setTitle = (e) => this.setState({ title: e.target.value });
   setSubtitle = (e) => this.setState({ subtitle: e.target.value });
@@ -1013,7 +1019,7 @@ class Component extends DCLogic {
   savePrefs() {
     try {
       var s = this.state;
-      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart });
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart });
       if (data === this._lastPrefs) return;
       this._lastPrefs = data;
       localStorage.setItem('sl_setup', data);
@@ -1022,7 +1028,7 @@ class Component extends DCLogic {
   resetSetup = () => {
     this.stopCurrentPreview();
     try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
-    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, fullscreenOnStart: true, searchQuery: '', results: [], previewPlaying: false, authError: '' });
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, fullscreenOnStart: true, searchQuery: '', results: [], previewPlaying: false, authError: '' });
   };
   toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
   openAbout = () => this.setState({ showAbout: true });
@@ -1270,6 +1276,10 @@ class Component extends DCLogic {
       toggleNowPlaying: this.toggleNowPlaying,
       npToggleBg: st.showNowPlaying ? pal.accent : '#d1d1d6',
       npKnobLeft: st.showNowPlaying ? '19px' : '2px',
+      toggleMusicIcon: this.toggleMusicIcon,
+      miToggleBg: st.showMusicIcon ? pal.accent : '#d1d1d6',
+      miKnobLeft: st.showMusicIcon ? '19px' : '2px',
+      showMusicIcon: st.showMusicIcon,
       // preview / live
       previewCountdown: this.fmt(cdSecs), label: 'Begins in',
       showEvent: st.showEvent,
