@@ -213,6 +213,15 @@
               </button>
             </sc-for>
           </div>
+
+          <!-- Liquid Glass intensity -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-size:12.5px;color:var(--sl-text-sub);">Liquid Glass</div>
+              <div style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--sl-text);">{{ glassLabel }}</div>
+            </div>
+            <input type="range" min="0" max="100" step="1" value="{{ glassPct }}" onInput="{{ setGlass }}" style="width:100%;accent-color:{{ accent }};" />
+          </div>
         </div>
 
         <!-- Music -->
@@ -377,7 +386,7 @@
             shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}"
             logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
             countdown-text="{{ previewCountdown }}" label="{{ label }}" show-countdown="{{ showEvent }}" show-ambient="{{ false }}"
-            track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="paused" show-exit-hint="{{ false }}"></dc-import>
+            track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="paused" show-exit-hint="{{ false }}" glass-opacity="{{ glassOpacity }}"></dc-import>
         </div>
         <div style="font-size:12.5px;color:var(--sl-text-sub);">Live preview · 16:9 · adapts to your logo</div>
       </div>
@@ -394,7 +403,7 @@
       shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}"
       logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
       countdown-text="{{ liveCountdown }}" label="{{ liveLabel }}" show-countdown="{{ showCountdown }}" show-ambient="{{ showAmbient }}"
-      track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}"></dc-import>
+      track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}" glass-opacity="{{ glassOpacity }}"></dc-import>
   </div>
   </sc-if>
 
@@ -445,6 +454,7 @@ class Component extends DCLogic {
     previewPlaying: false,
     copied: false,
     showAbout: false,
+    glassOpacity: 0.65,
   };
 
   VARIANTS = [
@@ -1055,7 +1065,7 @@ class Component extends DCLogic {
   savePrefs() {
     try {
       var s = this.state;
-      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart });
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity });
       if (data === this._lastPrefs) return;
       this._lastPrefs = data;
       localStorage.setItem('sl_setup', data);
@@ -1064,12 +1074,13 @@ class Component extends DCLogic {
   resetSetup = () => {
     this.stopCurrentPreview();
     try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
-    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, fullscreenOnStart: true, searchQuery: '', results: [], previewPlaying: false, authError: '' });
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '' });
   };
   toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
   openAbout = () => this.setState({ showAbout: true });
   closeAbout = () => this.setState({ showAbout: false });
   stopAbout = (e) => { try { e.stopPropagation(); } catch (_) {} };
+  setGlass = (e) => this.setState({ glassOpacity: Math.round(parseFloat(e.target.value)) / 100 });
   togglePause = () => {
     if (this.state.phase !== 'presenting') return;
     if (!this.state.paused) {
@@ -1286,10 +1297,14 @@ class Component extends DCLogic {
       eventToggleBg: st.showEvent ? pal.accent : '#d1d1d6',
       eventKnobLeft: st.showEvent ? '19px' : '2px',
       eventBodyOpacity: st.showEvent ? 1 : 0.4,
-      // design
+      // design + glass
       variants, shuffle: this.shuffle,
       blobs: this._blobs, liveBlobs: this._liveBlobs,
       stageBg, stageInk, shaderMode, shaderCols,
+      glassOpacity: st.glassOpacity,
+      glassPct: Math.round((st.glassOpacity !== undefined ? st.glassOpacity : 0.65) * 100),
+      glassLabel: Math.round((st.glassOpacity !== undefined ? st.glassOpacity : 0.65) * 100) + '%',
+      setGlass: this.setGlass,
       // music
       sources, showConnect, showSearch, showDemo, showUpload: isUpload,
       connectTitle: cm.title, connectNote: cm.note, connectBtnLabel: cm.btn, connectBtnBg: cm.bg,

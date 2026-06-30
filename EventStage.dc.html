@@ -49,15 +49,15 @@
     </sc-if>
 
     <sc-if value="{{ showCountdown }}" hint-placeholder-val="{{ true }}">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2.4cqh;animation:stRise 1.2s cubic-bezier(.2,.7,.2,1) both;">
-        <div style="font-size:2.1cqmin;text-transform:uppercase;letter-spacing:0.42em;font-weight:600;color:{{ ink }};opacity:0.42;padding-left:0.42em;">{{ label }}</div>
+      <div style="{{ glassCountdownStyle }}">
+        <div style="font-size:2.1cqmin;text-transform:uppercase;letter-spacing:0.42em;font-weight:600;color:{{ ink }};opacity:0.55;padding-left:0.42em;">{{ label }}</div>
         <div style="font-size:15cqmin;font-weight:200;font-variant-numeric:tabular-nums;line-height:0.95;color:{{ ink }};letter-spacing:0.01em;">{{ countdownText }}</div>
-        <div style="font-size:2.7cqmin;font-weight:400;color:{{ ink }};opacity:0.6;max-width:70cqw;">{{ title }}</div>
+        <div style="font-size:2.7cqmin;font-weight:400;color:{{ ink }};opacity:0.65;max-width:70cqw;">{{ title }}</div>
       </div>
     </sc-if>
 
     <sc-if value="{{ showAmbient }}" hint-placeholder-val="{{ false }}">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2cqh;">
+      <div style="{{ glassAmbientStyle }}">
         <div style="font-size:6.4cqmin;font-weight:300;color:{{ ink }};animation:stPulse 3.4s ease-in-out infinite;letter-spacing:0.005em;">{{ subtitle }}</div>
         <div style="font-size:2.6cqmin;font-weight:400;color:{{ ink }};opacity:0.5;">{{ title }}</div>
       </div>
@@ -66,7 +66,7 @@
   </div>
 
   <sc-if value="{{ showNowPlaying }}" hint-placeholder-val="{{ false }}">
-    <div style="position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);display:flex;align-items:center;gap:2.2cqmin;padding:1.5cqmin 3cqmin 1.5cqmin 1.5cqmin;background:rgba(255,255,255,0.62);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(0,0,0,0.05);border-radius:999px;box-shadow:0 2cqmin 6cqmin rgba(0,0,0,0.08);animation:stRise 1s cubic-bezier(.2,.7,.2,1) both;">
+    <div style="{{ glassNPStyle }}">
       <div style="width:6.2cqmin;height:6.2cqmin;border-radius:1.6cqmin;background:{{ track.cover }};flex:none;box-shadow:0 1cqmin 2cqmin rgba(0,0,0,0.12);"></div>
       <div style="display:flex;flex-direction:column;gap:0.5cqh;min-width:0;text-align:left;">
         <div style="font-size:2.3cqmin;font-weight:600;color:{{ ink }};white-space:nowrap;">{{ track.title }}</div>
@@ -91,15 +91,42 @@
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:540},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#fbfbfd&quot;},&quot;accent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgb(10,132,255)&quot;},&quot;ink&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#1d1d1f&quot;},&quot;blobs&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[]},&quot;logo&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null},&quot;hasLogo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;We’ll begin shortly&quot;},&quot;countdownText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;05:00&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Begins in&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showAmbient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;track&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;cover&quot;:&quot;linear-gradient(135deg,#a8edea,#fed6e3)&quot;,&quot;title&quot;:&quot;Weightless&quot;,&quot;artist&quot;:&quot;Marconi Union&quot;}},&quot;showNowPlaying&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showMusicIcon&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;eqPlay&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;running&quot;},&quot;showExitHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;shader&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;},&quot;shaderCols&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:540},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#fbfbfd&quot;},&quot;accent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;rgb(10,132,255)&quot;},&quot;ink&quot;:{&quot;editor&quot;:null,&quot;default&quot;:&quot;#1d1d1f&quot;},&quot;blobs&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[]},&quot;logo&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null},&quot;hasLogo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;We’ll begin shortly&quot;},&quot;countdownText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;05:00&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Begins in&quot;},&quot;showCountdown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showAmbient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;track&quot;:{&quot;editor&quot;:null,&quot;default&quot;:{&quot;cover&quot;:&quot;linear-gradient(135deg,#a8edea,#fed6e3)&quot;,&quot;title&quot;:&quot;Weightless&quot;,&quot;artist&quot;:&quot;Marconi Union&quot;}},&quot;showNowPlaying&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;showMusicIcon&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;eqPlay&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;running&quot;},&quot;showExitHint&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;shader&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;},&quot;shaderCols&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;},&quot;glassOpacity&quot;:{&quot;editor&quot;:null,&quot;default&quot;:0.65}}">
 class Component extends DCLogic {
   renderVals() {
     const p = this.props || {};
     const on = !!p.shader;
+
+    // Liquid Glass
+    const rawG = (p.glassOpacity !== undefined && p.glassOpacity !== null) ? Number(p.glassOpacity) : 0.65;
+    const g = isNaN(rawG) ? 0.65 : Math.max(0, Math.min(1, rawG));
+    const blur = Math.round(g * 28);
+    const bgA = (g * 0.16).toFixed(3);
+    const bdA = (g * 0.35).toFixed(3);
+    const hlA = (g * 0.60).toFixed(3);
+    const shA = (g * 0.14).toFixed(3);
+    const glassBase = g > 0.01
+      ? ';background:rgba(255,255,255,' + bgA + ');backdrop-filter:blur(' + blur + 'px) saturate(1.8);-webkit-backdrop-filter:blur(' + blur + 'px) saturate(1.8);border:1px solid rgba(255,255,255,' + bdA + ');box-shadow:0 4cqmin 18cqmin rgba(0,0,0,' + shA + '),inset 0 1px 0 rgba(255,255,255,' + hlA + ');'
+      : '';
+    const glassPadCD = g > 0.01 ? '3.5cqmin 8cqmin' : '0';
+    const glassPadAM = g > 0.01 ? '3cqmin 7cqmin' : '0';
+    const glassR = g > 0.01 ? ';border-radius:3.5cqmin' : '';
+    const glassCountdownStyle = 'display:flex;flex-direction:column;align-items:center;gap:2.4cqh;animation:stRise 1.2s cubic-bezier(.2,.7,.2,1) both;padding:' + glassPadCD + glassR + glassBase;
+    const glassAmbientStyle = 'display:flex;flex-direction:column;align-items:center;gap:2cqh;padding:' + glassPadAM + glassR + glassBase;
+
+    const npBgA = (0.5 + g * 0.15).toFixed(3);
+    const npBlur = 20 + Math.round(g * 8);
+    const npBdA = (0.08 + g * 0.22).toFixed(3);
+    const npHlA = (0.35 + g * 0.25).toFixed(3);
+    const npShA = (0.06 + g * 0.08).toFixed(3);
+    const glassNPStyle = 'position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);display:flex;align-items:center;gap:2.2cqmin;padding:1.5cqmin 3cqmin 1.5cqmin 1.5cqmin;background:rgba(255,255,255,' + npBgA + ');backdrop-filter:blur(' + npBlur + 'px) saturate(1.8);-webkit-backdrop-filter:blur(' + npBlur + 'px) saturate(1.8);border:1px solid rgba(255,255,255,' + npBdA + ');border-radius:999px;box-shadow:0 2cqmin 6cqmin rgba(0,0,0,' + npShA + '),inset 0 1px 0 rgba(255,255,255,' + npHlA + ');animation:stRise 1s cubic-bezier(.2,.7,.2,1) both;';
+
     return {
       setCanvas: this.setCanvas, shaderOn: on, blobOverlay: !on,
       // floating music icon
       setMusicIcon: this.setMusicIcon,
+      // Liquid Glass
+      glassCountdownStyle, glassAmbientStyle, glassNPStyle,
     };
   }
 
