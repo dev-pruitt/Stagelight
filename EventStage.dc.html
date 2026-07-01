@@ -45,7 +45,7 @@
   <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 26%, rgba(255,255,255,0) 72%, rgba(255,255,255,0.35));pointer-events:none;"></div>
   </sc-if>
 
-  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5cqh;padding:9cqmin;box-sizing:border-box;text-align:center;">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5cqh;padding:9cqmin;box-sizing:border-box;text-align:center;z-index:3;">
 
     <sc-if value="{{ showCountdown }}" hint-placeholder-val="{{ true }}">
       <div style="{{ glassCountdownStyle }}">
@@ -151,7 +151,7 @@ class Component extends DCLogic {
 
     // Float vs pinned NP bar (showMusicIcon prop drives float mode)
     const npFloat = !!(p.showMusicIcon);
-    const glassNPFloatStyle = 'position:absolute;left:0;top:0;display:flex;align-items:center;gap:2.2cqmin;padding:1.5cqmin 3cqmin 1.5cqmin 1.5cqmin;' + _npGlass + 'will-change:left,top;z-index:5;pointer-events:none;';
+    const glassNPFloatStyle = 'position:absolute;left:0;top:0;display:flex;align-items:center;gap:2.2cqmin;padding:1.5cqmin 3cqmin 1.5cqmin 1.5cqmin;' + _npGlass + 'will-change:left,top;z-index:2;pointer-events:none;';
     const actualNPStyle = npFloat ? glassNPFloatStyle : glassNPStyle;
 
     // Liquid Glass countdown — Apple-style: each digit slides in from above on change.
