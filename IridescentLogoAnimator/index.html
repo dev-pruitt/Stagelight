@@ -792,6 +792,16 @@ function onResize() {
 window.addEventListener('resize', onResize);
 onResize();
 
+// ─── Embed mode ──────────────────────────────────────────────────────────────
+// Declared early so the isEmbed flag is available to all code below.
+// When loaded inside the Stagelight stage iframe (?embed=1), hide the control
+// panel so only the 3D canvas shows, and receive opts via postMessage instead.
+const isEmbed = new URLSearchParams(location.search).has('embed');
+if (isEmbed) {
+  document.getElementById('panel').style.display = 'none';
+  canvas.parentElement.style.flex = '1 1 100%';
+}
+
 // ─── Controls Wiring ─────────────────────────────────────────────────────────
 
 function bindSlider(id, valId, paramKey, fmt) {
@@ -832,15 +842,7 @@ function showError(msg) {
 // ─── Drop zone reference ──────────────────────────────────────────────────────
 const dropZone = document.getElementById('drop-zone');
 
-// ─── Embed mode ──────────────────────────────────────────────────────────────
-// When loaded in an iframe from Stagelight (?embed=1), hide the control panel
-// and listen for postMessage with logo + opts from the parent.
-
-const isEmbed = new URLSearchParams(location.search).has('embed');
-if (isEmbed) {
-  document.getElementById('panel').style.display = 'none';
-  canvas.parentElement.style.flex = '1 1 100%';
-}
+// ─── postMessage interface (Stagelight embed) ─────────────────────────────────
 
 // Apply parameter updates arriving via postMessage from the Stagelight parent frame.
 // All values are clamped to their slider ranges before use to guard against
