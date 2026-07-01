@@ -631,8 +631,16 @@ class Component extends DCLogic {
     return (isFinite(stored) && stored >= 0 && stored <= 1) ? stored : 1;
   }
   setSpotifyVolume(v) {
-    if (!this.spPlayer) return;
-    try { this.spPlayer.setVolume(Math.max(0, Math.min(1, v))); } catch (e) {}
+    const vol = Math.max(0, Math.min(1, v));
+    // 1. SDK player — controls volume in this browser tab
+    if (this.spPlayer) { try { this.spPlayer.setVolume(vol); } catch (e) {} }
+    // 2. REST API — PUT /v1/me/player/volume actually moves the Spotify device volume
+    const token = this.state.spToken;
+    if (token) {
+      fetch('https://api.spotify.com/v1/me/player/volume?volume_percent=' + Math.round(vol * 100),
+        { method: 'PUT', headers: { Authorization: 'Bearer ' + token } }
+      ).catch(() => {});
+    }
   }
   showVolumeIndicator(v) {
     var el = document.getElementById('sl-vol');
@@ -646,7 +654,7 @@ class Component extends DCLogic {
     var pct = Math.round(v * 100);
     document.getElementById('sl-vol-fill').style.width = pct + '%';
     document.getElementById('sl-vol-pct').textContent = pct + '%';
-    document.getElementById('sl-vol-icon').textContent = v === 0 ? 'Mute' : 'Vol';
+    document.getElementById('sl-vol-icon').textContent = v === 0 ? '🔇' : v < 0.4 ? '🔈' : '🔊';
     el.style.opacity = '1';
     el.style.transform = 'translateX(-50%) translateY(0)';
     clearTimeout(this._volHideTimer);
