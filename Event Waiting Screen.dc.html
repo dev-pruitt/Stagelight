@@ -630,16 +630,19 @@ class Component extends DCLogic {
     var stored = parseFloat(localStorage.getItem('stagelight_volume'));
     return (isFinite(stored) && stored >= 0 && stored <= 1) ? stored : 1;
   }
-  setSpotifyVolume(v) {
+  setSpotifyVolume(v, callApi = false) {
     const vol = Math.max(0, Math.min(1, v));
-    // 1. SDK player — controls volume in this browser tab
+    // SDK player — smooth fade-in loop uses this path only
     if (this.spPlayer) { try { this.spPlayer.setVolume(vol); } catch (e) {} }
-    // 2. REST API — PUT /v1/me/player/volume actually moves the Spotify device volume
-    const token = this.state.spToken;
-    if (token) {
-      fetch('https://api.spotify.com/v1/me/player/volume?volume_percent=' + Math.round(vol * 100),
-        { method: 'PUT', headers: { Authorization: 'Bearer ' + token } }
-      ).catch(() => {});
+    // REST API — only for explicit user-initiated changes (not the automated fade-in loop,
+    // which fires every 120 ms and would immediately hit Spotify's rate limit)
+    if (callApi) {
+      const token = this.state.spToken;
+      if (token) {
+        fetch('https://api.spotify.com/v1/me/player/volume?volume_percent=' + Math.round(vol * 100),
+          { method: 'PUT', headers: { Authorization: 'Bearer ' + token } }
+        ).catch(() => {});
+      }
     }
   }
   showVolumeIndicator(v) {
@@ -664,14 +667,14 @@ class Component extends DCLogic {
     var next = Math.max(0, Math.min(1, Math.round((this.spotifyVolume() + dir * 0.05) * 100) / 100));
     try { localStorage.setItem('stagelight_volume', String(next)); } catch (e) {}
     clearInterval(this._spFade);
-    this.setSpotifyVolume(next);
+    this.setSpotifyVolume(next, true);  // callApi=true — user-initiated, hit REST endpoint
     if (this.audio && !this.audio.paused) { try { this.audio.volume = next; } catch (e) {} }
     this.showVolumeIndicator(next);
   }
   attachSpotifyVolumeControl() {
     if (this._spotifyVolumeAttached) return;
     this._spotifyVolumeAttached = true;
-    this._onStagelightVolume = (e) => this.setSpotifyVolume(e.detail && typeof e.detail.volume === 'number' ? e.detail.volume : this.spotifyVolume());
+    this._onStagelightVolume = (e) => this.setSpotifyVolume(e.detail && typeof e.detail.volume === 'number' ? e.detail.volume : this.spotifyVolume(), true);
     window.addEventListener('stagelight:volume', this._onStagelightVolume);
   }
   async playSpotify(uri) {
