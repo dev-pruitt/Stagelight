@@ -34,6 +34,10 @@
     <canvas ref="{{ setCanvas }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
   </sc-if>
 
+  <sc-if value="{{ iridOn }}" hint-placeholder-val="{{ false }}">
+    <iframe ref="{{ setIridFrame }}" src="./IridescentLogoAnimator/?embed=1" style="position:absolute;inset:0;width:100%;height:100%;border:none;display:block;" scrolling="no" allowtransparency="false"></iframe>
+  </sc-if>
+
   <sc-for list="{{ blobs }}" as="b" hint-placeholder-count="4">
     <div style="{{ b.style }}"><div style="{{ b.inner }}"></div></div>
   </sc-for>
@@ -44,7 +48,7 @@
 
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5cqh;padding:9cqmin;box-sizing:border-box;text-align:center;">
 
-    <sc-if value="{{ hasLogo }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ showLogoImg }}" hint-placeholder-val="{{ true }}">
       <img src="{{ logo }}" alt="logo" style="height:17cqmin;max-width:58cqw;object-fit:contain;animation:stRise 1.1s cubic-bezier(.2,.7,.2,1) both;" />
     </sc-if>
 
@@ -95,7 +99,8 @@
 class Component extends DCLogic {
   renderVals() {
     const p = this.props || {};
-    const on = !!p.shader;
+    const on = !!p.shader && p.shader !== 'iridescent';
+    const iridOn = p.shader === 'iridescent';
 
     // Liquid Glass
     const rawG = (p.glassOpacity !== undefined && p.glassOpacity !== null) ? Number(p.glassOpacity) : 0.65;
@@ -122,7 +127,9 @@ class Component extends DCLogic {
     const glassNPStyle = 'position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);display:flex;align-items:center;gap:2.2cqmin;padding:1.5cqmin 3cqmin 1.5cqmin 1.5cqmin;background:rgba(255,255,255,' + npBgA + ');backdrop-filter:blur(' + npBlur + 'px) saturate(1.8);-webkit-backdrop-filter:blur(' + npBlur + 'px) saturate(1.8);border:1px solid rgba(255,255,255,' + npBdA + ');border-radius:999px;box-shadow:0 2cqmin 6cqmin rgba(0,0,0,' + npShA + '),inset 0 1px 0 rgba(255,255,255,' + npHlA + ');animation:stRise 1s cubic-bezier(.2,.7,.2,1) both;';
 
     return {
-      setCanvas: this.setCanvas, shaderOn: on, blobOverlay: !on,
+      setCanvas: this.setCanvas, shaderOn: on, iridOn, blobOverlay: !on && !iridOn,
+      showLogoImg: !!(p.hasLogo || p.logo) && !iridOn,
+      setIridFrame: this.setIridFrame,
       // floating music icon
       setMusicIcon: this.setMusicIcon,
       // Liquid Glass
@@ -135,6 +142,21 @@ class Component extends DCLogic {
     if (this._canvas) this.teardownGL();
     this._canvas = el || null;
     if (el) this.initGL();
+  };
+
+  setIridFrame = (el) => {
+    this._iridFrame = el || null;
+    if (el) el.onload = () => this._pushIridOpts();
+  };
+
+  _pushIridOpts() {
+    const f = this._iridFrame;
+    if (!f || !f.contentWindow) return;
+    const p = this.props || {};
+    try {
+      const opts = p.shaderOpts ? JSON.parse(p.shaderOpts) : {};
+      f.contentWindow.postMessage({ type: 'irid', logo: p.logo || null, opts }, '*');
+    } catch (e) {}
   };
 
   setMusicIcon = (el) => {
@@ -175,12 +197,14 @@ class Component extends DCLogic {
 
   componentDidUpdate() {
     const sh = this.props && this.props.shader;
+    if (sh === 'iridescent') { this._pushIridOpts(); return; }
     if (!sh) return;
     if (this._canvas && sh !== this._shaderId) { this.teardownGL(); this.initGL(); return; }
     if (this._gl) this.setTarget(this.props.shaderCols);
   }
   componentWillUnmount() {
     this.teardownGL();
+    if (this._iridFrame) { this._iridFrame.onload = null; this._iridFrame = null; }
     if (this._musicRaf != null) { cancelAnimationFrame(this._musicRaf); this._musicRaf = null; }
     this._musicIcon = null;
   }
