@@ -94,6 +94,12 @@ After editing the `.dc.html` source, re-export the standalone to refresh `index.
 
 ---
 
+## Iridescent Logo Animator
+
+A companion tool at `/IridescentLogoAnimator/` that renders your logo as a rotating 3D iridescent slab. Drop in an SVG or transparent-background PNG and adjust slab depth, chamfer, rotation speed, and fresnel intensity. It is also available as the **Iridescent Logo** background design inside the main event screen.
+
+---
+
 ## Roadmap
 
 - [ ] Apple Music (MusicKit) — scaffolded, needs a developer token.
