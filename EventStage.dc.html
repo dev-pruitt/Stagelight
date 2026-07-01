@@ -86,7 +86,7 @@
   </sc-if>
 
   <sc-if value="{{ showMusicIcon }}" hint-placeholder-val="{{ true }}">
-    <div ref="{{ setMusicIcon }}" style="position:absolute;top:0;left:0;font-size:5cqmin;line-height:1;pointer-events:none;user-select:none;will-change:left,top;animation:stMusicBob 2.8s ease-in-out infinite;z-index:5;opacity:0.65;">🎵</div>
+    <div ref="{{ setMusicIcon }}" style="position:absolute;top:0;left:0;width:7cqmin;height:7cqmin;border-radius:1.4cqmin;background:{{ track.cover }};background-size:cover;background-position:center;pointer-events:none;user-select:none;will-change:left,top;animation:stMusicBob 2.8s ease-in-out infinite;z-index:5;opacity:0.82;box-shadow:0 1cqmin 3cqmin rgba(0,0,0,0.22);flex:none;"></div>
   </sc-if>
 
   <sc-if value="{{ showExitHint }}" hint-placeholder-val="{{ false }}">
