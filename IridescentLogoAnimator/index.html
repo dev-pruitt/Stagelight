@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iridescent Logo Animator</title>
+<link rel="icon" type="image/png" href="../assets/favicon-32.png">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg:       #f2f2f4;
+    --panel-bg: rgba(255,255,255,0.72);
+    --border:   rgba(0,0,0,0.07);
+    --text:     #1c1c1e;
+    --muted:    #6e6e73;
+    --accent:   #007aff;
+    --radius:   14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:       #1c1c1e;
+      --panel-bg: rgba(44,44,46,0.82);
+      --border:   rgba(255,255,255,0.08);
+      --text:     #f2f2f7;
+      --muted:    #8e8e93;
+    }
+  }
+
+  body {
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    display: flex;
+    height: 100dvh;
+    overflow: hidden;
+    color: var(--text);
+  }
+
+  /* ── Canvas fills everything ───────────────────────────────────── */
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  #canvas-wrap canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Drop-zone overlay (visible when no file loaded) */
+  #drop-zone {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  #drop-zone.hidden { opacity: 0; }
+  #drop-zone svg { opacity: .25; }
+  #drop-zone p {
+    font-size: 14px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 240px;
+  }
+  #canvas-wrap.drag-over #drop-zone { opacity: 1 !important; }
+  #canvas-wrap.drag-over::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px dashed var(--accent);
+    border-radius: 0;
+    pointer-events: none;
+  }
+
+  /* ── Control panel ─────────────────────────────────────────────── */
+  #panel {
+    width: 252px;
+    min-width: 252px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--panel-bg);
+    border-left: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    overflow-y: auto;
+  }
+
+  .panel-header {
+    padding: 20px 18px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+  .panel-header p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .panel-section {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* File import button */
+  .import-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    padding: 9px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(0,122,255,0.08);
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .import-btn:hover { background: rgba(0,122,255,0.14); }
+  #file-input { display: none; }
+
+  /* Sliders */
+  .control-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .control-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .control-label span:first-child {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .control-value {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5px solid rgba(0,0,0,0.18);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: grab;
+  }
+  input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+  }
+
+  /* Error toast */
+  #error-toast {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,20,22,0.88);
+    color: #ff8a80;
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s;
+    white-space: nowrap;
+  }
+  #error-toast.visible { opacity: 1; }
+</style>
+
+<!-- Three.js r168 via importmap -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+
+  <div id="drop-zone">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p>Drop an SVG or PNG logo here, or use the panel →</p>
+  </div>
+
+  <div id="error-toast"></div>
+</div>
+
+<div id="panel">
+  <div class="panel-header">
+    <h1>Iridescent Logo</h1>
+    <p>Frosted 3D slab · pearlescent surface</p>
+  </div>
+
+  <div class="panel-section">
+    <label class="import-btn" for="file-input">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Load Logo…
+    </label>
+    <input type="file" id="file-input" accept=".svg,.png,.jpg,.jpeg,.webp">
+  </div>
+
+  <div class="panel-section">
+    <div class="section-title">Geometry</div>
+
+    <div class="control-row">
+      <div class="control-label">
+        <span>Slab Depth</span>
+        <span class="control-value" id="v-depth">8.0</span>
+      </div>
+      <input type="range" id="s-depth" min="1" max="24" step="0.5" value="8">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">
+        <span>Chamfer Radius</span>
+        <span class="control-value" id="v-chamfer">0.30</span>
+      </div>
+      <input type="range" id="s-chamfer" min="0" max="1.2" step="0.01" value="0.3">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">
+        <span>Chamfer Segments</span>
+        <span class="control-value" id="v-bsegs">6</span>
+      </div>
+      <input type="range" id="s-bsegs" min="1" max="12" step="1" value="6">
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="section-title">Animation</div>
+
+    <div class="control-row">
+      <div class="control-label">
+        <span>Rotation Speed</span>
+        <span class="control-value" id="v-speed">8.0 s</span>
+      </div>
+      <input type="range" id="s-speed" min="3" max="40" step="0.5" value="8">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">
+        <span>Tilt Amplitude</span>
+        <span class="control-value" id="v-tilt">0.12</span>
+      </div>
+      <input type="range" id="s-tilt" min="0" max="0.4" step="0.01" value="0.12">
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="section-title">Surface</div>
+
+    <div class="control-row">
+      <div class="control-label">
+        <span>Fresnel Power</span>
+        <span class="control-value" id="v-fresnel">1.5</span>
+      </div>
+      <input type="range" id="s-fresnel" min="0.5" max="4" step="0.1" value="1.5">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">
+        <span>Iridescent Strength</span>
+        <span class="control-value" id="v-iridstr">2.2</span>
+      </div>
+      <input type="range" id="s-iridstr" min="0.5" max="5" step="0.1" value="2.2">
+    </div>
+
+    <div class="control-row">
+      <div class="control-label">
+        <span>Base Emission</span>
+        <span class="control-value" id="v-emit">0.08</span>
+      </div>
+      <input type="range" id="s-emit" min="0" max="0.3" step="0.005" value="0.08">
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+const params = {
+  depth:    8.0,
+  chamfer:  0.30,
+  bsegs:    6,
+  speed:    8.0,
+  tilt:     0.12,
+  fresnel:  1.5,
+  iridStr:  2.2,
+  emit:     0.08,
+};
+
+// ─── Scene Setup ─────────────────────────────────────────────────────────────
+
+const canvas   = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0xf2f2f4);
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+camera.position.set(0, 0, 30);
+
+// Soft ambient + two area lights (no hard shadows)
+const ambientLight = new THREE.AmbientLight(0xf0f0ff, 1.8);
+scene.add(ambientLight);
+const keyLight = new THREE.DirectionalLight(0xfff8f0, 1.2);
+keyLight.position.set(5, 8, 10);
+keyLight.castShadow = false;
+scene.add(keyLight);
+const fillLight = new THREE.DirectionalLight(0xe8eeff, 0.6);
+fillLight.position.set(-6, -3, 6);
+scene.add(fillLight);
+
+// ─── Iridescent Material ─────────────────────────────────────────────────────
+
+const vertexShader = /* glsl */`
+  varying vec3 vNormal;
+  varying vec3 vViewDir;
+  varying vec3 vWorldNormal;
+
+  void main() {
+    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+    vNormal      = normalize(normalMatrix * normal);
+    vViewDir     = normalize(-mvPos.xyz);
+    vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+    gl_Position  = projectionMatrix * mvPos;
+  }
+`;
+
+const fragmentShader = /* glsl */`
+  uniform float uFresnelPower;
+  uniform float uIridStr;
+  uniform float uBaseEmit;
+
+  varying vec3 vNormal;
+  varying vec3 vViewDir;
+  varying vec3 vWorldNormal;
+
+  // 7-stop pastel gradient
+  vec3 paletteColor(float t) {
+    vec3 c0 = vec3(0.40, 0.80, 0.90); // cyan
+    vec3 c1 = vec3(0.40, 0.50, 0.90); // blue
+    vec3 c2 = vec3(0.70, 0.60, 0.90); // lavender
+    vec3 c3 = vec3(0.90, 0.50, 0.70); // pink
+    vec3 c4 = vec3(0.90, 0.60, 0.50); // peach
+    vec3 c5 = vec3(0.90, 0.80, 0.40); // yellow
+    vec3 c6 = vec3(0.40, 0.90, 0.70); // mint
+
+    float ft = clamp(t * 6.0, 0.0, 5.9999);
+    float fi = floor(ft);
+    int   idx = int(fi);
+    float lt  = ft - fi;
+    lt = lt * lt * (3.0 - 2.0 * lt); // smoothstep
+
+    vec3 a, b;
+    if      (idx == 0) { a = c0; b = c1; }
+    else if (idx == 1) { a = c1; b = c2; }
+    else if (idx == 2) { a = c2; b = c3; }
+    else if (idx == 3) { a = c3; b = c4; }
+    else if (idx == 4) { a = c4; b = c5; }
+    else               { a = c5; b = c6; }
+
+    return mix(a, b, lt);
+  }
+
+  void main() {
+    vec3 N = normalize(vNormal);
+    vec3 V = normalize(vViewDir);
+    vec3 W = normalize(vWorldNormal);
+
+    // Fresnel: more color at grazing angles
+    float ndv     = clamp(dot(N, V), 0.0, 1.0);
+    float fresnel = pow(1.0 - ndv, uFresnelPower);
+
+    // Hue from view-space normal direction (shifts as object rotates — the magic)
+    float angle   = atan(N.y, N.x);
+    float hue     = (angle + 3.14159265) / (2.0 * 3.14159265);
+    vec3  grad    = paletteColor(hue);
+
+    // Near-white frosted base
+    vec3 base = vec3(0.97, 0.97, 0.99);
+
+    // Iridescent rim contribution
+    vec3 irid = grad * fresnel * uIridStr;
+
+    // Subtle specular sheen from 2 baked light directions
+    vec3 L1   = normalize(vec3(0.5,  0.8, 1.0));
+    vec3 L2   = normalize(vec3(-0.5, -0.3, 0.6));
+    float s1  = pow(max(dot(reflect(-L1, N), V), 0.0), 40.0) * 0.12;
+    float s2  = pow(max(dot(reflect(-L2, N), V), 0.0), 24.0) * 0.07;
+
+    // Soft NdotL diffuse so back-faces never go black
+    float diff1 = max(dot(N, L1), 0.0) * 0.25 + 0.75; // never below 0.75
+
+    vec3 color = base * diff1 * (1.0 - fresnel * 0.22)
+               + irid
+               + vec3(s1 + s2)
+               + vec3(uBaseEmit);
+
+    color = min(color, vec3(1.0));
+
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
+
+function makeMaterial() {
+  return new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+      uFresnelPower: { value: params.fresnel  },
+      uIridStr:      { value: params.iridStr  },
+      uBaseEmit:     { value: params.emit     },
+    },
+    side: THREE.DoubleSide,
+  });
+}
+
+// ─── Logo Node ───────────────────────────────────────────────────────────────
+
+let logoGroup = null;
+
+function clearLogo() {
+  if (logoGroup) {
+    logoGroup.traverse(obj => {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) obj.material.dispose();
+    });
+    scene.remove(logoGroup);
+    logoGroup = null;
+  }
+}
+
+function buildFromShapes(shapes, sourceWidth, sourceHeight) {
+  clearLogo();
+  dropZone.classList.add('hidden');
+
+  const mat = makeMaterial();
+  const extrudeSettings = extrudeParams();
+  const group = new THREE.Group();
+
+  for (const shape of shapes) {
+    const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, mat);
+    group.add(mesh);
+  }
+
+  // Centre the group on its bounding box
+  const box = new THREE.Box3().setFromObject(group);
+  const centre = new THREE.Vector3();
+  box.getCenter(centre);
+  group.position.sub(centre);
+
+  // Scale to fit within ~12 units (fills the camera FOV nicely)
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const maxDim = Math.max(size.x, size.y);
+  if (maxDim > 0) {
+    const scale = 12 / maxDim;
+    group.scale.setScalar(scale);
+  }
+
+  scene.add(group);
+  logoGroup = group;
+}
+
+function extrudeParams() {
+  return {
+    depth:            params.depth,
+    bevelEnabled:     params.chamfer > 0,
+    bevelThickness:   params.chamfer,
+    bevelSize:        params.chamfer * 0.8,
+    bevelSegments:    params.bsegs,
+    curveSegments:    24,
+  };
+}
+
+function rebuildGeometry() {
+  if (!logoGroup) return;
+  const mat = makeMaterial();
+  const extrudeSettings = extrudeParams();
+
+  logoGroup.traverse(obj => {
+    if (!(obj instanceof THREE.Mesh)) return;
+    const oldShape = obj.geometry.userData.shape;
+    if (!oldShape) return;
+
+    obj.geometry.dispose();
+    const geo = new THREE.ExtrudeGeometry(oldShape, extrudeSettings);
+    geo.computeVertexNormals();
+    geo.userData.shape = oldShape;
+    obj.geometry = geo;
+    obj.material.dispose();
+    obj.material = mat;
+  });
+
+  // Recentre
+  const box = new THREE.Box3().setFromObject(logoGroup);
+  const centre = new THREE.Vector3();
+  box.getCenter(centre);
+  logoGroup.position.sub(centre);
+}
+
+// ─── SVG Pipeline ────────────────────────────────────────────────────────────
+
+function loadSVG(svgText) {
+  const loader = new SVGLoader();
+  const parsed = loader.parse(svgText);
+  const shapes = [];
+
+  for (const path of parsed.paths) {
+    // SVGLoader.createShapes handles even-odd holes automatically
+    for (const shape of SVGLoader.createShapes(path)) {
+      shape.userData = { fillColor: path.color };
+      shapes.push(shape);
+    }
+  }
+
+  if (shapes.length === 0) {
+    showError('No paths found in SVG — try a different file.');
+    return;
+  }
+
+  // SVG Y-axis is flipped relative to Three.js; mirror it
+  const group = new THREE.Group();
+  for (const s of shapes) {
+    const geo = new THREE.ExtrudeGeometry(s, extrudeParams());
+    geo.computeVertexNormals();
+    geo.userData.shape = s;
+    group.add(new THREE.Mesh(geo, makeMaterial()));
+  }
+  group.scale.y = -1; // flip SVG Y
+
+  // Inline build (reuse buildFromShapes logic via group)
+  clearLogo();
+  dropZone.classList.add('hidden');
+
+  const box = new THREE.Box3().setFromObject(group);
+  const centre = new THREE.Vector3(); box.getCenter(centre);
+  group.position.sub(centre);
+  const size = new THREE.Vector3(); box.getSize(size);
+  const maxDim = Math.max(size.x, size.y);
+  if (maxDim > 0) group.scale.multiplyScalar(12 / maxDim);
+
+  scene.add(group);
+  logoGroup = group;
+}
+
+// ─── PNG/Raster Alpha-Contour Pipeline ───────────────────────────────────────
+
+function loadRaster(imgSrc) {
+  const img = new Image();
+  img.onload = () => {
+    const W = Math.min(img.naturalWidth,  512);
+    const H = Math.min(img.naturalHeight, 512);
+    const canvas2 = document.createElement('canvas');
+    canvas2.width = W; canvas2.height = H;
+    const ctx = canvas2.getContext('2d');
+    ctx.drawImage(img, 0, 0, W, H);
+    const { data } = ctx.getImageData(0, 0, W, H);
+
+    const pts = traceAlphaBoundary(data, W, H, 64);
+    if (pts.length < 6) {
+      showError('Could not trace logo outline — is there a transparent background?');
+      return;
+    }
+
+    // Douglas–Peucker simplification to reduce polygon count
+    const simplified = douglasPeucker(pts, 0.004);
+
+    // Build THREE.Shape from points (normalised [-1,1])
+    const shape = new THREE.Shape();
+    shape.moveTo(simplified[0][0], simplified[0][1]);
+    for (let i = 1; i < simplified.length; i++) {
+      shape.lineTo(simplified[i][0], simplified[i][1]);
+    }
+    shape.closePath();
+
+    buildFromShapes([shape], W, H);
+    // Store shape ref for rebuild
+    logoGroup.traverse(m => { if (m.geometry) m.geometry.userData.shape = shape; });
+  };
+  img.onerror = () => showError('Could not load image.');
+  img.src = imgSrc;
+}
+
+// Moore-Neighbor boundary tracing on alpha channel
+function traceAlphaBoundary(data, W, H, threshold) {
+  function alpha(x, y) {
+    if (x < 0 || y < 0 || x >= W || y >= H) return 0;
+    return data[(y * W + x) * 4 + 3];
+  }
+
+  // Find topmost-leftmost opaque pixel
+  let sx = -1, sy = 0;
+  outer: for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (alpha(x, y) > threshold) { sx = x; sy = y; break outer; }
+    }
+  }
+  if (sx < 0) return [];
+
+  const pts = [];
+  // 8-connected neighbours, clockwise from right
+  const NX = [ 1, 1, 0,-1,-1,-1, 0, 1];
+  const NY = [ 0,-1,-1,-1, 0, 1, 1, 1];
+
+  let cx = sx, cy = sy, dir = 6; // start: came from below (dir 6 = down)
+  const limit = W * H;
+
+  for (let iter = 0; iter < limit; iter++) {
+    pts.push([cx, cy]);
+    // Try directions starting from (dir+6)%8 (backtrack-right-first)
+    let moved = false;
+    for (let di = 0; di < 8; di++) {
+      const d  = (dir + 6 + di) % 8;
+      const nx = cx + NX[d];
+      const ny = cy + NY[d];
+      if (alpha(nx, ny) > threshold) {
+        dir = d; cx = nx; cy = ny;
+        moved = true;
+        break;
+      }
+    }
+    if (!moved || (iter > 3 && cx === sx && cy === sy)) break;
+  }
+
+  // Normalise to [-1, 1] centred, Y flipped (image Y vs Three.js Y)
+  const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  const aspect = W / H;
+  const sc = Math.max(W, H) / 2;
+  return pts.map(([x, y]) => [(x - cx2) / sc * aspect, -(y - cy2) / sc]);
+}
+
+// Douglas–Peucker line simplification
+function douglasPeucker(pts, eps) {
+  if (pts.length <= 2) return pts;
+  let maxDist = 0, idx = 0;
+  const [x1, y1] = pts[0];
+  const [x2, y2] = pts[pts.length - 1];
+  const len = Math.hypot(x2 - x1, y2 - y1);
+
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [px, py] = pts[i];
+    const dist = len < 1e-9
+      ? Math.hypot(px - x1, py - y1)
+      : Math.abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1) / len;
+    if (dist > maxDist) { maxDist = dist; idx = i; }
+  }
+
+  if (maxDist > eps) {
+    const l = douglasPeucker(pts.slice(0, idx + 1), eps);
+    const r = douglasPeucker(pts.slice(idx), eps);
+    return [...l.slice(0, -1), ...r];
+  }
+  return [pts[0], pts[pts.length - 1]];
+}
+
+// ─── File Handling ───────────────────────────────────────────────────────────
+
+function handleFile(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+
+  if (ext === 'svg') {
+    reader.onload = e => loadSVG(e.target.result);
+    reader.readAsText(file);
+  } else {
+    reader.onload = e => loadRaster(e.target.result);
+    reader.readAsDataURL(file);
+  }
+}
+
+document.getElementById('file-input').addEventListener('change', e => {
+  handleFile(e.target.files[0]);
+});
+
+const wrap = document.getElementById('canvas-wrap');
+wrap.addEventListener('dragover', e => {
+  e.preventDefault();
+  wrap.classList.add('drag-over');
+});
+wrap.addEventListener('dragleave', () => wrap.classList.remove('drag-over'));
+wrap.addEventListener('drop', e => {
+  e.preventDefault();
+  wrap.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+// ─── Animation Loop ───────────────────────────────────────────────────────────
+
+const clock = new THREE.Clock();
+let tiltPhase = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  if (logoGroup) {
+    // Primary Y rotation — exact 2π period = seamless
+    logoGroup.rotation.y = (t / params.speed) * Math.PI * 2;
+
+    // Secondary gentle X tilt (sinusoidal)
+    if (params.tilt > 0) {
+      logoGroup.rotation.x = Math.sin(t / (params.speed * 1.75)) * params.tilt;
+    }
+
+    // Update shader uniforms live
+    logoGroup.traverse(obj => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      const u = obj.material.uniforms;
+      if (!u) return;
+      u.uFresnelPower.value = params.fresnel;
+      u.uIridStr.value      = params.iridStr;
+      u.uBaseEmit.value     = params.emit;
+    });
+  }
+
+  renderer.render(scene, camera);
+}
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+
+function onResize() {
+  const w = canvas.parentElement.clientWidth;
+  const h = canvas.parentElement.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// ─── Controls Wiring ─────────────────────────────────────────────────────────
+
+function bindSlider(id, valId, paramKey, fmt) {
+  const slider = document.getElementById(id);
+  const display = document.getElementById(valId);
+  slider.addEventListener('input', () => {
+    const v = parseFloat(slider.value);
+    params[paramKey] = v;
+    display.textContent = fmt(v);
+    if (['depth', 'chamfer', 'bsegs'].includes(paramKey)) rebuildGeometry();
+  });
+  display.textContent = fmt(parseFloat(slider.value));
+}
+
+bindSlider('s-depth',   'v-depth',   'depth',   v => v.toFixed(1));
+bindSlider('s-chamfer', 'v-chamfer', 'chamfer', v => v.toFixed(2));
+bindSlider('s-bsegs',   'v-bsegs',   'bsegs',   v => String(Math.round(v)));
+bindSlider('s-speed',   'v-speed',   'speed',   v => v.toFixed(1) + ' s');
+bindSlider('s-tilt',    'v-tilt',    'tilt',    v => v.toFixed(2));
+bindSlider('s-fresnel', 'v-fresnel', 'fresnel', v => v.toFixed(1));
+bindSlider('s-iridstr', 'v-iridstr', 'iridStr', v => v.toFixed(1));
+bindSlider('s-emit',    'v-emit',    'emit',    v => v.toFixed(3));
+
+// ─── Error Toast ──────────────────────────────────────────────────────────────
+
+const errorToast = document.getElementById('error-toast');
+let errorTimer;
+function showError(msg) {
+  errorToast.textContent = msg;
+  errorToast.classList.add('visible');
+  clearTimeout(errorTimer);
+  errorTimer = setTimeout(() => errorToast.classList.remove('visible'), 5000);
+}
+
+// ─── Drop zone reference ──────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+
+// ─── Kick off ─────────────────────────────────────────────────────────────────
+animate();
+</script>
+</body>
+</html>
