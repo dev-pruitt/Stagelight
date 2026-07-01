@@ -463,7 +463,7 @@ class Component extends DCLogic {
     track: null,
     queue: [],
     currentIdx: 0,
-    autoMatch: true,
+    autoMatch: true,  // when true, countdown duration auto-matches total queue length
     playing: false,
     paused: false,
     fullscreenOnStart: true,
@@ -539,8 +539,10 @@ class Component extends DCLogic {
   }
 
   // ----- Spotify -----
+  // Maps a raw Spotify SDK/API error string to a human-readable message.
+  // Checked roughly in order of likelihood; falls back to a generic message.
   spotifyErr(raw) {
-    var s = String((raw && raw.message) || raw || '').toLowerCase();
+    const s = String((raw && raw.message) || raw || '').toLowerCase();
     if (/premium|account_error/.test(s)) return 'Spotify needs a Premium account to play full songs. You can use the demo library or upload your own audio instead.';
     if (/access_denied|cancel/.test(s)) return 'Spotify sign-in was cancelled. Try again, or use the demo library or upload below.';
     if (/not registered|dashboard|forbidden|invalid client|user may not|403/.test(s)) return 'This Spotify account does not have access yet. Ask the organizer to add it, or use the demo library or upload below.';
@@ -563,18 +565,20 @@ class Component extends DCLogic {
       if (!this._popup) this.setState({ authError: this.spotifyErr('popup') });
     } catch (e) { this.setState({ authError: 'Spotify connect error: ' + (e && e.message || e) }); }
   };
+  // _spCodeUsed: guards against re-exchanging the same OAuth auth code twice
+  // (browsers sometimes re-deliver it on back-navigation or HMR reload).
   exchangeSpotifyCode = async (code) => { if (!code || this._spCodeUsed === code) return; this._spCodeUsed = code;
     try {
       const verifier = localStorage.getItem('sl_sp_verifier');
       const clientId = localStorage.getItem('sl_sp_clientid');
       const body = new URLSearchParams({ client_id: clientId, grant_type: 'authorization_code', code: code, redirect_uri: this.REDIRECT(), code_verifier: verifier });
       const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body });
-      const j = await r.json();
-      if (j.error) { this.setState({ authError: this.spotifyErr(j.error_description || j.error) }); return; }
-      const exp = Date.now() + (j.expires_in || 3600) * 1000;
-      localStorage.setItem('sl_sp_token', j.access_token); localStorage.setItem('sl_sp_expires', String(exp));
-      if (j.refresh_token) localStorage.setItem('sl_sp_refresh', j.refresh_token);
-      this.setState((s) => ({ connected: { ...s.connected, spotify: true }, spToken: j.access_token, spExpires: exp, source: 'spotify', useDemo: false }));
+      const json = await r.json();
+      if (json.error) { this.setState({ authError: this.spotifyErr(json.error_description || json.error) }); return; }
+      const exp = Date.now() + (json.expires_in || 3600) * 1000;
+      localStorage.setItem('sl_sp_token', json.access_token); localStorage.setItem('sl_sp_expires', String(exp));
+      if (json.refresh_token) localStorage.setItem('sl_sp_refresh', json.refresh_token);
+      this.setState((s) => ({ connected: { ...s.connected, spotify: true }, spToken: json.access_token, spExpires: exp, source: 'spotify', useDemo: false }));
       this.initSpotifyPlayer();
     } catch (e) { this.setState({ authError: 'Spotify token exchange failed: ' + (e && e.message || e) }); }
   };

@@ -146,7 +146,10 @@ class Component extends DCLogic {
 
   setIridFrame = (el) => {
     this._iridFrame = el || null;
-    if (el) el.onload = () => this._pushIridOpts();
+    if (el) {
+      el.onload  = () => this._pushIridOpts();
+      el.onerror = () => console.warn('[Stagelight] IridescentLogoAnimator iframe failed to load.');
+    }
   };
 
   _pushIridOpts() {
@@ -167,7 +170,7 @@ class Component extends DCLogic {
     const par = el.parentNode;
     const pw = par ? par.clientWidth : 800;
     const ph = par ? par.clientHeight : 450;
-    const spd = Math.min(pw, ph) * 0.0015;
+    const spd = Math.min(pw, ph) * 0.0015; // pixels per frame at ~60 fps; slower on large screens
     const ang = Math.random() * Math.PI * 2;
     this._mx = pw * 0.25 + Math.random() * pw * 0.5;
     this._my = ph * 0.2 + Math.random() * ph * 0.5;
@@ -209,6 +212,10 @@ class Component extends DCLogic {
     this._musicIcon = null;
   }
 
+  // Parse the shader colour string passed from the parent frame.
+  // Format: "r,g,b|r,g,b|r,g,b|r,g,b" (four groups: base, A, B, C).
+  // Each channel is 0–255 sRGB; output is linearised for the WebGL shader.
+  // Missing groups default to black [0,0,0].
   parseCols(str) {
     const groups = String(str || '').split('|');
     const lin = (n) => Math.pow(Math.max(0, Math.min(255, +n || 0)) / 255, 2.2);

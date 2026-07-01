@@ -484,6 +484,28 @@ function clearLogo() {
   }
 }
 
+// Centre a group at the world origin without changing its scale.
+// Used when re-extruding an existing logo (depth/chamfer change).
+function centreGroup(group) {
+  const box = new THREE.Box3().setFromObject(group);
+  const centre = new THREE.Vector3();
+  box.getCenter(centre);
+  group.position.sub(centre);
+}
+
+// Centre and uniformly scale a group so its longest XY axis fits within targetUnits.
+// Uses multiplyScalar so a pre-applied Y-flip (SVG mode) is preserved.
+function fitGroup(group, targetUnits = 12) {
+  const box = new THREE.Box3().setFromObject(group);
+  const centre = new THREE.Vector3();
+  box.getCenter(centre);
+  group.position.sub(centre);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const maxDim = Math.max(size.x, size.y);
+  if (maxDim > 0) group.scale.multiplyScalar(targetUnits / maxDim);
+}
+
 function buildFromShapes(shapes, sourceWidth, sourceHeight) {
   clearLogo();
   dropZone.classList.add('hidden');
@@ -499,21 +521,7 @@ function buildFromShapes(shapes, sourceWidth, sourceHeight) {
     group.add(mesh);
   }
 
-  // Centre the group on its bounding box
-  const box = new THREE.Box3().setFromObject(group);
-  const centre = new THREE.Vector3();
-  box.getCenter(centre);
-  group.position.sub(centre);
-
-  // Scale to fit within ~12 units (fills the camera FOV nicely)
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  const maxDim = Math.max(size.x, size.y);
-  if (maxDim > 0) {
-    const scale = 12 / maxDim;
-    group.scale.setScalar(scale);
-  }
-
+  fitGroup(group);   // centre at origin + scale to fill FOV
   scene.add(group);
   logoGroup = group;
 }
@@ -548,11 +556,7 @@ function rebuildGeometry() {
     obj.material = mat;
   });
 
-  // Recentre
-  const box = new THREE.Box3().setFromObject(logoGroup);
-  const centre = new THREE.Vector3();
-  box.getCenter(centre);
-  logoGroup.position.sub(centre);
+  centreGroup(logoGroup);  // depth change shifts the Z midpoint; re-centre without rescaling
 }
 
 // ─── SVG Pipeline ────────────────────────────────────────────────────────────
@@ -585,17 +589,9 @@ function loadSVG(svgText) {
   }
   group.scale.y = -1; // flip SVG Y
 
-  // Inline build (reuse buildFromShapes logic via group)
   clearLogo();
   dropZone.classList.add('hidden');
-
-  const box = new THREE.Box3().setFromObject(group);
-  const centre = new THREE.Vector3(); box.getCenter(centre);
-  group.position.sub(centre);
-  const size = new THREE.Vector3(); box.getSize(size);
-  const maxDim = Math.max(size.x, size.y);
-  if (maxDim > 0) group.scale.multiplyScalar(12 / maxDim);
-
+  fitGroup(group);   // centre at origin + scale to fill FOV (preserves Y=-1 flip)
   scene.add(group);
   logoGroup = group;
 }
@@ -638,33 +634,40 @@ function loadRaster(imgSrc) {
   img.src = imgSrc;
 }
 
-// Moore-Neighbor boundary tracing on alpha channel
+// Moore-Neighbor boundary tracing on the alpha channel of an RGBA pixel buffer.
+// Returns points normalised to Three.js space: centred at (0,0), Y-flipped,
+// aspect-ratio corrected, roughly in the range [-1, 1].
 function traceAlphaBoundary(data, W, H, threshold) {
+  // Helper: safely read alpha value at (x, y); returns 0 for out-of-bounds pixels.
   function alpha(x, y) {
     if (x < 0 || y < 0 || x >= W || y >= H) return 0;
     return data[(y * W + x) * 4 + 3];
   }
 
-  // Find topmost-leftmost opaque pixel
+  // Step 1: find the topmost-leftmost opaque pixel as our starting point.
   let sx = -1, sy = 0;
   outer: for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       if (alpha(x, y) > threshold) { sx = x; sy = y; break outer; }
     }
   }
-  if (sx < 0) return [];
+  if (sx < 0) return []; // no opaque pixels found
 
   const pts = [];
-  // 8-connected neighbours, clockwise from right
+
+  // Step 2: 8-connected direction table, clockwise starting from right (dir=0).
+  // Indices: 0=R, 1=UR, 2=U, 3=UL, 4=L, 5=DL, 6=D, 7=DR
   const NX = [ 1, 1, 0,-1,-1,-1, 0, 1];
   const NY = [ 0,-1,-1,-1, 0, 1, 1, 1];
 
-  let cx = sx, cy = sy, dir = 6; // start: came from below (dir 6 = down)
-  const limit = W * H;
+  // dir=6 means we "came from below", so we'll try right first on the first iteration.
+  let cx = sx, cy = sy, dir = 6;
+  const limit = W * H; // upper bound prevents infinite loops on pathological inputs
 
   for (let iter = 0; iter < limit; iter++) {
     pts.push([cx, cy]);
-    // Try directions starting from (dir+6)%8 (backtrack-right-first)
+    // Walk: rotate direction table 6 steps left (backtrack-right-first order),
+    // then try each of the 8 neighbours until we find an opaque one.
     let moved = false;
     for (let di = 0; di < 8; di++) {
       const d  = (dir + 6 + di) % 8;
@@ -676,10 +679,13 @@ function traceAlphaBoundary(data, W, H, threshold) {
         break;
       }
     }
+    // Stop when we return to the start pixel (after at least 4 steps), or get stuck.
     if (!moved || (iter > 3 && cx === sx && cy === sy)) break;
   }
 
-  // Normalise to [-1, 1] centred, Y flipped (image Y vs Three.js Y)
+  // Step 3: normalise pixel coordinates to Three.js space.
+  // Centroid → origin, Y-axis flipped (image Y=0 is top; Three.js Y=0 is centre),
+  // X scaled by aspect ratio so a square logo stays square in 3D.
   const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
   const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
   const aspect = W / H;
@@ -746,7 +752,6 @@ wrap.addEventListener('drop', e => {
 // ─── Animation Loop ───────────────────────────────────────────────────────────
 
 const clock = new THREE.Clock();
-let tiltPhase = 0;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -801,14 +806,17 @@ function bindSlider(id, valId, paramKey, fmt) {
   display.textContent = fmt(parseFloat(slider.value));
 }
 
-bindSlider('s-depth',   'v-depth',   'depth',   v => v.toFixed(1));
-bindSlider('s-chamfer', 'v-chamfer', 'chamfer', v => v.toFixed(2));
-bindSlider('s-bsegs',   'v-bsegs',   'bsegs',   v => String(Math.round(v)));
-bindSlider('s-speed',   'v-speed',   'speed',   v => v.toFixed(1) + ' s');
-bindSlider('s-tilt',    'v-tilt',    'tilt',    v => v.toFixed(2));
-bindSlider('s-fresnel', 'v-fresnel', 'fresnel', v => v.toFixed(1));
-bindSlider('s-iridstr', 'v-iridstr', 'iridStr', v => v.toFixed(1));
-bindSlider('s-emit',    'v-emit',    'emit',    v => v.toFixed(3));
+// In embed mode the panel is hidden; skip binding the (non-existent) slider elements.
+if (!isEmbed) {
+  bindSlider('s-depth',   'v-depth',   'depth',   v => v.toFixed(1));
+  bindSlider('s-chamfer', 'v-chamfer', 'chamfer', v => v.toFixed(2));
+  bindSlider('s-bsegs',   'v-bsegs',   'bsegs',   v => String(Math.round(v)));
+  bindSlider('s-speed',   'v-speed',   'speed',   v => v.toFixed(1) + ' s');
+  bindSlider('s-tilt',    'v-tilt',    'tilt',    v => v.toFixed(2));
+  bindSlider('s-fresnel', 'v-fresnel', 'fresnel', v => v.toFixed(1));
+  bindSlider('s-iridstr', 'v-iridstr', 'iridStr', v => v.toFixed(1));
+  bindSlider('s-emit',    'v-emit',    'emit',    v => v.toFixed(3));
+}
 
 // ─── Error Toast ──────────────────────────────────────────────────────────────
 
@@ -834,24 +842,33 @@ if (isEmbed) {
   canvas.parentElement.style.flex = '1 1 100%';
 }
 
+// Apply parameter updates arriving via postMessage from the Stagelight parent frame.
+// All values are clamped to their slider ranges before use to guard against
+// malformed messages setting nonsensical values (e.g. negative depth).
 function applyOpts(opts) {
   if (!opts) return;
-  if (opts.depth    != null) { params.depth    = +opts.depth;    document.getElementById('s-depth').value   = params.depth;   document.getElementById('v-depth').textContent   = params.depth.toFixed(1);   rebuildGeometry(); }
-  if (opts.chamfer  != null) { params.chamfer  = +opts.chamfer;  document.getElementById('s-chamfer').value = params.chamfer; document.getElementById('v-chamfer').textContent = params.chamfer.toFixed(2); rebuildGeometry(); }
-  if (opts.bsegs    != null) { params.bsegs    = +opts.bsegs;    document.getElementById('s-bsegs').value   = params.bsegs;                                                                                        rebuildGeometry(); }
-  if (opts.speed    != null) { params.speed    = +opts.speed;    document.getElementById('s-speed').value   = params.speed;   document.getElementById('v-speed').textContent   = params.speed.toFixed(1) + ' s'; }
-  if (opts.tilt     != null) { params.tilt     = +opts.tilt;     document.getElementById('s-tilt').value    = params.tilt;    document.getElementById('v-tilt').textContent    = params.tilt.toFixed(2);   }
-  if (opts.fresnel  != null) { params.fresnel  = +opts.fresnel;  document.getElementById('s-fresnel').value = params.fresnel; document.getElementById('v-fresnel').textContent = params.fresnel.toFixed(1); }
-  if (opts.strength != null) { params.iridStr  = +opts.strength; document.getElementById('s-iridstr').value = params.iridStr; document.getElementById('v-iridstr').textContent = params.iridStr.toFixed(1); }
+  let needsRebuild = false;
+
+  if (opts.depth   != null) { params.depth   = Math.max(0.5, Math.min(50,  +opts.depth));   needsRebuild = true; }
+  if (opts.chamfer != null) { params.chamfer = Math.max(0,   Math.min(3,   +opts.chamfer)); needsRebuild = true; }
+  if (opts.bsegs   != null) { params.bsegs   = Math.max(1,   Math.min(16,  +opts.bsegs));   needsRebuild = true; }
+  if (opts.speed   != null) { params.speed   = Math.max(1,   Math.min(60,  +opts.speed));   }
+  if (opts.tilt    != null) { params.tilt    = Math.max(0,   Math.min(1,   +opts.tilt));    }
+  if (opts.fresnel != null) { params.fresnel = Math.max(0.1, Math.min(8,   +opts.fresnel)); }
+  if (opts.strength!= null) { params.iridStr = Math.max(0,   Math.min(10,  +opts.strength));}
+
+  if (needsRebuild) rebuildGeometry();
 }
 
 function handleDataUrl(url) {
   if (!url) return;
   if (url.startsWith('data:image/svg')) {
-    // Decode SVG data URL inline — no network request needed
+    // Decode SVG data URL inline — no network request needed.
     try {
       const raw = url.split(',')[1] || '';
       const svgText = url.includes(';base64,') ? atob(raw) : decodeURIComponent(raw);
+      // Basic sanity check before handing off to the SVG parser.
+      if (!svgText.includes('<svg')) { showError('Invalid SVG: missing <svg> root element.'); return; }
       loadSVG(svgText);
     } catch (e) { showError('Could not decode SVG data URL.'); }
   } else {
