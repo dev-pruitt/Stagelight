@@ -25,7 +25,6 @@
 @keyframes stSweepA { 0%{transform:translate(-14%,10%) scale(1);opacity:.55} 50%{transform:translate(16%,-11%) scale(1.04);opacity:1} 100%{transform:translate(-14%,10%) scale(1);opacity:.55} }
 @keyframes stSweepB { 0%{transform:translate(13%,-9%) scale(1.03);opacity:.6} 50%{transform:translate(-15%,11%) scale(.98);opacity:1} 100%{transform:translate(13%,-9%) scale(1.03);opacity:.6} }
 @keyframes stSweepC { 0%{transform:translate(-11%,-12%) scale(.99);opacity:.65} 50%{transform:translate(14%,12%) scale(1.05);opacity:1} 100%{transform:translate(-11%,-12%) scale(.99);opacity:.65} }
-@keyframes stMusicBob { 0%,100%{transform:rotate(-12deg) scale(1)} 50%{transform:rotate(12deg) scale(1.2)} }
 </style>
 </helmet>
 <div style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
@@ -70,7 +69,7 @@
   </div>
 
   <sc-if value="{{ showNowPlaying }}" hint-placeholder-val="{{ false }}">
-    <div style="{{ glassNPStyle }}">
+    <div ref="{{ setNPBar }}" style="{{ actualNPStyle }}">
       <div style="width:6.2cqmin;height:6.2cqmin;border-radius:1.6cqmin;background:{{ track.cover }};flex:none;box-shadow:0 1cqmin 2cqmin rgba(0,0,0,0.12);"></div>
       <div style="display:flex;flex-direction:column;gap:0.5cqh;min-width:0;text-align:left;">
         <div style="font-size:2.3cqmin;font-weight:600;color:{{ ink }};white-space:nowrap;">{{ track.title }}</div>
@@ -85,9 +84,7 @@
     </div>
   </sc-if>
 
-  <sc-if value="{{ showMusicIcon }}" hint-placeholder-val="{{ true }}">
-    <div ref="{{ setMusicIcon }}" style="position:absolute;top:0;left:0;width:7cqmin;height:7cqmin;border-radius:1.4cqmin;background:{{ track.cover }};background-size:cover;background-position:center;pointer-events:none;user-select:none;will-change:left,top;animation:stMusicBob 2.8s ease-in-out infinite;z-index:5;opacity:0.82;box-shadow:0 1cqmin 3cqmin rgba(0,0,0,0.22);flex:none;"></div>
-  </sc-if>
+
 
   <sc-if value="{{ showExitHint }}" hint-placeholder-val="{{ false }}">
     <div style="position:absolute;top:5cqh;left:50%;transform:translateX(-50%);font-size:1.9cqmin;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;color:{{ ink }};opacity:0;animation:stHint 6.5s ease-in-out 1.2s both;">Press Esc to exit</div>
@@ -126,14 +123,18 @@ class Component extends DCLogic {
     const npShA = (0.06 + g * 0.08).toFixed(3);
     const glassNPStyle = 'position:absolute;left:50%;bottom:6cqh;transform:translateX(-50%);display:flex;align-items:center;gap:2.2cqmin;padding:1.5cqmin 3cqmin 1.5cqmin 1.5cqmin;background:rgba(255,255,255,' + npBgA + ');backdrop-filter:blur(' + npBlur + 'px) saturate(1.8);-webkit-backdrop-filter:blur(' + npBlur + 'px) saturate(1.8);border:1px solid rgba(255,255,255,' + npBdA + ');border-radius:999px;box-shadow:0 2cqmin 6cqmin rgba(0,0,0,' + npShA + '),inset 0 1px 0 rgba(255,255,255,' + npHlA + ');animation:stRise 1s cubic-bezier(.2,.7,.2,1) both;';
 
+    // Float vs pinned NP bar (showMusicIcon prop drives float mode)
+    const npFloat = !!(p.showMusicIcon);
+    const glassNPFloatStyle = 'position:absolute;left:0;top:0;display:flex;align-items:center;gap:2.2cqmin;padding:1.5cqmin 3cqmin 1.5cqmin 1.5cqmin;background:rgba(255,255,255,' + npBgA + ');backdrop-filter:blur(' + npBlur + 'px) saturate(1.8);-webkit-backdrop-filter:blur(' + npBlur + 'px) saturate(1.8);border:1px solid rgba(255,255,255,' + npBdA + ');border-radius:999px;box-shadow:0 2cqmin 6cqmin rgba(0,0,0,' + npShA + '),inset 0 1px 0 rgba(255,255,255,' + npHlA + ');will-change:left,top;z-index:5;pointer-events:none;';
+    const actualNPStyle = npFloat ? glassNPFloatStyle : glassNPStyle;
+
     return {
       setCanvas: this.setCanvas, shaderOn: on, iridOn, blobOverlay: !on && !iridOn,
       showLogoImg: !!(p.hasLogo || p.logo) && !iridOn,
       setIridFrame: this.setIridFrame,
-      // floating music icon
-      setMusicIcon: this.setMusicIcon,
+      setNPBar: this.setNPBar,
       // Liquid Glass
-      glassCountdownStyle, glassAmbientStyle, glassNPStyle,
+      glassCountdownStyle, glassAmbientStyle, glassNPStyle, actualNPStyle,
     };
   }
 
@@ -162,44 +163,62 @@ class Component extends DCLogic {
     } catch (e) {}
   };
 
-  setMusicIcon = (el) => {
-    if (el === this._musicIcon) return;
-    if (this._musicRaf != null) { cancelAnimationFrame(this._musicRaf); this._musicRaf = null; }
-    this._musicIcon = el || null;
-    if (!el) return;
+  setNPBar = (el) => {
+    if (el === this._npBar) return;
+    if (this._npRaf != null) { cancelAnimationFrame(this._npRaf); this._npRaf = null; }
+    this._npBar = el || null;
+    if (!el || !(this.props && this.props.showMusicIcon)) return;
+    this._startNPFloat(el);
+  };
+
+  _startNPFloat(el) {
+    if (this._npRaf != null) { cancelAnimationFrame(this._npRaf); this._npRaf = null; }
     const par = el.parentNode;
     const pw = par ? par.clientWidth : 800;
     const ph = par ? par.clientHeight : 450;
-    const spd = Math.min(pw, ph) * 0.0015; // pixels per frame at ~60 fps; slower on large screens
+    const spd = Math.min(pw, ph) * 0.0012;
     const ang = Math.random() * Math.PI * 2;
-    this._mx = pw * 0.25 + Math.random() * pw * 0.5;
-    this._my = ph * 0.2 + Math.random() * ph * 0.5;
-    this._mvx = Math.cos(ang) * spd;
-    this._mvy = Math.sin(ang) * spd;
-    el.style.left = this._mx + 'px';
-    el.style.top = this._my + 'px';
+    this._npx = pw * 0.05 + Math.random() * pw * 0.6;
+    this._npy = ph * 0.05 + Math.random() * ph * 0.6;
+    this._nvx = Math.cos(ang) * spd;
+    this._nvy = Math.sin(ang) * spd;
+    el.style.left = this._npx + 'px';
+    el.style.top = this._npy + 'px';
     const loop = () => {
-      const ico = this._musicIcon;
-      if (!ico) return;
-      const p = ico.parentNode;
+      const bar = this._npBar;
+      if (!bar) return;
+      const p = bar.parentNode;
       const pw = p ? p.clientWidth : 800;
       const ph = p ? p.clientHeight : 450;
-      const sz = ico.offsetWidth || Math.min(pw, ph) * 0.05;
-      this._mx += this._mvx;
-      this._my += this._mvy;
-      if (this._mx <= 0) { this._mx = 0; this._mvx = Math.abs(this._mvx); }
-      else if (this._mx + sz >= pw) { this._mx = pw - sz; this._mvx = -Math.abs(this._mvx); }
-      if (this._my <= 0) { this._my = 0; this._mvy = Math.abs(this._mvy); }
-      else if (this._my + sz >= ph) { this._my = ph - sz; this._mvy = -Math.abs(this._mvy); }
-      ico.style.left = this._mx + 'px';
-      ico.style.top = this._my + 'px';
-      this._musicRaf = requestAnimationFrame(loop);
+      const sw = bar.offsetWidth || Math.min(pw, ph) * 0.28;
+      const sh = bar.offsetHeight || Math.min(pw, ph) * 0.07;
+      this._npx += this._nvx;
+      this._npy += this._nvy;
+      if (this._npx <= 0) { this._npx = 0; this._nvx = Math.abs(this._nvx); }
+      else if (this._npx + sw >= pw) { this._npx = pw - sw; this._nvx = -Math.abs(this._nvx); }
+      if (this._npy <= 0) { this._npy = 0; this._nvy = Math.abs(this._nvy); }
+      else if (this._npy + sh >= ph) { this._npy = ph - sh; this._nvy = -Math.abs(this._nvy); }
+      bar.style.left = this._npx + 'px';
+      bar.style.top = this._npy + 'px';
+      this._npRaf = requestAnimationFrame(loop);
     };
-    this._musicRaf = requestAnimationFrame(loop);
-  };
+    this._npRaf = requestAnimationFrame(loop);
+  }
 
   componentDidUpdate() {
     const sh = this.props && this.props.shader;
+    // Handle NP bar float/pin toggle change
+    const npFloat = !!(this.props && this.props.showMusicIcon);
+    if (this._npBar) {
+      if (npFloat && this._npRaf == null) {
+        this._startNPFloat(this._npBar);
+      } else if (!npFloat && this._npRaf != null) {
+        cancelAnimationFrame(this._npRaf);
+        this._npRaf = null;
+        this._npBar.style.left = '';
+        this._npBar.style.top = '';
+      }
+    }
     if (sh === 'iridescent') { this._pushIridOpts(); return; }
     if (!sh) return;
     if (this._canvas && sh !== this._shaderId) { this.teardownGL(); this.initGL(); return; }
@@ -208,8 +227,8 @@ class Component extends DCLogic {
   componentWillUnmount() {
     this.teardownGL();
     if (this._iridFrame) { this._iridFrame.onload = null; this._iridFrame = null; }
-    if (this._musicRaf != null) { cancelAnimationFrame(this._musicRaf); this._musicRaf = null; }
-    this._musicIcon = null;
+    if (this._npRaf != null) { cancelAnimationFrame(this._npRaf); this._npRaf = null; }
+    this._npBar = null;
   }
 
   // Parse the shader colour string passed from the parent frame.
