@@ -274,6 +274,14 @@
               </button>
             </div>
           </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <sc-for list="{{ npStyleOptions }}" as="ns" hint-placeholder-count="4">
+              <button onClick="{{ ns.onClick }}" style="display:flex;flex-direction:column;gap:2px;padding:9px 12px;border:1.5px solid {{ ns.border }};border-radius:11px;background:{{ ns.bg }};cursor:pointer;text-align:left;transition:all .12s ease;width:100%;">
+                <span style="font-size:12.5px;font-weight:600;color:{{ ns.color }};">{{ ns.name }}</span>
+                <span style="font-size:10.5px;color:{{ ns.descColor }};">{{ ns.desc }}</span>
+              </button>
+            </sc-for>
+          </div>
           <div style="display:flex;gap:6px;padding:4px;background:var(--sl-secondary);border-radius:12px;">
             <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
               <button onClick="{{ s.onClick }}" disabled="{{ s.soon }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 0;border:none;border-radius:9px;background:{{ s.bg }};color:{{ s.color }};font-size:12.5px;font-weight:600;cursor:{{ s.cursor }};box-shadow:{{ s.shadow }};transition:all .12s ease;">
@@ -421,7 +429,7 @@
             shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}" shader-opts="{{ shaderOpts }}"
             logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
             countdown-text="{{ previewCountdown }}" label="{{ label }}" show-countdown="{{ showEvent }}" show-ambient="{{ false }}"
-            track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="paused" show-exit-hint="{{ false }}" glass-opacity="{{ glassOpacity }}"></dc-import>
+            track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" np-style="{{ npStyle }}" eq-play="paused" show-exit-hint="{{ false }}" glass-opacity="{{ glassOpacity }}"></dc-import>
         </div>
         <div style="font-size:12.5px;color:var(--sl-text-sub);">Live preview · 16:9 · adapts to your logo</div>
       </div>
@@ -438,7 +446,7 @@
       shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}" shader-opts="{{ shaderOpts }}"
       logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
       countdown-text="{{ liveCountdown }}" label="{{ liveLabel }}" show-countdown="{{ showCountdown }}" show-ambient="{{ showAmbient }}"
-      track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}" glass-opacity="{{ glassOpacity }}"></dc-import>
+      track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" np-style="{{ npStyle }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}" glass-opacity="{{ glassOpacity }}"></dc-import>
   </div>
   </sc-if>
 
@@ -457,6 +465,7 @@ class Component extends DCLogic {
     showEvent: true,
     showNowPlaying: true,
     showMusicIcon: true,
+    npStyle: 'pill',
     variantIdx: 0,
     seed: 1234,
     title: 'Team All-Hands',
@@ -1004,6 +1013,7 @@ class Component extends DCLogic {
   toggleEvent = () => this.setState((s) => ({ showEvent: !s.showEvent }));
   toggleNowPlaying = () => this.setState((s) => ({ showNowPlaying: !s.showNowPlaying }));
   toggleMusicIcon = () => this.setState((s) => ({ showMusicIcon: !s.showMusicIcon }));
+  setNpStyle = (style) => this.setState({ npStyle: style });
 
   setTitle = (e) => this.setState({ title: e.target.value });
   setSubtitle = (e) => this.setState({ subtitle: e.target.value });
@@ -1413,6 +1423,16 @@ class Component extends DCLogic {
       miToggleBg: st.showMusicIcon ? pal.accent : '#d1d1d6',
       miKnobLeft: st.showMusicIcon ? '19px' : '2px',
       showMusicIcon: st.showMusicIcon,
+      npStyle: st.npStyle || 'pill',
+      npStyleOptions: [
+        { key: 'pill',     name: 'Classic',  desc: 'Art · title · EQ' },
+        { key: 'stage',    name: 'Stage',    desc: 'Big art + stacked' },
+        { key: 'minimal',  name: 'Minimal',  desc: '♪ Note + text' },
+        { key: 'spectrum', name: 'Spectrum', desc: '8-bar EQ + title' },
+      ].map((ns) => {
+        const active = (st.npStyle || 'pill') === ns.key;
+        return { ...ns, onClick: () => this.setNpStyle(ns.key), bg: active ? pal.accent : 'var(--sl-card)', color: active ? '#fff' : 'var(--sl-text)', border: active ? pal.accent : 'var(--sl-border-md)', descColor: active ? 'rgba(255,255,255,0.72)' : 'var(--sl-text-sub)' };
+      }),
       // preview / live
       previewCountdown: this.fmt(cdSecs), label: 'Begins in',
       showEvent: st.showEvent,
