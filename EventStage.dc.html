@@ -415,7 +415,7 @@ class Component extends DCLogic {
     if (this._resize) window.removeEventListener('resize', this._resize);
     if (this._onVis) document.removeEventListener('visibilitychange', this._onVis);
     const gl = this._gl;
-    if (gl) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) {} }
+    if (gl && this._prog) { try { gl.deleteProgram(this._prog); } catch (e) {} }
     this._gl = null; this._prog = null; this._u = null; this._shaderId = null;
     if (this._canvas) this._canvas.style.background = '';
   }
