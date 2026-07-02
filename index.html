@@ -70,25 +70,22 @@
     <div onClick="{{ closeAbout }}" style="position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.34);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:appFade .2s ease both;">
       <div onClick="{{ stopAbout }}" style="position:relative;width:420px;max-width:calc(100vw - 48px);background:var(--sl-panel);border:1px solid var(--sl-border);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,0.32),0 2px 8px rgba(0,0,0,0.12);overflow:hidden;animation:appReveal .22s ease both;">
 
-        <!-- Title bar with macOS-style traffic lights -->
+        <!-- Title bar - close only -->
         <div style="display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid var(--sl-border);background:var(--sl-header);">
           <button onClick="{{ closeAbout }}" title="Close" style="width:13px;height:13px;border-radius:50%;border:none;background:#ff5f57;cursor:pointer;padding:0;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></button>
-          <span style="width:13px;height:13px;border-radius:50%;background:#febc2e;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></span>
-          <span style="width:13px;height:13px;border-radius:50%;background:#28c840;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.12);"></span>
-          <div style="flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--sl-text-sub);margin-right:39px;">About</div>
+          <div style="flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--sl-text-sub);margin-right:13px;">About</div>
         </div>
 
         <!-- Body -->
         <div style="padding:30px 32px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;">
-          <div style="width:66px;height:66px;border-radius:16px;background:linear-gradient(135deg,{{ accent }},{{ accent2 }});display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 6px 18px rgba(0,0,0,0.16);margin-bottom:8px;">🎬</div>
-          <div style=”font-size:22px;font-weight:700;letter-spacing:-0.02em;color:var(--sl-text);”>Stagelight</div>
-          <div style=”font-size:13.5px;color:var(--sl-text-sub);”>Event Waiting Screen · Version 1.0.0</div>
-          <p style=”margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--sl-text-mid);max-width:320px;”>A self-contained “we’ll begin shortly” countdown screen for events, all-hands, webinars, and launches. Drop in a logo, the theme adapts to it, set a countdown, and optionally play full-length tracks through your own Spotify account — no backend required.</p>
-          <div style=”display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px;”>
-            <a href=”https://www.stagelight.t64.org” target=”_blank” rel=”noopener” style=”text-decoration:none;border:1px solid var(--sl-border-md);background:var(--sl-card);border-radius:980px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--sl-text);”>Website</a>
-            <button onClick=”{{ closeAbout }}” style=”border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;color:#fff;background:#0a84ff;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.35);”>Done</button>
+          <img src="./assets/icon-256.png" alt="Stagelight" style="width:66px;height:66px;border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,0.16);margin-bottom:8px;" />
+          <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:var(--sl-text);">Stagelight</div>
+          <div style="font-size:13.5px;color:var(--sl-text-sub);">Event Waiting Screen · Version {{ version }}</div>
+          <p style="margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--sl-text-mid);max-width:320px;">A self-contained countdown screen for events, all-hands, webinars, and launches. Drop in a logo, the theme adapts to it, set a countdown, and optionally play full-length tracks through your own Spotify account — no backend required.</p>
+          <div style="display:flex;justify-content:center;margin-top:16px;">
+            <button onClick="{{ closeAbout }}" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;color:#fff;background:#0a84ff;cursor:pointer;box-shadow:0 4px 14px rgba(10,132,255,0.35);">Done</button>
           </div>
-          <div style=”margin-top:18px;font-size:11px;color:var(--sl-text-xs);”>MIT License · Built with the Design Components toolkit</div>
+          <div style="margin-top:18px;font-size:11px;color:var(--sl-text-xs);">Built with Love by Devin Pruitt 🩵</div>
         </div>
       </div>
     </div>
@@ -216,32 +213,6 @@
             </sc-for>
           </div>
 
-          <!-- Iridescent Logo extra controls (only shown when that design is active) -->
-          <sc-if value="{{ isIridescent }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid var(--sl-border);border-radius:14px;background:var(--sl-card);">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--sl-text-sub);">Logo 3D</div>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <div style="display:flex;justify-content:space-between;"><span style="font-size:12.5px;color:var(--sl-text-sub);">Slab Depth</span><span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;">{{ iridDepthLabel }}</span></div>
-              <input type="range" min="2" max="24" step="0.5" value="{{ iridDepth }}" onInput="{{ setIridDepth }}" style="width:100%;accent-color:{{ accent }};" />
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <div style="display:flex;justify-content:space-between;"><span style="font-size:12.5px;color:var(--sl-text-sub);">Chamfer</span><span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;">{{ iridChamferLabel }}</span></div>
-              <input type="range" min="0" max="1.2" step="0.01" value="{{ iridChamfer }}" onInput="{{ setIridChamfer }}" style="width:100%;accent-color:{{ accent }};" />
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <div style="display:flex;justify-content:space-between;"><span style="font-size:12.5px;color:var(--sl-text-sub);">Rotation Speed</span><span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;">{{ iridSpeedLabel }}</span></div>
-              <input type="range" min="3" max="30" step="0.5" value="{{ iridSpeed }}" onInput="{{ setIridSpeed }}" style="width:100%;accent-color:{{ accent }};" />
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <div style="display:flex;justify-content:space-between;"><span style="font-size:12.5px;color:var(--sl-text-sub);">Fresnel Power</span><span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;">{{ iridFresnelLabel }}</span></div>
-              <input type="range" min="0.5" max="4" step="0.1" value="{{ iridFresnel }}" onInput="{{ setIridFresnel }}" style="width:100%;accent-color:{{ accent }};" />
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <div style="display:flex;justify-content:space-between;"><span style="font-size:12.5px;color:var(--sl-text-sub);">Iridescent Strength</span><span style="font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;">{{ iridStrengthLabel }}</span></div>
-              <input type="range" min="0.5" max="5" step="0.1" value="{{ iridStrength }}" onInput="{{ setIridStrength }}" style="width:100%;accent-color:{{ accent }};" />
-            </div>
-          </div>
-          </sc-if>
 
           <!-- Liquid Glass intensity -->
           <div style="display:flex;flex-direction:column;gap:8px;">
@@ -442,6 +413,8 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;eventTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;countdownMinutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:60},&quot;defaultDesign&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Soft Mesh&quot;,&quot;options&quot;:[&quot;Soft Mesh&quot;,&quot;Halo&quot;,&quot;Aurora&quot;,&quot;Field&quot;,&quot;Aurora Flow&quot;]}}">
 class Component extends DCLogic {
+  VERSION = '1.1.0';
+
   state = {
     phase: 'setup',
     logo: null,
@@ -497,7 +470,6 @@ class Component extends DCLogic {
     { name: 'Lava Cells', count: 0, op: 0, mode: 'shader', shader: 'metaball' },
     { name: 'Stained Glass', count: 0, op: 0, mode: 'shader', shader: 'voronoi' },
     { name: 'Vortex Gate', count: 0, op: 0, mode: 'shader', shader: 'tunnel' },
-    { name: 'Iridescent Logo', count: 0, op: 0, mode: 'shader', shader: 'iridescent' },
     { name: 'Prism Rain',      count: 0, op: 0, mode: 'shader', shader: 'prism' },
     { name: 'Solar Corona',    count: 0, op: 0, mode: 'shader', shader: 'solar' },
     { name: 'Deep Tide',       count: 0, op: 0, mode: 'shader', shader: 'tide' },
@@ -1419,7 +1391,7 @@ class Component extends DCLogic {
       fsBg: st.fullscreenOnStart ? 'rgba(10,132,255,0.10)' : 'var(--sl-card)', fsColor: st.fullscreenOnStart ? '#0a84ff' : 'var(--sl-text-sub)', fsBorder: st.fullscreenOnStart ? 'rgba(10,132,255,0.4)' : 'var(--sl-border-md)',
       setRoot: this.setRoot, setAudio: this.setAudio,
       // about
-      showAbout: st.showAbout, openAbout: this.openAbout, closeAbout: this.closeAbout, stopAbout: this.stopAbout,
+      showAbout: st.showAbout, openAbout: this.openAbout, closeAbout: this.closeAbout, stopAbout: this.stopAbout, version: this.VERSION,
     };
   }
 }
