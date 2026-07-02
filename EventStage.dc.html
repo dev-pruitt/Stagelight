@@ -30,7 +30,7 @@
 @keyframes cdSlideInB { 0%{transform:translateY(-55%) scale(0.88);opacity:0} 55%{transform:translateY(5%) scale(1.01);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
 </style>
 </helmet>
-<div style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
+<div ref="{{ setRoot }}" style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
 
   <canvas ref="{{ setCanvas }}" style="position:absolute;inset:0;width:100%;height:100%;display:{{ shaderDisplay }};"></canvas>
 
@@ -39,7 +39,7 @@
   </sc-if>
 
   <sc-for list="{{ blobs }}" as="b" hint-placeholder-count="4">
-    <div style="{{ b.style }}"><div style="{{ b.inner }}"></div></div>
+    <div class="st-blob" style="{{ b.style }}"><div style="{{ b.inner }}"></div></div>
   </sc-for>
 
   <sc-if value="{{ blobOverlay }}" hint-placeholder-val="{{ true }}">
@@ -49,17 +49,17 @@
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5cqh;padding:9cqmin;box-sizing:border-box;text-align:center;z-index:3;">
 
     <sc-if value="{{ showCountdown }}" hint-placeholder-val="{{ true }}">
-      <div style="{{ glassCountdownStyle }}">
+      <div ref="{{ setCDBox }}" style="{{ glassCountdownStyle }}">
         <sc-if value="{{ showLogoImg }}" hint-placeholder-val="{{ true }}">
           <img src="{{ logo }}" alt="logo" style="height:13cqmin;max-width:55cqw;object-fit:contain;margin-bottom:0.8cqh;" />
         </sc-if>
-        <div style="font-size:2.1cqmin;text-transform:uppercase;letter-spacing:0.42em;font-weight:600;color:{{ ink }};opacity:0.55;padding-left:0.42em;">{{ label }}</div>
+        <div style="font-size:2.1cqmin;text-transform:uppercase;letter-spacing:0.42em;font-weight:600;color:var(--st-ink,{{ ink }});opacity:0.55;padding-left:0.42em;transition:color 0.4s ease;">{{ label }}</div>
         <div style="display:flex;align-items:baseline;font-variant-numeric:tabular-nums;line-height:0.95;letter-spacing:0.01em;overflow:hidden;">
           <sc-for list="{{ countdownCells }}" as="d" hint-placeholder-count="5">
             <span style="{{ d.style }}">{{ d.ch }}</span>
           </sc-for>
         </div>
-        <div style="font-size:2.7cqmin;font-weight:400;color:{{ ink }};opacity:0.65;max-width:70cqw;">{{ title }}</div>
+        <div style="font-size:2.7cqmin;font-weight:400;color:var(--st-ink,{{ ink }});opacity:0.65;max-width:70cqw;transition:color 0.4s ease;">{{ title }}</div>
       </div>
     </sc-if>
 
@@ -68,8 +68,8 @@
         <sc-if value="{{ showLogoImg }}" hint-placeholder-val="{{ true }}">
           <img src="{{ logo }}" alt="logo" style="height:11cqmin;max-width:50cqw;object-fit:contain;margin-bottom:0.8cqh;" />
         </sc-if>
-        <div style="font-size:6.4cqmin;font-weight:300;color:{{ ink }};animation:stPulse 3.4s ease-in-out infinite;letter-spacing:0.005em;">{{ subtitle }}</div>
-        <div style="font-size:2.6cqmin;font-weight:400;color:{{ ink }};opacity:0.5;">{{ title }}</div>
+        <div style="font-size:6.4cqmin;font-weight:300;color:var(--st-ink,{{ ink }});animation:stPulse 3.4s ease-in-out infinite;letter-spacing:0.005em;transition:color 0.4s ease;">{{ subtitle }}</div>
+        <div style="font-size:2.6cqmin;font-weight:400;color:var(--st-ink,{{ ink }});opacity:0.5;transition:color 0.4s ease;">{{ title }}</div>
       </div>
     </sc-if>
 
@@ -85,8 +85,8 @@
     <div ref="{{ setNPBar }}" style="{{ actualNPStyle }}">
       <div style="width:6.2cqmin;height:6.2cqmin;border-radius:1.6cqmin;background:{{ track.cover }};flex:none;box-shadow:0 1cqmin 2cqmin rgba(0,0,0,0.12);"></div>
       <div style="display:flex;flex-direction:column;gap:0.5cqh;min-width:0;text-align:left;">
-        <div style="font-size:2.3cqmin;font-weight:600;color:{{ ink }};white-space:nowrap;">{{ track.title }}</div>
-        <div style="font-size:2cqmin;color:{{ ink }};opacity:0.5;white-space:nowrap;">{{ track.artist }}</div>
+        <div style="font-size:2.3cqmin;font-weight:600;color:var(--st-ink,{{ ink }});white-space:nowrap;transition:color 0.4s ease;">{{ track.title }}</div>
+        <div style="font-size:2cqmin;color:var(--st-ink,{{ ink }});opacity:0.5;white-space:nowrap;transition:color 0.4s ease;">{{ track.artist }}</div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:0.6cqmin;height:4cqmin;margin-left:1.2cqmin;">
         <div style="width:0.8cqmin;height:100%;background:{{ accent }};border-radius:1cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out infinite;animation-play-state:{{ eqPlay }};"></div>
@@ -100,7 +100,7 @@
 
 
   <sc-if value="{{ showExitHint }}" hint-placeholder-val="{{ false }}">
-    <div style="position:absolute;top:5cqh;left:50%;transform:translateX(-50%);font-size:1.9cqmin;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;color:{{ ink }};opacity:0;animation:stHint 6.5s ease-in-out 1.2s both;">Press Esc to exit</div>
+    <div style="position:absolute;top:5cqh;left:50%;transform:translateX(-50%);font-size:1.9cqmin;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;color:var(--st-ink,{{ ink }});opacity:0;animation:stHint 6.5s ease-in-out 1.2s both;">Press Esc to exit</div>
   </sc-if>
 
 </div>
@@ -170,12 +170,12 @@ class Component extends DCLogic {
     for (let i = 0; i < ct.length; i++) {
       const ch = ct[i];
       if (ch === ':') {
-        countdownCells.push({ ch, style: 'font-size:11cqmin;font-weight:200;color:' + ink + ';opacity:0.42;padding:0 0.5cqmin;align-self:center;margin-bottom:0.5cqmin;display:inline-block;' });
+        countdownCells.push({ ch, style: 'font-size:11cqmin;font-weight:200;color:var(--st-ink,' + ink + ');opacity:0.42;padding:0 0.5cqmin;align-self:center;margin-bottom:0.5cqmin;display:inline-block;transition:color 0.4s ease;' });
       } else {
         if (ch !== this._prevCDChars[i]) this._cdFlipKey[i] = !this._cdFlipKey[i];
         this._prevCDChars[i] = ch;
         const anim = this._cdFlipKey[i] ? 'cdSlideInB' : 'cdSlideIn';
-        countdownCells.push({ ch, style: 'font-size:15cqmin;font-weight:200;color:' + ink + ';display:inline-block;animation:' + anim + ' 0.48s cubic-bezier(.22,1,.36,1) both;' });
+        countdownCells.push({ ch, style: 'font-size:15cqmin;font-weight:200;color:var(--st-ink,' + ink + ');display:inline-block;animation:' + anim + ' 0.48s cubic-bezier(.22,1,.36,1) both;transition:color 0.4s ease;' });
       }
     }
 
@@ -185,6 +185,8 @@ class Component extends DCLogic {
       showLogoOnly: !!(p.hasLogo || p.logo) && !iridOn && !p.showCountdown && !p.showAmbient,
       setIridFrame: this.setIridFrame,
       setNPBar: this.setNPBar,
+      setRoot: this.setRoot,
+      setCDBox: this.setCDBox,
       // Liquid Glass
       glassCountdownStyle, glassAmbientStyle, glassLogoOnlyStyle, glassNPStyle, actualNPStyle,
       // Countdown digit cells with Apple-style flip animation
@@ -219,6 +221,125 @@ class Component extends DCLogic {
 
   setNPBar = (el) => { this._npBar = el || null; };
 
+  setRoot = (el) => {
+    this._rootEl = el || null;
+    if (el) this._startAdaptiveInkLoop();
+    else this._stopAdaptiveInkLoop();
+  };
+
+  setCDBox = (el) => { this._cdBox = el || null; };
+
+  _startAdaptiveInkLoop() {
+    if (this._inkInterval) return;
+    this._inkInterval = setInterval(() => this._tickAdaptiveInk(), 150);
+  }
+
+  _stopAdaptiveInkLoop() {
+    if (this._inkInterval) { clearInterval(this._inkInterval); this._inkInterval = null; }
+  }
+
+  _tickAdaptiveInk() {
+    const p = this.props || {};
+    const baseInk = p.ink || '#1d1d1f';
+    const inkLum = this._parseLuminance(baseInk);
+    const apply = (boxEl) => {
+      if (!boxEl) return;
+      const rect = boxEl.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
+      const bgLum = this._sampleLuminanceAt(rect);
+      if (bgLum < 0) { boxEl.style.removeProperty('--st-ink'); return; }
+      if (bgLum > 0.52 && inkLum > 0.52) {
+        boxEl.style.setProperty('--st-ink', '#1d1d1f');
+      } else if (bgLum < 0.45 && inkLum < 0.45) {
+        boxEl.style.setProperty('--st-ink', '#ffffff');
+      } else {
+        boxEl.style.removeProperty('--st-ink');
+      }
+    };
+    apply(this._cdBox);
+    apply(this._npBar);
+  }
+
+  _sampleLuminanceAt(rect) {
+    if (this._gl && this._canvas) {
+      const c = this._canvas;
+      const cr = c.getBoundingClientRect();
+      if (cr.width > 0 && cr.height > 0) {
+        const sx = c.width / cr.width, sy = c.height / cr.height;
+        const px = Math.round((rect.left - cr.left + rect.width / 2) * sx);
+        const py = c.height - Math.round((rect.top - cr.top + rect.height / 2) * sy);
+        if (px >= 0 && px < c.width && py >= 0 && py < c.height) {
+          const buf = new Uint8Array(4);
+          try { this._gl.readPixels(px, py, 1, 1, this._gl.RGBA, this._gl.UNSIGNED_BYTE, buf); }
+          catch(e) { return -1; }
+          const r = buf[0]/255, g = buf[1]/255, b = buf[2]/255;
+          const lin = x => x <= 0.04045 ? x/12.92 : Math.pow((x+0.055)/1.055, 2.4);
+          return 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
+        }
+      }
+    }
+    if (!this._rootEl) return -1;
+    const blobs = this._rootEl.querySelectorAll('.st-blob');
+    if (!blobs.length) return -1;
+    let wSum = 0, lumSum = 0;
+    const boxArea = rect.width * rect.height;
+    for (const blob of blobs) {
+      const inner = blob.firstElementChild;
+      if (!inner) continue;
+      const br = blob.getBoundingClientRect();
+      const ow = Math.max(0, Math.min(rect.right, br.right) - Math.max(rect.left, br.left));
+      const oh = Math.max(0, Math.min(rect.bottom, br.bottom) - Math.max(rect.top, br.top));
+      const area = ow * oh;
+      if (area < 1) continue;
+      const bg = getComputedStyle(inner).backgroundImage || '';
+      const lum = this._parseLuminanceFromGradient(bg);
+      const alpha = this._parsePeakAlpha(bg);
+      const w = (area / boxArea) * alpha;
+      lumSum += lum * w;
+      wSum += w;
+    }
+    return wSum > 0.01 ? lumSum / wSum : -1;
+  }
+
+  _parseLuminanceFromGradient(bgStr) {
+    let maxLum = -1;
+    const re = /rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/g;
+    let m;
+    while ((m = re.exec(bgStr)) !== null) {
+      const alpha = m[4] !== undefined ? +m[4] : 1.0;
+      if (alpha < 0.05) continue;
+      const r = +m[1]/255, g = +m[2]/255, b = +m[3]/255;
+      const lin = x => x <= 0.04045 ? x/12.92 : Math.pow((x+0.055)/1.055, 2.4);
+      const lum = 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
+      if (lum > maxLum) maxLum = lum;
+    }
+    return maxLum < 0 ? 0.5 : maxLum;
+  }
+
+  _parsePeakAlpha(bgStr) {
+    let max = 0;
+    const re = /rgba\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d.]+)\s*\)/g;
+    let m;
+    while ((m = re.exec(bgStr)) !== null) max = Math.max(max, +m[1]);
+    return max || 1.0;
+  }
+
+  _parseLuminance(color) {
+    let r, g, b;
+    const rgbM = color.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (rgbM) { r = +rgbM[1]/255; g = +rgbM[2]/255; b = +rgbM[3]/255; }
+    else {
+      const hex = color.replace(/^#/, '');
+      const full = hex.length === 3 ? hex.split('').map(c => c+c).join('') : hex;
+      r = parseInt(full.slice(0,2),16)/255;
+      g = parseInt(full.slice(2,4),16)/255;
+      b = parseInt(full.slice(4,6),16)/255;
+    }
+    if (isNaN(r)) return 0.5;
+    const lin = x => x <= 0.04045 ? x/12.92 : Math.pow((x+0.055)/1.055, 2.4);
+    return 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
+  }
+
   componentDidUpdate() {
     const sh = this.props && this.props.shader;
     if (sh === 'iridescent') { this._pushIridOpts(); return; }
@@ -228,9 +349,12 @@ class Component extends DCLogic {
     if (this._gl) this.setTarget(this.props.shaderCols);
   }
   componentWillUnmount() {
+    this._stopAdaptiveInkLoop();
     this.teardownGL();
     if (this._iridFrame) { this._iridFrame.onload = null; this._iridFrame = null; }
     this._npBar = null;
+    this._cdBox = null;
+    this._rootEl = null;
   }
 
   // Parse the shader colour string passed from the parent frame.
@@ -256,7 +380,7 @@ class Component extends DCLogic {
     this._tgt = this._cur.map((c) => c.slice());
     let gl = null;
     try {
-      const o = { antialias: false, alpha: false, depth: false, stencil: false, premultipliedAlpha: false, powerPreference: 'high-performance' };
+      const o = { antialias: false, alpha: false, depth: false, stencil: false, premultipliedAlpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true };
       gl = canvas.getContext('webgl2', o) || canvas.getContext('webgl', o);
     } catch (e) { gl = null; }
     if (!gl) { this.fallback(); return; }
