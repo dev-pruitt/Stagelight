@@ -202,14 +202,17 @@
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--sl-text-sub);">Design</div>
-            <button onClick="{{ shuffle }}" style="display:flex;align-items:center;gap:6px;border:1px solid var(--sl-border-md);background:var(--sl-card);border-radius:980px;padding:6px 13px;font-size:12.5px;font-weight:600;color:var(--sl-text);cursor:pointer;transition:all .12s ease;">↻ Shuffle</button>
+            <button onClick="{{ shuffle }}" style="display:flex;align-items:center;gap:6px;border:1px solid {{ shuffleBorder }};background:{{ shuffleBg }};border-radius:980px;padding:6px 13px;font-size:12.5px;font-weight:600;color:{{ shuffleColor }};cursor:pointer;transition:all .12s ease;">↻ {{ shuffleLabel }}</button>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <sc-for list="{{ variants }}" as="v" hint-placeholder-count="4">
-              <button onClick="{{ v.onClick }}" style="display:flex;align-items:center;gap:9px;padding:10px 12px;border:1.5px solid {{ v.border }};border-radius:12px;background:{{ v.bg }};cursor:pointer;text-align:left;transition:all .12s ease;">
-                <div style="width:22px;height:22px;border-radius:6px;background:{{ v.swatch }};flex:none;"></div>
-                <span style="font-size:13px;font-weight:600;color:{{ v.color }};">{{ v.name }}</span>
-              </button>
+              <div style="position:relative;">
+                <div onClick="{{ v.onClick }}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;padding-right:30px;border:1.5px solid {{ v.border }};border-radius:12px;background:{{ v.bg }};cursor:pointer;text-align:left;transition:all .12s ease;">
+                  <div style="width:20px;height:20px;border-radius:5px;background:{{ v.swatch }};flex:none;"></div>
+                  <span style="font-size:12px;font-weight:600;color:{{ v.color }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ v.name }}</span>
+                </div>
+                <div onClick="{{ v.onToggleSelect }}" title="Include in shuffle" style="position:absolute;top:50%;right:7px;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:{{ v.selBg }};border:1.5px solid {{ v.selBorder }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:pointer;transition:all .15s ease;flex:none;z-index:1;">{{ v.selMark }}</div>
+              </div>
             </sc-for>
           </div>
 
@@ -434,6 +437,9 @@ class Component extends DCLogic {
     showMusicIcon: true,
     npStyle: 'pill',
     variantIdx: 0,
+    selectedVariants: null,
+    shuffledDesigns: [],
+    designQueueIdx: 0,
     seed: 1234,
     title: 'Team All-Hands',
     subtitle: 'We\u2019ll begin shortly',
@@ -604,6 +610,7 @@ class Component extends DCLogic {
         var patch = { title: ct.name, artist: (ct.artists || []).map((a) => a.name).join(', '), dur: sec ? this.fmt(sec) : '', secs: sec };
         var img = ct.album && ct.album.images && ct.album.images[0];
         if (img) patch.cover = 'center/cover url(' + img.url + ')';
+        var prevUri = this._lastSpUri; this._lastSpUri = uri;
         this.setState((s) => {
           var apply = (x) => (x && x.uri === uri ? Object.assign({}, x, patch) : x);
           var nq = (s.queue || []).map(apply);
@@ -614,6 +621,7 @@ class Component extends DCLogic {
           return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: (presenting && idx >= 0) ? idx : s.currentIdx };
         });
         if (this.state.colorSource === 'album' && patch.cover) this.applyAlbumPalette({ cover: patch.cover });
+        if (this.state.phase === 'presenting' && prevUri && uri !== prevUri && (this.state.shuffledDesigns || []).length > 0) this.advanceDesign();
       });
       await player.connect();
       this.spPlayer = player;
@@ -848,7 +856,7 @@ class Component extends DCLogic {
     window.removeEventListener('keydown', this._onKey);
     window.removeEventListener('message', this.onAuthMessage); window.removeEventListener('storage', this.onAuthStorage);
     if (this._onStagelightVolume) window.removeEventListener('stagelight:volume', this._onStagelightVolume);
-    clearTimeout(this._volHideTimer);
+    clearTimeout(this._volHideTimer); clearTimeout(this._dtrTimer);
     clearInterval(this._spFade); clearInterval(this._amFade);
     if (this.spPlayer) { try { this.spPlayer.disconnect(); } catch (e) {} }
     if (this.actx) try { this.actx.close(); } catch (e) {}
@@ -980,8 +988,45 @@ class Component extends DCLogic {
   setMinutes = (e) => this.setState({ minutes: parseInt(e.target.value, 10) || 1, autoMatch: false });
   toggleAutoMatch = () => this.setState((s) => ({ autoMatch: !s.autoMatch }));
 
-  shuffle = () => this.setState((s) => ({ seed: (s.seed * 1103515245 + 12345) & 0x7fffffff, variantIdx: Math.random() < 0.55 ? (s.variantIdx + 1) % this.VARIANTS.length : s.variantIdx }));
-  setVariant = (i) => this.setState({ variantIdx: i });
+  getSelectedVariants() {
+    const sv = this.state.selectedVariants;
+    return (!sv || sv.length === 0) ? this.VARIANTS.map((_, i) => i) : sv;
+  }
+  shuffle = () => {
+    const selected = this.getSelectedVariants(); if (!selected.length) return;
+    const arr = selected.slice();
+    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
+    this.setState({ shuffledDesigns: arr, designQueueIdx: 0, variantIdx: arr[0], seed: (this.state.seed * 1103515245 + 12345) & 0x7fffffff });
+  };
+  toggleVariantSelection = (i, e) => {
+    try { e && e.stopPropagation(); } catch (_) {}
+    const current = this.getSelectedVariants(); const hasIt = current.indexOf(i) >= 0;
+    if (hasIt && current.length === 1) return;
+    this.setState({ selectedVariants: hasIt ? current.filter((x) => x !== i) : current.concat([i]).sort((a, b) => a - b) });
+  };
+  advanceDesign = () => {
+    const { shuffledDesigns, designQueueIdx } = this.state;
+    if (!shuffledDesigns || !shuffledDesigns.length) return;
+    const nqi = (designQueueIdx + 1) % shuffledDesigns.length;
+    const nvi = shuffledDesigns[nqi];
+    const newSeed = (this.state.seed * 1103515245 + 12345) & 0x7fffffff;
+    this._doDesignTransition(() => this.setState({ designQueueIdx: nqi, variantIdx: nvi, seed: newSeed }));
+  };
+  _doDesignTransition(applyFn) {
+    let ov = document.getElementById('sl-dtr');
+    if (!ov) {
+      ov = document.createElement('div'); ov.id = 'sl-dtr';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:99998;pointer-events:none;background:#000;opacity:0;transition:opacity 0.5s ease;';
+      document.body.appendChild(ov);
+    }
+    clearTimeout(this._dtrTimer);
+    ov.style.transition = 'opacity 0.5s ease'; ov.style.opacity = '0.45';
+    this._dtrTimer = setTimeout(() => {
+      applyFn();
+      setTimeout(() => { ov.style.transition = 'opacity 1s ease'; ov.style.opacity = '0'; }, 60);
+    }, 500);
+  }
+  setVariant = (i) => this.setState({ variantIdx: i, shuffledDesigns: [], designQueueIdx: 0 });
 
   setSource = (src) => this.setState({ source: src, results: [], searchQuery: '', authError: '' });
   stopCurrentPreview() { const tr = this.state.track; if (tr) { if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} } } }
@@ -1068,7 +1113,7 @@ class Component extends DCLogic {
     if (!t || !t.url || !this.audio) return;
     const moreLocal = q.filter((x) => x && x.url).length > 1;
     this.audio.loop = !moreLocal;
-    this.audio.onended = moreLocal ? (() => { let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++; if (n < q.length) this.playLocalAt(n); }) : null;
+    this.audio.onended = moreLocal ? (() => { let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++; if (n < q.length) { if ((this.state.shuffledDesigns || []).length > 0) this.advanceDesign(); this.playLocalAt(n); } }) : null;
     this.audio.src = t.url; this.audio.volume = 0; this.audio.currentTime = 0;
     const p = this.audio.play(); if (p && p.catch) p.catch(() => {});
     let v = 0; clearInterval(this._fade);
@@ -1095,7 +1140,7 @@ class Component extends DCLogic {
   savePrefs() {
     try {
       var s = this.state;
-      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, selectedVariants: s.selectedVariants, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
       if (data === this._lastPrefs) return;
       this._lastPrefs = data;
       localStorage.setItem('sl_setup', data);
@@ -1104,7 +1149,7 @@ class Component extends DCLogic {
   resetSetup = () => {
     this.stopCurrentPreview();
     try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
-    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, npStyle: 'pill', fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '' });
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, npStyle: 'pill', fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '', selectedVariants: null, shuffledDesigns: [], designQueueIdx: 0 });
   };
   toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
   openAbout = () => this.setState({ showAbout: true });
@@ -1138,6 +1183,7 @@ class Component extends DCLogic {
     var t = q[i];
     this.setState({ currentIdx: i, track: t, paused: false, playing: true });
     if (this.state.phase === 'presenting') {
+      if ((this.state.shuffledDesigns || []).length > 0) this.advanceDesign();
       try {
         if (t.service === 'spotify' && this.state.spReady) this.playSpotify(t.uri);
         else if (t.service === 'apple' && this.state.connected.apple) this.playApple(t.id);
@@ -1148,7 +1194,8 @@ class Component extends DCLogic {
   };
   beginEvent = () => {
     const target = Date.now() + this.countdownSecs() * 1000;
-    this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, paused: false, currentIdx: 0, track: (this.state.queue[0] || this.state.track) });
+    const sd = this.state.shuffledDesigns || [];
+    this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, paused: false, currentIdx: 0, track: (this.state.queue[0] || this.state.track), designQueueIdx: 0, variantIdx: sd.length > 0 ? sd[0] : this.state.variantIdx });
     try { this.startAudio(); } catch (e) {}
     try { if (this.state.fullscreenOnStart && this.root && this.root.requestFullscreen) { const r = this.root.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
   };
@@ -1263,12 +1310,19 @@ class Component extends DCLogic {
       border: manualSel(m) ? pal.accent : 'var(--sl-border-md)',
     }));
 
+    const selectedSet = new Set(this.getSelectedVariants());
+    const shuffleActive = !!(st.shuffledDesigns && st.shuffledDesigns.length > 0);
     const variants = this.VARIANTS.map((v, i) => ({
       name: v.name, onClick: () => this.setVariant(i),
       border: st.variantIdx === i ? pal.accent : 'rgba(0,0,0,0.1)',
       bg: st.variantIdx === i ? this.rgba(accentArr, 0.06) : 'var(--sl-card)',
       color: 'var(--sl-text)',
       swatch: 'linear-gradient(135deg,' + pal.accent + ',' + pal.accent2 + ')',
+      isSelected: selectedSet.has(i),
+      selBg: selectedSet.has(i) ? pal.accent : 'transparent',
+      selBorder: selectedSet.has(i) ? pal.accent : 'rgba(0,0,0,0.2)',
+      selMark: selectedSet.has(i) ? '✓' : '',
+      onToggleSelect: (e) => this.toggleVariantSelection(i, e),
     }));
 
     const srcDefs = [{ id: 'spotify', label: 'Spotify' }, { id: 'apple', label: 'Apple Music', soon: true }, { id: 'upload', label: 'Upload' }];
@@ -1337,6 +1391,10 @@ class Component extends DCLogic {
       eventBodyOpacity: st.showEvent ? 1 : 0.4,
       // design + glass
       variants, shuffle: this.shuffle,
+      shuffleLabel: shuffleActive ? 'Shuffled' : 'Shuffle',
+      shuffleBg: shuffleActive ? this.rgba(accentArr, 0.10) : 'var(--sl-card)',
+      shuffleColor: shuffleActive ? pal.accent : 'var(--sl-text)',
+      shuffleBorder: shuffleActive ? pal.accent : 'var(--sl-border-md)',
       blobs: this._blobs, liveBlobs: this._liveBlobs,
       stageBg, stageInk, shaderMode, shaderCols,
       isIridescent: isIrid,
