@@ -1135,7 +1135,7 @@ class Component extends DCLogic {
   savePrefs() {
     try {
       var s = this.state;
-      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity });
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, npStyle: s.npStyle || 'pill', variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity });
       if (data === this._lastPrefs) return;
       this._lastPrefs = data;
       localStorage.setItem('sl_setup', data);
@@ -1144,7 +1144,7 @@ class Component extends DCLogic {
   resetSetup = () => {
     this.stopCurrentPreview();
     try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
-    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '' });
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, npStyle: 'pill', fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '' });
   };
   toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
   openAbout = () => this.setState({ showAbout: true });
