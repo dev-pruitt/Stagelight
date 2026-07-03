@@ -239,6 +239,11 @@
               </button>
             </div>
           </div>
+          <div style="display:flex;gap:5px;">
+            <sc-for list="{{ npStyleButtons }}" as="nb" hint-placeholder-count="4">
+              <button onClick="{{ nb.onClick }}" style="flex:1;padding:5px 0;border:1px solid {{ nb.border }};border-radius:8px;background:{{ nb.bg }};color:{{ nb.color }};font-size:11px;font-weight:600;cursor:pointer;transition:all .12s ease;">{{ nb.label }}</button>
+            </sc-for>
+          </div>
           <div style="display:flex;gap:6px;padding:4px;background:var(--sl-secondary);border-radius:12px;">
             <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
               <button onClick="{{ s.onClick }}" disabled="{{ s.soon }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 0;border:none;border-radius:9px;background:{{ s.bg }};color:{{ s.color }};font-size:12.5px;font-weight:600;cursor:{{ s.cursor }};box-shadow:{{ s.shadow }};transition:all .12s ease;">
@@ -389,7 +394,7 @@
             shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}" shader-opts="{{ shaderOpts }}"
             logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
             countdown-text="{{ previewCountdown }}" label="{{ label }}" show-countdown="{{ showEvent }}" show-ambient="{{ false }}"
-            track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="paused" show-exit-hint="{{ false }}" glass-opacity="{{ glassOpacity }}"></dc-import>
+            track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="paused" show-exit-hint="{{ false }}" np-style="{{ npStyle }}" glass-opacity="{{ glassOpacity }}"></dc-import>
         </div>
         <div style="font-size:12.5px;color:var(--sl-text-sub);">Live preview · 16:9 · adapts to your logo</div>
       </div>
@@ -406,7 +411,7 @@
       shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}" shader-opts="{{ shaderOpts }}"
       logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
       countdown-text="{{ liveCountdown }}" label="{{ liveLabel }}" show-countdown="{{ showCountdown }}" show-ambient="{{ showAmbient }}"
-      track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}" glass-opacity="{{ glassOpacity }}"></dc-import>
+      track="{{ track }}" show-now-playing="{{ showNP }}" show-music-icon="{{ showMusicIcon }}" eq-play="{{ eqPlay }}" show-exit-hint="{{ true }}" np-style="{{ npStyle }}" glass-opacity="{{ glassOpacity }}"></dc-import>
   </div>
   </sc-if>
 
@@ -427,6 +432,7 @@ class Component extends DCLogic {
     showEvent: true,
     showNowPlaying: true,
     showMusicIcon: true,
+    npStyle: 'pill',
     variantIdx: 0,
     seed: 1234,
     title: 'Team All-Hands',
@@ -745,13 +751,7 @@ class Component extends DCLogic {
     this.setState({ searching: true, authError: '' });
     try {
       let results = [];
-      if (this.state.source === 'spotify') {
-        const token = await this.ensureSpToken();
-        const r = await fetch('https://api.spotify.com/v1/search?' + new URLSearchParams({ q: q, type: 'track', limit: '20' }).toString(), { headers: { Authorization: 'Bearer ' + token } });
-        const j = await r.json();
-        if (j.error) { var em = (j.error.message || j.error) + ''; this.setState({ searching: false, authError: /limit|quota|forbidden/i.test(em) ? 'Spotify search is unavailable here — new Spotify developer apps no longer get catalog/search access from Spotify. Use the demo library or the Upload tab instead.' : ('Spotify: ' + em) }); return; }
-        results = ((j.tracks && j.tracks.items) || []).map((t) => ({ service: 'spotify', uri: t.uri, title: t.name, artist: (t.artists || []).map((a) => a.name).join(', '), cover: (t.album && t.album.images && t.album.images[0] && ('center/cover url(' + t.album.images[0].url + ')')) || 'linear-gradient(135deg,#1db954,#191414)', secs: Math.round((t.duration_ms || 0) / 1000), dur: this.fmt(Math.round((t.duration_ms || 0) / 1000)) }));
-      } else if (this.state.source === 'apple') {
+      if (this.state.source === 'apple') {
         const music = window.MusicKit.getInstance();
         const res = await music.api.music('/v1/catalog/' + this.state.amStorefront + '/search', { term: q, types: 'songs', limit: 12 });
         const songs = (res && res.data && res.data.results && res.data.results.songs && res.data.results.songs.data) || [];
@@ -973,6 +973,7 @@ class Component extends DCLogic {
   toggleEvent = () => this.setState((s) => ({ showEvent: !s.showEvent }));
   toggleNowPlaying = () => this.setState((s) => ({ showNowPlaying: !s.showNowPlaying }));
   toggleMusicIcon = () => this.setState((s) => ({ showMusicIcon: !s.showMusicIcon }));
+  setNpStyle = (s) => this.setState({ npStyle: s });
 
   setTitle = (e) => this.setState({ title: e.target.value });
   setSubtitle = (e) => this.setState({ subtitle: e.target.value });
@@ -1094,7 +1095,7 @@ class Component extends DCLogic {
   savePrefs() {
     try {
       var s = this.state;
-      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity });
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
       if (data === this._lastPrefs) return;
       this._lastPrefs = data;
       localStorage.setItem('sl_setup', data);
@@ -1103,7 +1104,7 @@ class Component extends DCLogic {
   resetSetup = () => {
     this.stopCurrentPreview();
     try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
-    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '' });
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, npStyle: 'pill', fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '' });
   };
   toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
   openAbout = () => this.setState({ showAbout: true });
@@ -1373,6 +1374,8 @@ class Component extends DCLogic {
       canPreview, togglePreview: this.togglePreview, previewLabel: st.previewPlaying ? '\u23f8 Stop' : '\u25b6 Preview',
       authError: st.authError,
       musicFootnote: isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Requires Spotify Premium.' : (isUpload ? 'Drop or select an audio file. It plays in sync with your countdown.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
+      npStyle: st.npStyle || 'pill',
+      npStyleButtons: ['pill', 'stage', 'minimal', 'spectrum'].map((s) => { const active = (st.npStyle || 'pill') === s; return { label: s.charAt(0).toUpperCase() + s.slice(1), onClick: () => this.setNpStyle(s), bg: active ? pal.accent : 'var(--sl-card)', color: active ? '#fff' : 'var(--sl-text)', border: active ? pal.accent : 'var(--sl-border-md)' }; }),
       showNP: !!npTrack && st.showNowPlaying,
       toggleNowPlaying: this.toggleNowPlaying,
       npToggleBg: st.showNowPlaying ? pal.accent : '#d1d1d6',
