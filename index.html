@@ -281,6 +281,9 @@
                 <input value="{{ searchQuery }}" onInput="{{ setSearchQuery }}" onKeyDown="{{ onSearchKey }}" placeholder="{{ searchPlaceholder }}" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--sl-border-md);border-radius:10px;font-size:13px;background:var(--sl-card);color:var(--sl-text);" />
                 <button onClick="{{ runSearch }}" style="flex:none;border:none;border-radius:10px;background:{{ accent }};color:#fff;font-size:13px;font-weight:600;padding:0 16px;cursor:pointer;">{{ searchLabel }}</button>
               </div>
+              <sc-if value="{{ searchHint }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11px;color:var(--sl-text-xs);line-height:1.45;">{{ searchHint }}</div>
+              </sc-if>
               <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;flex-direction:column;gap:2px;border:1px solid var(--sl-border);border-radius:14px;background:var(--sl-card);overflow:hidden;max-height:262px;overflow-y:auto;">
                   <sc-for list="{{ results }}" as="t" hint-placeholder-count="3">
@@ -1360,7 +1363,8 @@ class Component extends DCLogic {
       showRedirect: false, redirectUri: this.REDIRECT(), copyRedirect: this.copyRedirect, copyLabel: st.copied ? 'Copied' : 'Copy',
       connectedLabel: cm.label, readyColor: cm.ready ? '#34c759' : '#ff9f0a',
       searchQuery: st.searchQuery, setSearchQuery: this.setSearchQuery, onSearchKey: this.onSearchKey, runSearch: this.runSearch,
-      searchLabel: st.searching ? '\u2026' : (isSpotify ? 'Add track' : 'Search'), searchPlaceholder: isSpotify ? 'Paste a Spotify track or playlist link' : ('Search Apple Music' + '\u2026'),
+      searchLabel: st.searching ? '\u2026' : (isSpotify ? 'Add' : 'Search'), searchPlaceholder: isSpotify ? 'Paste a Spotify track or playlist link' : ('Search Apple Music' + '\u2026'),
+      searchHint: isSpotify ? 'Paste a track or full playlist link — all tracks import automatically.' : '',
       results, hasResults: results.length > 0, emptyResults: !st.searching && results.length === 0 && !!st.searchQuery && !st.authError && !isSpotify, emptyMsg: 'No results \u2014 try another search.',
       demoLibrary: demoLib, toggleDemo: this.toggleDemo, disconnectSource: this.disconnectSource,
       onAudioChange: this.onAudioChange,
@@ -1368,7 +1372,7 @@ class Component extends DCLogic {
       queueList, hasQueue: queueList.length > 0, queueCount: queueList.length, queueTotal: this.fmt(totalSecs),
       canPreview, togglePreview: this.togglePreview, previewLabel: st.previewPlaying ? '\u23f8 Stop' : '\u25b6 Preview',
       authError: st.authError,
-      musicFootnote: 'Connected accounts play full tracks through the official Spotify / Apple Music players. The demo library and generated ambient bed need no account.',
+      musicFootnote: isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Requires Spotify Premium.' : (isUpload ? 'Drop or select an audio file. It plays in sync with your countdown.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
       showNP: !!npTrack && st.showNowPlaying,
       toggleNowPlaying: this.toggleNowPlaying,
       npToggleBg: st.showNowPlaying ? pal.accent : '#d1d1d6',
