@@ -48,11 +48,12 @@
 
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5cqh;padding:9cqmin;box-sizing:border-box;text-align:center;z-index:3;">
 
+    <sc-if value="{{ showLogoAbove }}" hint-placeholder-val="{{ true }}">
+      <img src="{{ logo }}" alt="logo" style="height:12cqmin;max-width:50cqw;object-fit:contain;" />
+    </sc-if>
+
     <sc-if value="{{ showCountdown }}" hint-placeholder-val="{{ true }}">
       <div ref="{{ setCDBox }}" style="{{ glassCountdownStyle }}">
-        <sc-if value="{{ showLogoImg }}" hint-placeholder-val="{{ true }}">
-          <img src="{{ logo }}" alt="logo" style="height:13cqmin;max-width:55cqw;object-fit:contain;margin-bottom:0.8cqh;" />
-        </sc-if>
         <div style="font-size:2.1cqmin;text-transform:uppercase;letter-spacing:0.42em;font-weight:600;color:var(--st-ink,{{ ink }});opacity:0.55;padding-left:0.42em;transition:color 0.4s ease;">{{ label }}</div>
         <div style="display:flex;align-items:baseline;font-variant-numeric:tabular-nums;line-height:0.95;letter-spacing:0.01em;overflow:hidden;">
           <sc-for list="{{ countdownCells }}" as="d" hint-placeholder-count="5">
@@ -65,9 +66,6 @@
 
     <sc-if value="{{ showAmbient }}" hint-placeholder-val="{{ false }}">
       <div style="{{ glassAmbientStyle }}">
-        <sc-if value="{{ showLogoImg }}" hint-placeholder-val="{{ true }}">
-          <img src="{{ logo }}" alt="logo" style="height:11cqmin;max-width:50cqw;object-fit:contain;margin-bottom:0.8cqh;" />
-        </sc-if>
         <div style="font-size:6.4cqmin;font-weight:300;color:var(--st-ink,{{ ink }});animation:stPulse 3.4s ease-in-out infinite;letter-spacing:0.005em;transition:color 0.4s ease;">{{ subtitle }}</div>
         <div style="font-size:2.6cqmin;font-weight:400;color:var(--st-ink,{{ ink }});opacity:0.5;transition:color 0.4s ease;">{{ title }}</div>
       </div>
@@ -236,6 +234,7 @@ class Component extends DCLogic {
     return {
       setCanvas: this.setCanvas, shaderDisplay: on ? 'block' : 'none', iridOn, blobOverlay: !on && !iridOn,
       showLogoImg: !!(p.hasLogo || p.logo) && !iridOn,
+      showLogoAbove: !!(p.hasLogo || p.logo) && !iridOn && !!(p.showCountdown || p.showAmbient),
       showLogoOnly: !!(p.hasLogo || p.logo) && !iridOn && !p.showCountdown && !p.showAmbient,
       setIridFrame: this.setIridFrame,
       setNPBar: this.setNPBar,
