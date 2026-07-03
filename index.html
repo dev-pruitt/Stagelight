@@ -548,7 +548,7 @@ class Component extends DCLogic {
       const { verifier, challenge } = await this.pkce();
       localStorage.setItem('sl_sp_verifier', verifier);
       localStorage.setItem('sl_sp_clientid', clientId);
-      const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: this.REDIRECT(), code_challenge_method: 'S256', code_challenge: challenge, scope: this.SCOPES, state: 'sl_spotify_popup' });
+      const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: this.REDIRECT(), code_challenge_method: 'S256', code_challenge: challenge, scope: this.SCOPES, state: 'sl_spotify_popup', show_dialog: 'true' });
       const w = 480, h = 740, left = Math.max(0, (screen.width - w) / 2), top = Math.max(0, (screen.height - h) / 2);
       this._popup = window.open('https://accounts.spotify.com/authorize?' + params.toString(), 'sl_spotify_auth', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top);
       if (!this._popup) this.setState({ authError: this.spotifyErr('popup') });
