@@ -554,15 +554,17 @@ class Component extends DCLogic {
       const { verifier, challenge } = await this.pkce();
       localStorage.setItem('sl_sp_verifier', verifier);
       localStorage.setItem('sl_sp_clientid', clientId);
+      try { localStorage.removeItem('sl_sp_auth_msg'); } catch (e) {}
       const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: this.REDIRECT(), code_challenge_method: 'S256', code_challenge: challenge, scope: this.SCOPES, state: 'sl_spotify_popup', show_dialog: 'true' });
       const w = 480, h = 740, left = Math.max(0, (screen.width - w) / 2), top = Math.max(0, (screen.height - h) / 2);
       this._popup = window.open('https://accounts.spotify.com/authorize?' + params.toString(), 'sl_spotify_auth', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top);
-      if (!this._popup) this.setState({ authError: this.spotifyErr('popup') });
+      if (!this._popup) { this.setState({ authError: this.spotifyErr('popup') }); return; }
+      this._startAuthPoll();
     } catch (e) { this.setState({ authError: 'Spotify connect error: ' + (e && e.message || e) }); }
   };
   // _spCodeUsed: guards against re-exchanging the same OAuth auth code twice
   // (browsers sometimes re-deliver it on back-navigation or HMR reload).
-  exchangeSpotifyCode = async (code) => { if (!code || this._spCodeUsed === code) return; this._spCodeUsed = code;
+  exchangeSpotifyCode = async (code) => { if (!code || this._spCodeUsed === code) return; this._spCodeUsed = code; this._stopAuthPoll();
     try {
       const verifier = localStorage.getItem('sl_sp_verifier');
       const clientId = localStorage.getItem('sl_sp_clientid');
@@ -577,6 +579,23 @@ class Component extends DCLogic {
       this.initSpotifyPlayer();
     } catch (e) { this.setState({ authError: 'Spotify token exchange failed: ' + (e && e.message || e) }); }
   };
+  _startAuthPoll() {
+    this._stopAuthPoll();
+    this._authPoll = setInterval(() => {
+      const raw = localStorage.getItem('sl_sp_auth_msg');
+      if (!raw) return;
+      try { localStorage.removeItem('sl_sp_auth_msg'); } catch (e) {}
+      this._stopAuthPoll();
+      let d; try { d = JSON.parse(raw); } catch (e) { return; }
+      if (d && d.error) { this.setState({ authError: this.spotifyErr(d.error) }); }
+      else if (d && d.code) this.exchangeSpotifyCode(d.code);
+    }, 500);
+    this._authPollStop = setTimeout(() => this._stopAuthPoll(), 600000);
+  }
+  _stopAuthPoll() {
+    if (this._authPoll) { clearInterval(this._authPoll); this._authPoll = null; }
+    if (this._authPollStop) { clearTimeout(this._authPollStop); this._authPollStop = null; }
+  }
   async ensureSpToken() {
     if (this.state.spToken && Date.now() < this.state.spExpires - 8000) return this.state.spToken;
     const refresh = localStorage.getItem('sl_sp_refresh'); const clientId = localStorage.getItem('sl_sp_clientid');
@@ -801,13 +820,16 @@ class Component extends DCLogic {
     try {
       const p = new URLSearchParams(location.search);
       const code = p.get('code'), error = p.get('error');
-      const isPopup = p.get('state') === 'sl_spotify_popup' || window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
+      const isPopup = window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
         try { if (window.opener && window.opener !== window) window.opener.postMessage({ __sl_auth: 'spotify', code: code, error: error }, '*'); } catch (e) {} try { localStorage.setItem('sl_sp_auth_msg', JSON.stringify({ code: code || '', error: error || '', t: Date.now() })); } catch (e) {} try { document.title = 'You can close this window'; } catch (e) {}
         window.close();
         return true;
       }
       if (code && localStorage.getItem('sl_sp_verifier')) {
         this.exchangeSpotifyCode(code);
+        history.replaceState({}, '', this.REDIRECT());
+      } else if (error && p.get('state') === 'sl_spotify_popup') {
+        this.setState({ authError: this.spotifyErr(error) });
         history.replaceState({}, '', this.REDIRECT());
       }
     } catch (e) {}
@@ -858,6 +880,7 @@ class Component extends DCLogic {
     if (this._onStagelightVolume) window.removeEventListener('stagelight:volume', this._onStagelightVolume);
     clearTimeout(this._volHideTimer); clearTimeout(this._dtrTimer);
     clearInterval(this._spFade); clearInterval(this._amFade);
+    this._stopAuthPoll();
     if (this.spPlayer) { try { this.spPlayer.disconnect(); } catch (e) {} }
     if (this.actx) try { this.actx.close(); } catch (e) {}
   }
