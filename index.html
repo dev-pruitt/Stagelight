@@ -211,7 +211,7 @@
                   <div style="width:20px;height:20px;border-radius:5px;background:{{ v.swatch }};flex:none;"></div>
                   <span style="font-size:12px;font-weight:600;color:{{ v.color }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ v.name }}</span>
                 </div>
-                <div onClick="{{ v.onToggleSelect }}" title="Include in shuffle" style="position:absolute;top:50%;right:7px;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:{{ v.selBg }};border:1.5px solid {{ v.selBorder }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:pointer;transition:all .15s ease;flex:none;z-index:1;">{{ v.selMark }}</div>
+                <div onClick="{{ v.onToggleSelect }}" title="{{ v.selTitle }}" style="position:absolute;top:50%;right:7px;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:{{ v.selBg }};border:1.5px solid {{ v.selBorder }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:pointer;transition:all .15s ease;flex:none;z-index:1;opacity:{{ v.selOpacity }};">{{ v.selMark }}</div>
               </div>
             </sc-for>
           </div>
@@ -1023,9 +1023,12 @@ class Component extends DCLogic {
   };
   toggleVariantSelection = (i, e) => {
     try { e && e.stopPropagation(); } catch (_) {}
-    const current = this.getSelectedVariants(); const hasIt = current.indexOf(i) >= 0;
-    if (hasIt && current.length === 1) return;
-    this.setState({ selectedVariants: hasIt ? current.filter((x) => x !== i) : current.concat([i]).sort((a, b) => a - b) });
+    const sv = this.state.selectedVariants;
+    if (sv === null) { this.setState({ selectedVariants: [i], shuffledDesigns: [], designQueueIdx: 0 }); return; }
+    const hasIt = sv.indexOf(i) >= 0;
+    if (hasIt && sv.length === 1) { this.setState({ selectedVariants: null, shuffledDesigns: [], designQueueIdx: 0 }); return; }
+    const next = hasIt ? sv.filter((x) => x !== i) : sv.concat([i]).sort((a, b) => a - b);
+    this.setState({ selectedVariants: next.length === this.VARIANTS.length ? null : next, shuffledDesigns: [], designQueueIdx: 0 });
   };
   advanceDesign = () => {
     const { shuffledDesigns, designQueueIdx } = this.state;
@@ -1335,18 +1338,24 @@ class Component extends DCLogic {
 
     const selectedSet = new Set(this.getSelectedVariants());
     const shuffleActive = !!(st.shuffledDesigns && st.shuffledDesigns.length > 0);
-    const variants = this.VARIANTS.map((v, i) => ({
-      name: v.name, onClick: () => this.setVariant(i),
-      border: st.variantIdx === i ? pal.accent : 'rgba(0,0,0,0.1)',
-      bg: st.variantIdx === i ? this.rgba(accentArr, 0.06) : 'var(--sl-card)',
-      color: 'var(--sl-text)',
-      swatch: 'linear-gradient(135deg,' + pal.accent + ',' + pal.accent2 + ')',
-      isSelected: selectedSet.has(i),
-      selBg: selectedSet.has(i) ? pal.accent : 'transparent',
-      selBorder: selectedSet.has(i) ? pal.accent : 'rgba(0,0,0,0.2)',
-      selMark: selectedSet.has(i) ? '✓' : '',
-      onToggleSelect: (e) => this.toggleVariantSelection(i, e),
-    }));
+    const hasExplicitSelection = st.selectedVariants !== null && (st.selectedVariants || []).length > 0;
+    const variants = this.VARIANTS.map((v, i) => {
+      const inPool = selectedSet.has(i);
+      return {
+        name: v.name, onClick: () => this.setVariant(i),
+        border: st.variantIdx === i ? pal.accent : 'rgba(0,0,0,0.1)',
+        bg: st.variantIdx === i ? this.rgba(accentArr, 0.06) : 'var(--sl-card)',
+        color: 'var(--sl-text)',
+        swatch: 'linear-gradient(135deg,' + pal.accent + ',' + pal.accent2 + ')',
+        isSelected: inPool,
+        selBg: hasExplicitSelection && inPool ? pal.accent : 'transparent',
+        selBorder: hasExplicitSelection && inPool ? pal.accent : 'rgba(0,0,0,0.18)',
+        selMark: hasExplicitSelection && inPool ? '✓' : '',
+        selOpacity: hasExplicitSelection ? 1 : 0.28,
+        selTitle: hasExplicitSelection ? (inPool ? 'Remove from shuffle' : 'Add to shuffle') : 'Shuffle only this design',
+        onToggleSelect: (e) => this.toggleVariantSelection(i, e),
+      };
+    });
 
     const srcDefs = [{ id: 'spotify', label: 'Spotify' }, { id: 'apple', label: 'Apple Music', soon: true }, { id: 'upload', label: 'Upload' }];
     const sources = srcDefs.map((s) => ({
