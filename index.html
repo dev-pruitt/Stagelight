@@ -202,7 +202,10 @@
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--sl-text-sub);">Design</div>
-            <button onClick="{{ shuffle }}" style="display:flex;align-items:center;gap:6px;border:1px solid {{ shuffleBorder }};background:{{ shuffleBg }};border-radius:980px;padding:6px 13px;font-size:12.5px;font-weight:600;color:{{ shuffleColor }};cursor:pointer;transition:all .12s ease;">↻ {{ shuffleLabel }}</button>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button onClick="{{ toggleMultiSelect }}" style="display:flex;align-items:center;gap:5px;border:1px solid {{ multiSelectBorder }};background:{{ multiSelectBg }};border-radius:980px;padding:6px 13px;font-size:12.5px;font-weight:600;color:{{ multiSelectColor }};cursor:pointer;transition:all .12s ease;">Multiple</button>
+              <button onClick="{{ shuffle }}" style="display:flex;align-items:center;gap:6px;border:1px solid {{ shuffleBorder }};background:{{ shuffleBg }};border-radius:980px;padding:6px 13px;font-size:12.5px;font-weight:600;color:{{ shuffleColor }};cursor:pointer;transition:all .12s ease;">↻ {{ shuffleLabel }}</button>
+            </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <sc-for list="{{ variants }}" as="v" hint-placeholder-count="4">
@@ -211,7 +214,7 @@
                   <div style="width:20px;height:20px;border-radius:5px;background:{{ v.swatch }};flex:none;"></div>
                   <span style="font-size:12px;font-weight:600;color:{{ v.color }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ v.name }}</span>
                 </div>
-                <div onClick="{{ v.onToggleSelect }}" title="{{ v.selTitle }}" style="position:absolute;top:50%;right:7px;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:{{ v.selBg }};border:1.5px solid {{ v.selBorder }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:pointer;transition:all .15s ease;flex:none;z-index:1;opacity:{{ v.selOpacity }};">{{ v.selMark }}</div>
+                <div onClick="{{ v.onToggleSelect }}" title="{{ v.selTitle }}" style="position:absolute;top:50%;right:7px;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:{{ v.selBg }};border:1.5px solid {{ v.selBorder }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:pointer;transition:all .15s ease;flex:none;z-index:1;opacity:{{ v.selOpacity }};pointer-events:{{ v.selPointerEvents }};">{{ v.selMark }}</div>
               </div>
             </sc-for>
           </div>
@@ -438,6 +441,7 @@ class Component extends DCLogic {
     npStyle: 'pill',
     variantIdx: 0,
     selectedVariants: null,
+    multiSelect: false,
     shuffledDesigns: [],
     designQueueIdx: 0,
     seed: 1234,
@@ -1024,9 +1028,9 @@ class Component extends DCLogic {
   toggleVariantSelection = (i, e) => {
     try { e && e.stopPropagation(); } catch (_) {}
     const sv = this.state.selectedVariants;
-    if (sv === null) { this.setState({ selectedVariants: [i], shuffledDesigns: [], designQueueIdx: 0 }); return; }
+    if (sv === null) { const next = this.VARIANTS.map((_, idx) => idx).filter(idx => idx !== i); this.setState({ selectedVariants: next, shuffledDesigns: [], designQueueIdx: 0 }); return; }
     const hasIt = sv.indexOf(i) >= 0;
-    if (hasIt && sv.length === 1) { this.setState({ selectedVariants: null, shuffledDesigns: [], designQueueIdx: 0 }); return; }
+    if (hasIt && sv.length === 1) { this.setState({ selectedVariants: null, multiSelect: false, shuffledDesigns: [], designQueueIdx: 0 }); return; }
     const next = hasIt ? sv.filter((x) => x !== i) : sv.concat([i]).sort((a, b) => a - b);
     this.setState({ selectedVariants: next.length === this.VARIANTS.length ? null : next, shuffledDesigns: [], designQueueIdx: 0 });
   };
@@ -1053,6 +1057,7 @@ class Component extends DCLogic {
     }, 500);
   }
   setVariant = (i) => this.setState({ variantIdx: i, shuffledDesigns: [], designQueueIdx: 0 });
+  toggleMultiSelect = () => this.setState((s) => ({ multiSelect: !s.multiSelect, selectedVariants: null, shuffledDesigns: [], designQueueIdx: 0 }));
 
   setSource = (src) => this.setState({ source: src, results: [], searchQuery: '', authError: '' });
   stopCurrentPreview() { const tr = this.state.track; if (tr) { if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} } } }
@@ -1166,7 +1171,7 @@ class Component extends DCLogic {
   savePrefs() {
     try {
       var s = this.state;
-      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, selectedVariants: s.selectedVariants, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, selectedVariants: s.selectedVariants, multiSelect: s.multiSelect, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
       if (data === this._lastPrefs) return;
       this._lastPrefs = data;
       localStorage.setItem('sl_setup', data);
@@ -1336,24 +1341,33 @@ class Component extends DCLogic {
       border: manualSel(m) ? pal.accent : 'var(--sl-border-md)',
     }));
 
+    const multiSelect = st.multiSelect;
     const selectedSet = new Set(this.getSelectedVariants());
     const shuffleActive = !!(st.shuffledDesigns && st.shuffledDesigns.length > 0);
-    const hasExplicitSelection = st.selectedVariants !== null && (st.selectedVariants || []).length > 0;
     const variants = this.VARIANTS.map((v, i) => {
+      const isActive = st.variantIdx === i;
       const inPool = selectedSet.has(i);
+      const showRing = !multiSelect && isActive;
+      const checkFilled = multiSelect && inPool;
       return {
-        name: v.name, onClick: () => this.setVariant(i),
-        border: st.variantIdx === i ? pal.accent : 'rgba(0,0,0,0.1)',
-        bg: st.variantIdx === i ? this.rgba(accentArr, 0.06) : 'var(--sl-card)',
+        name: v.name,
+        onClick: multiSelect
+          ? () => { this.setState({ variantIdx: i }); this.toggleVariantSelection(i); }
+          : () => this.setVariant(i),
+        border: showRing ? pal.accent : 'rgba(0,0,0,0.1)',
+        bg: showRing ? this.rgba(accentArr, 0.06) : 'var(--sl-card)',
         color: 'var(--sl-text)',
         swatch: 'linear-gradient(135deg,' + pal.accent + ',' + pal.accent2 + ')',
         isSelected: inPool,
-        selBg: hasExplicitSelection && inPool ? pal.accent : 'transparent',
-        selBorder: hasExplicitSelection && inPool ? pal.accent : 'rgba(0,0,0,0.18)',
-        selMark: hasExplicitSelection && inPool ? '✓' : '',
-        selOpacity: hasExplicitSelection ? 1 : 0.28,
-        selTitle: hasExplicitSelection ? (inPool ? 'Remove from shuffle' : 'Add to shuffle') : 'Shuffle only this design',
-        onToggleSelect: (e) => this.toggleVariantSelection(i, e),
+        selBg: checkFilled ? pal.accent : 'transparent',
+        selBorder: checkFilled ? pal.accent : 'rgba(0,0,0,0.2)',
+        selMark: checkFilled ? '✓' : '',
+        selOpacity: multiSelect ? 1 : 0,
+        selPointerEvents: multiSelect ? 'auto' : 'none',
+        selTitle: multiSelect ? (inPool ? 'Remove from shuffle' : 'Add to shuffle') : '',
+        onToggleSelect: multiSelect
+          ? (e) => { try { e && e.stopPropagation(); } catch (_) {} this.toggleVariantSelection(i); }
+          : () => {},
       };
     });
 
@@ -1427,6 +1441,10 @@ class Component extends DCLogic {
       shuffleBg: shuffleActive ? this.rgba(accentArr, 0.10) : 'var(--sl-card)',
       shuffleColor: shuffleActive ? pal.accent : 'var(--sl-text)',
       shuffleBorder: shuffleActive ? pal.accent : 'var(--sl-border-md)',
+      multiSelect: st.multiSelect, toggleMultiSelect: this.toggleMultiSelect,
+      multiSelectBg: st.multiSelect ? this.rgba(accentArr, 0.10) : 'var(--sl-card)',
+      multiSelectColor: st.multiSelect ? pal.accent : 'var(--sl-text)',
+      multiSelectBorder: st.multiSelect ? pal.accent : 'var(--sl-border-md)',
       blobs: this._blobs, liveBlobs: this._liveBlobs,
       stageBg, stageInk, shaderMode, shaderCols,
       isIridescent: isIrid,
