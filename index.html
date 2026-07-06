@@ -820,7 +820,7 @@ class Component extends DCLogic {
     try {
       const p = new URLSearchParams(location.search);
       const code = p.get('code'), error = p.get('error');
-      const isPopup = window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
+      const isPopup = p.get('state') === 'sl_spotify_popup' || window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
         try { if (window.opener && window.opener !== window) window.opener.postMessage({ __sl_auth: 'spotify', code: code, error: error }, '*'); } catch (e) {} try { localStorage.setItem('sl_sp_auth_msg', JSON.stringify({ code: code || '', error: error || '', t: Date.now() })); } catch (e) {} try { document.title = 'You can close this window'; } catch (e) {}
         window.close();
         return true;
