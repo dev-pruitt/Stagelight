@@ -634,21 +634,31 @@ class Component extends DCLogic {
         var img = ct.album && ct.album.images && ct.album.images[0];
         if (img) patch.cover = 'center/cover url(' + img.url + ')';
         var prevUri = this._lastSpUri; this._lastSpUri = uri;
-        // Track whether playback has actually started, so we can tell "not started yet"
-        // (paused at position 0) apart from "whole queue finished" (paused at position 0
-        // with nothing left to play). Without this, the SDK parks on the first/last track
-        // paused and the Now Playing pill lingers showing a stale song.
-        if (!st.paused) this._spStarted = true;
-        var noNext = !st.track_window.next_tracks || st.track_window.next_tracks.length === 0;
-        var ended = this._spStarted && st.paused && (st.position || 0) === 0 && noNext;
+        // End-of-setlist detection driven by OUR queue, not the SDK's track_window:
+        // tracks are loaded via the queue API on a single-track context, so
+        // track_window.next_tracks is unreliable (usually empty). Instead, find the
+        // last Spotify track in our queue; once playback has reached it, the setlist
+        // is finished when the player either pauses at the start (no repeat) or loops
+        // back to an earlier track (repeat on). Guarding on "reached last" prevents the
+        // brief paused frames between queued tracks from ending the list early.
+        var q0 = this.state.queue || [];
+        var curIdx = q0.findIndex((x) => x && x.uri === uri);
+        var lastSpIdx = -1; for (var li = 0; li < q0.length; li++) { if (q0[li] && q0[li].service === 'spotify' && q0[li].uri) lastSpIdx = li; }
+        if (curIdx >= 0 && curIdx === lastSpIdx) this._reachedLast = true;
+        var loopedPastEnd = this._reachedLast && curIdx >= 0 && lastSpIdx >= 0 && curIdx < lastSpIdx;
+        var pausedEnd = this._reachedLast && st.paused && (st.position || 0) === 0;
+        var ended = loopedPastEnd || pausedEnd;
+        if (ended) { try { this.stopSpotify(); } catch (e) {} }
         this.setState((s) => {
           var apply = (x) => (x && x.uri === uri ? Object.assign({}, x, patch) : x);
           var nq = (s.queue || []).map(apply);
           var idx = nq.findIndex((x) => x && x.uri === uri);
           var presenting = s.phase === 'presenting';
           // While presenting, follow Spotify's own queue advancement so "Now playing" stays in sync.
-          var track = (presenting && idx >= 0) ? nq[idx] : ((s.track && s.track.uri === uri) ? Object.assign({}, s.track, patch) : s.track);
-          return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: (presenting && idx >= 0) ? idx : s.currentIdx, musicEnded: ended };
+          // Once ended, freeze on the last track (don't follow a loop back to song 1).
+          var follow = presenting && idx >= 0 && !ended;
+          var track = follow ? nq[idx] : ((s.track && s.track.uri === uri) ? Object.assign({}, s.track, patch) : s.track);
+          return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: follow ? idx : s.currentIdx, musicEnded: ended };
         });
         if (this.state.colorSource === 'album' && patch.cover) this.applyAlbumPalette({ cover: patch.cover });
         if (this.state.phase === 'presenting' && prevUri && uri !== prevUri && (this.state.shuffledDesigns || []).length > 0) this.advanceDesign();
@@ -1176,8 +1186,8 @@ class Component extends DCLogic {
     const queue = this.state.queue || [];
     const cur = queue[this.state.currentIdx] || this.state.track;
     if (!cur) return; // no music selected -> stay silent (no ambient bed)
-    // Fresh playback run: clear the "finished" flag so the Now Playing pill shows again.
-    this._spStarted = false;
+    // Fresh playback run: clear the "finished" flags so the Now Playing pill shows again.
+    this._reachedLast = false; this._lastSpUri = null;
     if (this.state.musicEnded) this.setState({ musicEnded: false });
     if (cur && cur.service === 'spotify' && this.state.spReady) { this.playSpotifyQueue(queue.filter((x) => x && x.service === 'spotify' && x.uri).map((x) => x.uri)); return; }
     if (cur && cur.service === 'apple' && this.state.connected.apple) { this.playApple(cur.id); return; }
@@ -1208,6 +1218,8 @@ class Component extends DCLogic {
     // Add the rest to Spotify's own playback queue; the Web Playback SDK auto-advances and player_state_changed keeps "Now playing" in sync.
     try {
       const token = await this.ensureSpToken(); const id = this.state.spDeviceId;
+      // Turn repeat off so the setlist doesn't loop back to song 1 after the last track.
+      try { await fetch('https://api.spotify.com/v1/me/player/repeat?' + new URLSearchParams({ state: 'off', device_id: id }).toString(), { method: 'PUT', headers: { Authorization: 'Bearer ' + token } }); } catch (e) {}
       for (let i = 1; i < uris.length; i++) {
         await fetch('https://api.spotify.com/v1/me/player/queue?' + new URLSearchParams({ uri: uris[i], device_id: id }).toString(), { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
       }
