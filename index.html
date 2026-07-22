@@ -634,6 +634,13 @@ class Component extends DCLogic {
         var img = ct.album && ct.album.images && ct.album.images[0];
         if (img) patch.cover = 'center/cover url(' + img.url + ')';
         var prevUri = this._lastSpUri; this._lastSpUri = uri;
+        // Track whether playback has actually started, so we can tell "not started yet"
+        // (paused at position 0) apart from "whole queue finished" (paused at position 0
+        // with nothing left to play). Without this, the SDK parks on the first/last track
+        // paused and the Now Playing pill lingers showing a stale song.
+        if (!st.paused) this._spStarted = true;
+        var noNext = !st.track_window.next_tracks || st.track_window.next_tracks.length === 0;
+        var ended = this._spStarted && st.paused && (st.position || 0) === 0 && noNext;
         this.setState((s) => {
           var apply = (x) => (x && x.uri === uri ? Object.assign({}, x, patch) : x);
           var nq = (s.queue || []).map(apply);
@@ -641,7 +648,7 @@ class Component extends DCLogic {
           var presenting = s.phase === 'presenting';
           // While presenting, follow Spotify's own queue advancement so "Now playing" stays in sync.
           var track = (presenting && idx >= 0) ? nq[idx] : ((s.track && s.track.uri === uri) ? Object.assign({}, s.track, patch) : s.track);
-          return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: (presenting && idx >= 0) ? idx : s.currentIdx };
+          return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: (presenting && idx >= 0) ? idx : s.currentIdx, musicEnded: ended };
         });
         if (this.state.colorSource === 'album' && patch.cover) this.applyAlbumPalette({ cover: patch.cover });
         if (this.state.phase === 'presenting' && prevUri && uri !== prevUri && (this.state.shuffledDesigns || []).length > 0) this.advanceDesign();
@@ -1169,6 +1176,9 @@ class Component extends DCLogic {
     const queue = this.state.queue || [];
     const cur = queue[this.state.currentIdx] || this.state.track;
     if (!cur) return; // no music selected -> stay silent (no ambient bed)
+    // Fresh playback run: clear the "finished" flag so the Now Playing pill shows again.
+    this._spStarted = false;
+    if (this.state.musicEnded) this.setState({ musicEnded: false });
     if (cur && cur.service === 'spotify' && this.state.spReady) { this.playSpotifyQueue(queue.filter((x) => x && x.service === 'spotify' && x.uri).map((x) => x.uri)); return; }
     if (cur && cur.service === 'apple' && this.state.connected.apple) { this.playApple(cur.id); return; }
     const firstLocal = queue.findIndex((x) => x && x.url);
@@ -1208,7 +1218,7 @@ class Component extends DCLogic {
     if (!t || !t.url || !this.audio) return;
     const moreLocal = q.filter((x) => x && x.url).length > 1;
     this.audio.loop = !moreLocal;
-    this.audio.onended = moreLocal ? (() => { let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++; if (n < q.length) { if ((this.state.shuffledDesigns || []).length > 0) this.advanceDesign(); this.playLocalAt(n); } }) : null;
+    this.audio.onended = moreLocal ? (() => { let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++; if (n < q.length) { if ((this.state.shuffledDesigns || []).length > 0) this.advanceDesign(); this.playLocalAt(n); } else { this.setState({ musicEnded: true }); } }) : null;
     this.audio.src = t.url; this.audio.volume = 0; this.audio.currentTime = 0;
     const p = this.audio.play(); if (p && p.catch) p.catch(() => {});
     let v = 0; clearInterval(this._fade);
@@ -1297,7 +1307,7 @@ class Component extends DCLogic {
   exit = () => {
     this.stopAudio();
     if (document.fullscreenElement && document.exitFullscreen) { try { document.exitFullscreen().catch(() => {}); } catch (e) {} }
-    this.setState({ phase: 'setup', playing: false });
+    this.setState({ phase: 'setup', playing: false, musicEnded: false });
   };
 
   // ---------- blobs ----------
@@ -1548,7 +1558,7 @@ class Component extends DCLogic {
       musicFootnote: isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Requires Spotify Premium.' : (isUpload ? 'Drop or select an audio file. It plays in sync with your countdown.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
       npStyle: st.npStyle || 'pill',
       npStyleButtons: ['pill', 'stage', 'minimal', 'spectrum'].map((s) => { const active = (st.npStyle || 'pill') === s; return { label: s.charAt(0).toUpperCase() + s.slice(1), onClick: () => this.setNpStyle(s), bg: active ? pal.accent : 'var(--sl-card)', color: active ? '#fff' : 'var(--sl-text)', border: active ? pal.accent : 'var(--sl-border-md)' }; }),
-      showNP: !!npTrack && st.showNowPlaying,
+      showNP: !!npTrack && st.showNowPlaying && !st.musicEnded,
       toggleNowPlaying: this.toggleNowPlaying,
       npToggleBg: st.showNowPlaying ? pal.accent : '#d1d1d6',
       npKnobLeft: st.showNowPlaying ? '19px' : '2px',
