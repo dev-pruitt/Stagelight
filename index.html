@@ -661,7 +661,7 @@ class Component extends DCLogic {
           return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: follow ? idx : s.currentIdx, musicEnded: ended };
         });
         if (this.state.colorSource === 'album' && patch.cover) this.applyAlbumPalette({ cover: patch.cover });
-        if (this.state.phase === 'presenting' && prevUri && uri !== prevUri && (this.state.shuffledDesigns || []).length > 0) this.advanceDesign();
+        if (this.state.phase === 'presenting' && prevUri && uri !== prevUri && this.designSequence().length > 1) this.advanceDesign();
       });
       await player.connect();
       this.spPlayer = player;
@@ -1096,30 +1096,45 @@ class Component extends DCLogic {
   setMinutes = (e) => this.setState({ minutes: parseInt(e.target.value, 10) || 1, autoMatch: false });
   toggleAutoMatch = () => this.setState((s) => ({ autoMatch: !s.autoMatch }));
 
+  // Variants shown as "selected" in the design grid (multiselect only, ordered by click).
   getSelectedVariants() {
-    const sv = this.state.selectedVariants;
-    return (!sv || sv.length === 0) ? this.VARIANTS.map((_, i) => i) : sv;
+    return this.state.multiSelect ? (this.state.selectedVariants || []) : [];
   }
+  // The ordered list of designs that cycle during a presentation. In multiselect it's the
+  // user's chosen sequence; otherwise it's a shuffled run of all designs (via Shuffle).
+  designSequence() {
+    const s = this.state;
+    return (s.multiSelect ? (s.selectedVariants || []) : (s.shuffledDesigns || []));
+  }
+  _shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   shuffle = () => {
-    const selected = this.getSelectedVariants(); if (!selected.length) return;
-    const arr = selected.slice();
-    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
-    this.setState({ shuffledDesigns: arr, designQueueIdx: 0, variantIdx: arr[0], seed: (this.state.seed * 1103515245 + 12345) & 0x7fffffff });
+    const s = this.state;
+    const newSeed = (s.seed * 1103515245 + 12345) & 0x7fffffff;
+    if (s.multiSelect) {
+      // Re-order the chosen sequence; the badge numbers update to match.
+      const sv = (s.selectedVariants || []).slice();
+      if (sv.length < 2) return;
+      this._shuffleArr(sv);
+      this.setState({ selectedVariants: sv, designQueueIdx: 0, variantIdx: sv[0], seed: newSeed });
+    } else {
+      const arr = this._shuffleArr(this.VARIANTS.map((_, i) => i));
+      this.setState({ shuffledDesigns: arr, designQueueIdx: 0, variantIdx: arr[0], seed: newSeed });
+    }
   };
+  // Multiselect toggle: append a design to the end of the sequence (next number), or remove
+  // it (the rest keep their order and renumber). Never auto-selects or collapses to "all".
   toggleVariantSelection = (i, e) => {
     try { e && e.stopPropagation(); } catch (_) {}
-    const sv = this.state.selectedVariants;
-    if (sv === null) { const next = this.VARIANTS.map((_, idx) => idx).filter(idx => idx !== i); this.setState({ selectedVariants: next, shuffledDesigns: [], designQueueIdx: 0 }); return; }
-    const hasIt = sv.indexOf(i) >= 0;
-    if (hasIt && sv.length === 1) { this.setState({ selectedVariants: null, multiSelect: false, shuffledDesigns: [], designQueueIdx: 0 }); return; }
-    const next = hasIt ? sv.filter((x) => x !== i) : sv.concat([i]).sort((a, b) => a - b);
-    this.setState({ selectedVariants: next.length === this.VARIANTS.length ? null : next, shuffledDesigns: [], designQueueIdx: 0 });
+    const sv = (this.state.selectedVariants || []).slice();
+    const at = sv.indexOf(i);
+    if (at >= 0) { sv.splice(at, 1); this.setState({ selectedVariants: sv, shuffledDesigns: [], designQueueIdx: 0 }); }
+    else { sv.push(i); this.setState({ selectedVariants: sv, shuffledDesigns: [], designQueueIdx: 0, variantIdx: i }); }
   };
   advanceDesign = () => {
-    const { shuffledDesigns, designQueueIdx } = this.state;
-    if (!shuffledDesigns || !shuffledDesigns.length) return;
-    const nqi = (designQueueIdx + 1) % shuffledDesigns.length;
-    const nvi = shuffledDesigns[nqi];
+    const seq = this.designSequence();
+    if (seq.length < 2) return;
+    const nqi = (this.state.designQueueIdx + 1) % seq.length;
+    const nvi = seq[nqi];
     const newSeed = (this.state.seed * 1103515245 + 12345) & 0x7fffffff;
     this._doDesignTransition(() => this.setState({ designQueueIdx: nqi, variantIdx: nvi, seed: newSeed }));
   };
@@ -1127,18 +1142,24 @@ class Component extends DCLogic {
     let ov = document.getElementById('sl-dtr');
     if (!ov) {
       ov = document.createElement('div'); ov.id = 'sl-dtr';
-      ov.style.cssText = 'position:fixed;inset:0;z-index:99998;pointer-events:none;background:#000;opacity:0;transition:opacity 0.5s ease;';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:99998;pointer-events:none;opacity:0;';
       document.body.appendChild(ov);
     }
+    // Cross-dissolve through the stage's own background colour (not black), so a design swap
+    // reads as the same soft, colour-led transition used elsewhere on the stage.
+    ov.style.background = this._lastStageBg || 'rgb(0,0,0)';
     clearTimeout(this._dtrTimer);
-    ov.style.transition = 'opacity 0.5s ease'; ov.style.opacity = '0.45';
+    ov.style.transition = 'opacity 0.5s ease-in-out';
+    void ov.offsetHeight; // reflow so the fade-in animates from the current opacity
+    ov.style.opacity = '0.92';
     this._dtrTimer = setTimeout(() => {
-      applyFn();
-      setTimeout(() => { ov.style.transition = 'opacity 1s ease'; ov.style.opacity = '0'; }, 60);
-    }, 500);
+      applyFn(); // swap the design while it's veiled
+      setTimeout(() => { ov.style.transition = 'opacity 0.75s ease-in-out'; ov.style.opacity = '0'; }, 90);
+    }, 520);
   }
   setVariant = (i) => this.setState({ variantIdx: i, shuffledDesigns: [], designQueueIdx: 0 });
-  toggleMultiSelect = () => this.setState((s) => ({ multiSelect: !s.multiSelect, selectedVariants: null, shuffledDesigns: [], designQueueIdx: 0 }));
+  // Entering multiselect selects nothing; leaving clears the selection back to single-design.
+  toggleMultiSelect = () => this.setState((s) => ({ multiSelect: !s.multiSelect, selectedVariants: !s.multiSelect ? [] : null, shuffledDesigns: [], designQueueIdx: 0 }));
 
   setSource = (src) => this.setState({ source: src, results: [], searchQuery: '', authError: '' });
   stopCurrentPreview() { const tr = this.state.track; if (tr) { if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} } } }
@@ -1230,7 +1251,7 @@ class Component extends DCLogic {
     if (!t || !t.url || !this.audio) return;
     const moreLocal = q.filter((x) => x && x.url).length > 1;
     this.audio.loop = !moreLocal;
-    this.audio.onended = moreLocal ? (() => { let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++; if (n < q.length) { if ((this.state.shuffledDesigns || []).length > 0) this.advanceDesign(); this.playLocalAt(n); } else { this.setState({ musicEnded: true }); } }) : null;
+    this.audio.onended = moreLocal ? (() => { let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++; if (n < q.length) { if (this.designSequence().length > 1) this.advanceDesign(); this.playLocalAt(n); } else { this.setState({ musicEnded: true }); } }) : null;
     this.audio.src = t.url; this.audio.volume = 0; this.audio.currentTime = 0;
     const p = this.audio.play(); if (p && p.catch) p.catch(() => {});
     let v = 0; clearInterval(this._fade);
@@ -1266,7 +1287,7 @@ class Component extends DCLogic {
   resetSetup = () => {
     this.stopCurrentPreview();
     try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
-    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, npStyle: 'pill', fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '', selectedVariants: null, shuffledDesigns: [], designQueueIdx: 0 });
+    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, npStyle: 'pill', fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '', selectedVariants: null, multiSelect: false, shuffledDesigns: [], designQueueIdx: 0 });
   };
   toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
   openAbout = () => this.setState({ showAbout: true });
@@ -1300,7 +1321,7 @@ class Component extends DCLogic {
     var t = q[i];
     this.setState({ currentIdx: i, track: t, paused: false, playing: true });
     if (this.state.phase === 'presenting') {
-      if ((this.state.shuffledDesigns || []).length > 0) this.advanceDesign();
+      if (this.designSequence().length > 1) this.advanceDesign();
       try {
         if (t.service === 'spotify' && this.state.spReady) this.playSpotify(t.uri);
         else if (t.service === 'apple' && this.state.connected.apple) this.playApple(t.id);
@@ -1311,8 +1332,8 @@ class Component extends DCLogic {
   };
   beginEvent = () => {
     const target = Date.now() + this.countdownSecs() * 1000;
-    const sd = this.state.shuffledDesigns || [];
-    this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, paused: false, currentIdx: 0, track: (this.state.queue[0] || this.state.track), designQueueIdx: 0, variantIdx: sd.length > 0 ? sd[0] : this.state.variantIdx });
+    const seq = this.designSequence();
+    this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, paused: false, currentIdx: 0, track: (this.state.queue[0] || this.state.track), designQueueIdx: 0, variantIdx: seq.length ? seq[0] : this.state.variantIdx });
     try { this.startAudio(); } catch (e) {}
     try { if (this.state.fullscreenOnStart && this.root && this.root.requestFullscreen) { const r = this.root.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
   };
@@ -1408,6 +1429,8 @@ class Component extends DCLogic {
     } else if (isIrid) {
       shaderMode = 'iridescent';
     }
+    // Remembered for the design cross-dissolve veil so it matches the on-screen background.
+    this._lastStageBg = stageBg;
 
     const accentArr = (pal.accent.match(/[\d.]+/g) || [10, 132, 255]).map(Number);
     const accentShadow = 'rgba(' + accentArr[0] + ',' + accentArr[1] + ',' + accentArr[2] + ',0.35)';
@@ -1428,29 +1451,29 @@ class Component extends DCLogic {
     }));
 
     const multiSelect = st.multiSelect;
-    const selectedSet = new Set(this.getSelectedVariants());
+    // 1-based play position for each chosen design (multiselect); 0 = not selected.
+    const selOrder = multiSelect ? (st.selectedVariants || []) : [];
+    const orderPos = new Map(selOrder.map((idx, n) => [idx, n + 1]));
     const shuffleActive = !!(st.shuffledDesigns && st.shuffledDesigns.length > 0);
     const variants = this.VARIANTS.map((v, i) => {
       const isActive = st.variantIdx === i;
-      const inPool = selectedSet.has(i);
-      const showRing = !multiSelect && isActive;
-      const checkFilled = multiSelect && inPool;
+      const seqNum = orderPos.get(i) || 0;
+      const inPool = seqNum > 0;
+      const highlight = multiSelect ? inPool : isActive;
       return {
         name: v.name,
-        onClick: multiSelect
-          ? () => { this.setState({ variantIdx: i }); this.toggleVariantSelection(i); }
-          : () => this.setVariant(i),
-        border: showRing ? pal.accent : 'rgba(0,0,0,0.1)',
-        bg: showRing ? this.rgba(accentArr, 0.06) : 'var(--sl-card)',
+        onClick: multiSelect ? () => this.toggleVariantSelection(i) : () => this.setVariant(i),
+        border: highlight ? pal.accent : 'rgba(0,0,0,0.1)',
+        bg: highlight ? this.rgba(accentArr, 0.06) : 'var(--sl-card)',
         color: 'var(--sl-text)',
         swatch: 'linear-gradient(135deg,' + pal.accent + ',' + pal.accent2 + ')',
         isSelected: inPool,
-        selBg: checkFilled ? pal.accent : 'transparent',
-        selBorder: checkFilled ? pal.accent : 'rgba(0,0,0,0.2)',
-        selMark: checkFilled ? '✓' : '',
+        selBg: inPool ? pal.accent : 'transparent',
+        selBorder: inPool ? pal.accent : 'rgba(0,0,0,0.2)',
+        selMark: inPool ? String(seqNum) : '',
         selOpacity: multiSelect ? 1 : 0,
         selPointerEvents: multiSelect ? 'auto' : 'none',
-        selTitle: multiSelect ? (inPool ? 'Remove from shuffle' : 'Add to shuffle') : '',
+        selTitle: multiSelect ? (inPool ? ('Plays #' + seqNum + ' — click to remove') : 'Add to the sequence') : '',
         onToggleSelect: multiSelect
           ? (e) => { try { e && e.stopPropagation(); } catch (_) {} this.toggleVariantSelection(i); }
           : () => {},
