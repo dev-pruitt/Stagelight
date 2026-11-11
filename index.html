@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stagelight — Event waiting screen</title>
+<meta name="description" content="Build an event countdown with animated designs, your logo, and music.">
+<link rel="icon" href="./assets/favicon-32.png">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -421,13 +424,14 @@
   </div>
   </sc-if>
 
-  <audio ref="{{ setAudio }}" loop></audio>
+  <sc-if value="{{ authError }}"><div role="alert" style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:100002;max-width:90vw;padding:12px 18px;border-radius:12px;background:#311b1b;color:#fff;font-size:13px;">{{ authError }}</div></sc-if>
+  <audio ref="{{ setAudio }}"></audio>
 
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;eventTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Team All-Hands&quot;},&quot;countdownMinutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:60},&quot;defaultDesign&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Soft Mesh&quot;,&quot;options&quot;:[&quot;Soft Mesh&quot;,&quot;Halo&quot;,&quot;Aurora&quot;,&quot;Field&quot;,&quot;Aurora Flow&quot;]}}">
 class Component extends DCLogic {
-  VERSION = '1.1.0';
+  VERSION = '1.1.1';
 
   state = {
     phase: 'setup',
@@ -521,13 +525,19 @@ class Component extends DCLogic {
   REDIRECT() { return location.origin + location.pathname; }
 
   loadScript(src) {
-    return new Promise((res, rej) => {
-      if (document.querySelector('script[data-sl="' + src + '"]')) return res();
-      const s = document.createElement('script');
-      s.src = src; s.async = true; s.setAttribute('data-sl', src);
-      s.onload = () => res(); s.onerror = () => rej(new Error('Failed to load ' + src));
-      document.head.appendChild(s);
+    this._scripts = this._scripts || new Map();
+    if (this._scripts.has(src)) return this._scripts.get(src);
+    const promise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      const timer = setTimeout(() => fail(), 15000);
+      const fail = () => { clearTimeout(timer); script.remove(); this._scripts.delete(src); reject(new Error('Failed to load ' + src)); };
+      script.src = src; script.async = true;
+      script.onload = () => { clearTimeout(timer); resolve(); };
+      script.onerror = fail;
+      document.head.appendChild(script);
     });
+    this._scripts.set(src, promise);
+    return promise;
   }
   b64url(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
   async pkce() {
@@ -555,16 +565,18 @@ class Component extends DCLogic {
     if (!clientId) { this.setState({ authError: 'Paste your Spotify Client ID first.' }); return; }
     this.setState({ authError: '' });
     try {
+      // Open during the click gesture, before PKCE awaits; Safari otherwise blocks it.
+      const w = 480, h = 740, left = Math.max(0, (screen.width - w) / 2), top = Math.max(0, (screen.height - h) / 2);
+      this._popup = window.open('about:blank', 'sl_spotify_auth', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top);
+      if (!this._popup) { this.setState({ authError: this.spotifyErr('popup') }); return; }
       const { verifier, challenge } = await this.pkce();
       localStorage.setItem('sl_sp_verifier', verifier);
       localStorage.setItem('sl_sp_clientid', clientId);
       try { localStorage.removeItem('sl_sp_auth_msg'); } catch (e) {}
       const params = new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: this.REDIRECT(), code_challenge_method: 'S256', code_challenge: challenge, scope: this.SCOPES, state: 'sl_spotify_popup', show_dialog: 'true' });
-      const w = 480, h = 740, left = Math.max(0, (screen.width - w) / 2), top = Math.max(0, (screen.height - h) / 2);
-      this._popup = window.open('https://accounts.spotify.com/authorize?' + params.toString(), 'sl_spotify_auth', 'width=' + w + ',height=' + h + ',left=' + left + ',top=' + top);
-      if (!this._popup) { this.setState({ authError: this.spotifyErr('popup') }); return; }
+      this._popup.location.replace('https://accounts.spotify.com/authorize?' + params.toString());
       this._startAuthPoll();
-    } catch (e) { this.setState({ authError: 'Spotify connect error: ' + (e && e.message || e) }); }
+    } catch (e) { if (this._popup) { try { this._popup.close(); } catch (_) {} } this.setState({ authError: 'Spotify connect error: ' + (e && e.message || e) }); }
   };
   // _spCodeUsed: guards against re-exchanging the same OAuth auth code twice
   // (browsers sometimes re-deliver it on back-navigation or HMR reload).
@@ -573,9 +585,9 @@ class Component extends DCLogic {
       const verifier = localStorage.getItem('sl_sp_verifier');
       const clientId = localStorage.getItem('sl_sp_clientid');
       const body = new URLSearchParams({ client_id: clientId, grant_type: 'authorization_code', code: code, redirect_uri: this.REDIRECT(), code_verifier: verifier });
-      const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body });
+      const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', signal: AbortSignal.timeout(15000), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body });
       const json = await r.json();
-      if (json.error) { this.setState({ authError: this.spotifyErr(json.error_description || json.error) }); return; }
+      if (!r.ok || !json.access_token) { this.setState({ authError: this.spotifyErr(json.error_description || json.error) }); return; }
       const exp = Date.now() + (json.expires_in || 3600) * 1000;
       localStorage.setItem('sl_sp_token', json.access_token); localStorage.setItem('sl_sp_expires', String(exp));
       if (json.refresh_token) localStorage.setItem('sl_sp_refresh', json.refresh_token);
@@ -602,28 +614,48 @@ class Component extends DCLogic {
   }
   async ensureSpToken() {
     if (this.state.spToken && Date.now() < this.state.spExpires - 8000) return this.state.spToken;
-    const refresh = localStorage.getItem('sl_sp_refresh'); const clientId = localStorage.getItem('sl_sp_clientid');
-    if (!refresh || !clientId) return this.state.spToken;
-    try {
-      const body = new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refresh, client_id: clientId });
-      const r = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body });
-      const j = await r.json();
-      if (j.access_token) {
-        const exp = Date.now() + (j.expires_in || 3600) * 1000;
-        localStorage.setItem('sl_sp_token', j.access_token); localStorage.setItem('sl_sp_expires', String(exp));
-        if (j.refresh_token) localStorage.setItem('sl_sp_refresh', j.refresh_token);
-        this.setState({ spToken: j.access_token, spExpires: exp });
-        return j.access_token;
-      }
-    } catch (e) {}
-    return this.state.spToken;
+    if (this._refreshPromise) return this._refreshPromise;
+    this._refreshPromise = this.refreshSpotifyToken();
+    try { return await this._refreshPromise; } finally { this._refreshPromise = null; }
+  }
+  async refreshSpotifyToken() {
+    const refresh = localStorage.getItem('sl_sp_refresh'), clientId = localStorage.getItem('sl_sp_clientid');
+    if (!refresh || !clientId) throw new Error('Spotify session expired. Disconnect and reconnect Spotify.');
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST', signal: AbortSignal.timeout(15000),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refresh, client_id: clientId })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.access_token) throw new Error('Spotify could not refresh the session. Try again or reconnect Spotify.');
+    const expires = Date.now() + (data.expires_in || 3600) * 1000;
+    localStorage.setItem('sl_sp_token', data.access_token); localStorage.setItem('sl_sp_expires', String(expires));
+    if (data.refresh_token) localStorage.setItem('sl_sp_refresh', data.refresh_token);
+    this.setState({ spToken: data.access_token, spExpires: expires });
+    return data.access_token;
+  }
+  async spotifyRequest(url, options = {}) {
+    const parsed = new URL(url);
+    if (parsed.origin !== 'https://api.spotify.com' || !parsed.pathname.startsWith('/v1/')) throw new Error('Invalid Spotify API address.');
+    const token = await this.ensureSpToken();
+    const response = await fetch(url, { ...options, signal: AbortSignal.timeout(15000), headers: { ...options.headers, Authorization: 'Bearer ' + token } });
+    if (!response.ok) {
+      if (response.status === 401) { this.setState({ spExpires: 0 }); throw new Error('Spotify session expired. Try again or reconnect Spotify.'); }
+      if (response.status === 403) throw new Error('Spotify denied access. Check Premium, app access, and playlist ownership or permissions.');
+      if (response.status === 429) throw new Error('Spotify is busy. Wait ' + (response.headers.get('Retry-After') || 'a few') + ' seconds, then retry.');
+      throw new Error('Spotify request failed (' + response.status + '). Try again.');
+    }
+    return response;
   }
   initSpotifyPlayer = async () => {
     try {
-      await this.loadScript('https://sdk.scdn.co/spotify-player.js');
-      if (!window.Spotify) await new Promise((res) => { window.onSpotifyWebPlaybackSDKReady = res; });
+      const ready = window.Spotify ? Promise.resolve() : new Promise((resolve, reject) => {
+        this._sdkReadyTimer = setTimeout(() => reject(new Error('Spotify player timed out. Try again.')), 15000);
+        window.onSpotifyWebPlaybackSDKReady = () => { clearTimeout(this._sdkReadyTimer); resolve(); };
+      });
+      await Promise.all([this.loadScript('https://sdk.scdn.co/spotify-player.js'), ready]);
       if (this.spPlayer) return;
-      const player = new window.Spotify.Player({ name: 'Stagelight', volume: 0.0, getOAuthToken: (cb) => { this.ensureSpToken().then((t) => cb(t)); } });
+      const player = new window.Spotify.Player({ name: 'Stagelight', volume: 0.0, getOAuthToken: (cb) => { this.ensureSpToken().then(cb).catch((e) => this.setState({ authError: e.message })); } });
       player.addListener('ready', ({ device_id }) => this.setState({ spDeviceId: device_id, spReady: true }));
       player.addListener('not_ready', () => this.setState({ spReady: false }));
       ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach((ev) => player.addListener(ev, (e) => this.setState({ authError: this.spotifyErr((e && e.message) || ev) }))); player.addListener('player_state_changed', (st) => {
@@ -646,8 +678,9 @@ class Component extends DCLogic {
         var lastSpIdx = -1; for (var li = 0; li < q0.length; li++) { if (q0[li] && q0[li].service === 'spotify' && q0[li].uri) lastSpIdx = li; }
         if (curIdx >= 0 && curIdx === lastSpIdx) this._reachedLast = true;
         var loopedPastEnd = this._reachedLast && curIdx >= 0 && lastSpIdx >= 0 && curIdx < lastSpIdx;
-        var pausedEnd = this._reachedLast && st.paused && (st.position || 0) === 0;
-        var ended = loopedPastEnd || pausedEnd;
+        if (curIdx === lastSpIdx && !st.paused && st.position > 0) this._lastSpProgress = true;
+        var pausedEnd = this._reachedLast && this._lastSpProgress && !this.state.paused && st.paused && (st.position || 0) === 0;
+        var ended = this.state.phase === 'presenting' && !!(loopedPastEnd || pausedEnd);
         if (ended) { try { this.stopSpotify(); } catch (e) {} }
         this.setState((s) => {
           var apply = (x) => (x && x.uri === uri ? Object.assign({}, x, patch) : x);
@@ -661,11 +694,11 @@ class Component extends DCLogic {
           return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: follow ? idx : s.currentIdx, musicEnded: ended };
         });
         if (this.state.colorSource === 'album' && patch.cover) this.applyAlbumPalette({ cover: patch.cover });
-        if (this.state.phase === 'presenting' && prevUri && uri !== prevUri && this.designSequence().length > 1) this.advanceDesign();
+        if (!ended && this.state.phase === 'presenting' && prevUri && uri !== prevUri && this.designSequence().length > 1) this.advanceDesign();
       });
-      await player.connect();
       this.spPlayer = player;
-    } catch (e) { this.setState({ authError: 'Spotify player error: ' + (e && e.message || e) }); }
+      if (!await player.connect()) { player.disconnect(); this.spPlayer = null; throw new Error('Spotify player could not connect. Try again.'); }
+    } catch (e) { clearTimeout(this._sdkReadyTimer); if (this.spPlayer) { try { this.spPlayer.disconnect(); } catch (_) {} this.spPlayer = null; } this.setState({ spReady: false, spDeviceId: null, authError: 'Spotify player error: ' + (e && e.message || e) }); }
   };
   spotifyVolume() {
     var stored = parseFloat(localStorage.getItem('stagelight_volume'));
@@ -718,26 +751,29 @@ class Component extends DCLogic {
     this._onStagelightVolume = (e) => this.setSpotifyVolume(e.detail && typeof e.detail.volume === 'number' ? e.detail.volume : this.spotifyVolume(), true);
     window.addEventListener('stagelight:volume', this._onStagelightVolume);
   }
-  async playSpotify(uri) {
-    const token = await this.ensureSpToken(); const id = this.state.spDeviceId;
-    if (!id) { this.setState({ authError: 'Spotify player not ready yet — give it a moment, then try again.' }); return; }
-    this.attachSpotifyVolumeControl();
-    if (this.spPlayer && this.spPlayer.activateElement) { try { await this.spPlayer.activateElement(); } catch (e) {} }
-    await fetch('https://api.spotify.com/v1/me/player/play?device_id=' + id, { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ uris: [uri] }) });
-    if (this.spPlayer) {
-      let v = 0;
-      const target = this.spotifyVolume();
-      this.setSpotifyVolume(0);
-      clearInterval(this._spFade);
-      this._spFade = setInterval(() => {
-        const liveTarget = this.spotifyVolume();
-        v = Math.min(liveTarget, v + 0.05);
-        this.setSpotifyVolume(v);
-        if (v >= liveTarget) clearInterval(this._spFade);
-      }, 120);
-    }
+  async playSpotify(uri, uris = [uri]) {
+    try {
+      const id = this.state.spDeviceId;
+      if (!id) { this.setState({ authError: 'Spotify player not ready yet — give it a moment, then try again.' }); return; }
+      this.attachSpotifyVolumeControl();
+      if (this.spPlayer && this.spPlayer.activateElement) { try { await this.spPlayer.activateElement(); } catch (e) {} }
+      await this.spotifyRequest('https://api.spotify.com/v1/me/player/play?device_id=' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uris: uris.slice(0, 100) }) });
+      this.setState({ authError: '' });
+      if (this.spPlayer) {
+        let v = 0;
+              this.setSpotifyVolume(0);
+        clearInterval(this._spFade);
+        this._spFade = setInterval(() => {
+          const liveTarget = this.spotifyVolume();
+          v = Math.min(liveTarget, v + 0.05);
+          this.setSpotifyVolume(v);
+          if (v >= liveTarget) clearInterval(this._spFade);
+        }, 120);
+      }
+      return true;
+    } catch (e) { this.setState({ authError: e.message, previewPlaying: false }); return false; }
   }
-  stopSpotify() { clearInterval(this._spFade); if (this.spPlayer) { try { this.spPlayer.pause(); } catch (e) {} } } parseSpotifyTrackId(s) { s = String(s || '').trim(); var t = s.split('track'); if (t.length < 2) return null; var m = t[t.length - 1].match(/[A-Za-z0-9]{22}/); return m ? m[0] : null; } parseSpotifyPlaylistId(s) { s = String(s || '').trim(); var m = s.match(/(?:playlist[:/])([A-Za-z0-9]{22})/); return m ? m[1] : null; } addSpotifyLink() { var q = this.state.searchQuery; var pid = this.parseSpotifyPlaylistId(q); if (pid) { this.addSpotifyPlaylist(pid); return; } var id = this.parseSpotifyTrackId(q); if (!id) { this.setState({ authError: 'Paste a Spotify track or playlist link, e.g. https://open.spotify.com/track/... or https://open.spotify.com/playlist/...' }); return; } var uri = 'spotify:track:' + id; var tr = { service: 'spotify', uri: uri, title: 'Spotify track', artist: 'Loading...', cover: 'linear-gradient(135deg,#1db954,#191414)', dur: '' }; var dedup = (this.state.results || []).filter((x) => x.uri !== uri); this.setState({ results: [Object.assign({}, tr)].concat(dedup), authError: '', searchQuery: '' }); this.addTrack(tr); this.hydrateSpotifyMeta(id, uri); } async addSpotifyPlaylist(playlistId) { this.setState({ searching: true, authError: '', searchQuery: '' }); try { var token = await this.ensureSpToken(); if (!token) { this.setState({ searching: false, authError: 'Spotify is not connected. Connect your account first.' }); return; } var tracks = []; var nextUrl = 'https://api.spotify.com/v1/playlists/' + playlistId + '/tracks?limit=100'; while (nextUrl) { var r = await fetch(nextUrl, { headers: { Authorization: 'Bearer ' + token } }); if (!r.ok) { var errJ = await r.json().catch(function() { return {}; }); if (r.status === 403) throw new Error('Spotify returned 403 Forbidden — your token is missing playlist permissions. Click Disconnect then reconnect Spotify to fix this.'); throw new Error('HTTP ' + r.status + ': ' + ((errJ.error && errJ.error.message) || r.statusText)); } var j = await r.json(); (j.items || []).forEach((item) => { var t = item && item.track; if (!t || !t.uri || !t.uri.startsWith('spotify:track:')) return; var sec = Math.round((t.duration_ms || 0) / 1000); var img = t.album && t.album.images && t.album.images[0]; tracks.push({ service: 'spotify', uri: t.uri, title: t.name || 'Spotify track', artist: (t.artists || []).map((a) => a.name).join(', ') || 'Unknown', cover: img ? ('center/cover url(' + img.url + ')') : 'linear-gradient(135deg,#1db954,#191414)', secs: sec, dur: sec ? this.fmt(sec) : '' }); }); nextUrl = j.next || null; } if (!tracks.length) { this.setState({ searching: false, authError: 'No playable tracks found in that playlist.' }); return; } var existingUris = new Set((this.state.queue || []).map((x) => x.uri)); var newTracks = tracks.filter((t) => !existingUris.has(t.uri)); if (!newTracks.length) { this.setState({ searching: false, authError: 'All tracks from that playlist are already in your queue.' }); return; } var nq = (this.state.queue || []).concat(newTracks); var last = newTracks[newTracks.length - 1]; this.setState({ searching: false, authError: '', queue: nq, currentIdx: nq.length - 1, track: last }); if (this.state.colorSource === 'album' && last.cover) this.applyAlbumPalette(last); } catch (e) { this.setState({ searching: false, authError: 'Could not load playlist: ' + (e && e.message || e) }); } } async hydrateSpotifyMeta(id, uri) {
+  stopSpotify() { clearInterval(this._spFade); if (this.spPlayer) { try { this.spPlayer.pause(); } catch (e) {} } } parseSpotifyTrackId(s) { s = String(s || '').trim(); var t = s.split('track'); if (t.length < 2) return null; var m = t[t.length - 1].match(/[A-Za-z0-9]{22}/); return m ? m[0] : null; } parseSpotifyPlaylistId(s) { s = String(s || '').trim(); var m = s.match(/(?:playlist[:/])([A-Za-z0-9]{22})/); return m ? m[1] : null; } addSpotifyLink() { var q = this.state.searchQuery; var pid = this.parseSpotifyPlaylistId(q); if (pid) { this.addSpotifyPlaylist(pid); return; } var id = this.parseSpotifyTrackId(q); if (!id) { this.setState({ authError: 'Paste a Spotify track or playlist link, e.g. https://open.spotify.com/track/... or https://open.spotify.com/playlist/...' }); return; } var uri = 'spotify:track:' + id; var tr = { service: 'spotify', uri: uri, title: 'Spotify track', artist: 'Loading...', cover: 'linear-gradient(135deg,#1db954,#191414)', dur: '' }; var dedup = (this.state.results || []).filter((x) => x.uri !== uri); this.setState({ results: [Object.assign({}, tr)].concat(dedup), authError: '', searchQuery: '' }); this.addTrack(tr); this.hydrateSpotifyMeta(id, uri); } async addSpotifyPlaylist(playlistId) { this.setState({ searching: true, authError: '', searchQuery: '' }); try { var token = await this.ensureSpToken(); if (!token) { this.setState({ searching: false, authError: 'Spotify is not connected. Connect your account first.' }); return; } var tracks = []; var nextUrl = 'https://api.spotify.com/v1/playlists/' + playlistId + '/items?limit=50'; while (nextUrl) { var r = await this.spotifyRequest(nextUrl); if (!r.ok) { var errJ = await r.json().catch(function() { return {}; }); if (r.status === 403) throw new Error('Spotify returned 403 Forbidden — your token is missing playlist permissions. Click Disconnect then reconnect Spotify to fix this.'); throw new Error('HTTP ' + r.status + ': ' + ((errJ.error && errJ.error.message) || r.statusText)); } var j = await r.json(); (j.items || []).forEach((item) => { var t = item && (item.item || item.track); if (!t || !t.uri || !t.uri.startsWith('spotify:track:')) return; var sec = Math.round((t.duration_ms || 0) / 1000); var img = t.album && t.album.images && t.album.images[0]; tracks.push({ service: 'spotify', uri: t.uri, title: t.name || 'Spotify track', artist: (t.artists || []).map((a) => a.name).join(', ') || 'Unknown', cover: img ? ('center/cover url(' + img.url + ')') : 'linear-gradient(135deg,#1db954,#191414)', secs: sec, dur: sec ? this.fmt(sec) : '' }); }); nextUrl = j.next || null; } if (!tracks.length) { this.setState({ searching: false, authError: 'No playable tracks found in that playlist.' }); return; } var existingUris = new Set((this.state.queue || []).map((x) => x.uri)); var newTracks = tracks.filter((t) => { if (existingUris.has(t.uri)) return false; existingUris.add(t.uri); return true; }); if (!newTracks.length) { this.setState({ searching: false, authError: 'All tracks from that playlist are already in your queue.' }); return; } var nq = (this.state.queue || []).concat(newTracks); var last = newTracks[newTracks.length - 1]; this.setState({ searching: false, authError: '', queue: nq, currentIdx: nq.length - 1, track: last }); if (this.state.colorSource === 'album' && last.cover) this.applyAlbumPalette(last); } catch (e) { this.setState({ searching: false, authError: 'Could not load playlist: ' + (e && e.message || e) }); } } async hydrateSpotifyMeta(id, uri) {
     // Prefer the Web API track endpoint (works for a known id without Extended Quota) — it returns the duration so the timer can auto-match.
     try {
       var token = await this.ensureSpToken();
@@ -814,9 +850,9 @@ class Component extends DCLogic {
       if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} }
       this.setState({ previewPlaying: false }); return;
     }
-    if (tr.service === 'spotify') await this.playSpotify(tr.uri);
+    if (tr.service === 'spotify') { if (!await this.playSpotify(tr.uri)) return; }
     else if (tr.service === 'apple') await this.playApple(tr.id);
-    else if (tr.url && this.audio) { this.audio.src = tr.url; this.audio.volume = 0.85; try { this.audio.play(); } catch (e) {} }
+    else if (tr.url && this.audio) { this.audio.src = tr.url; this.audio.volume = 0.85; try { await this.audio.play(); } catch (e) { this.setState({ authError: 'Audio could not play. Upload the file again.', previewPlaying: false }); return; } }
     this.setState({ previewPlaying: true });
   };
   disconnectSource = () => {
@@ -845,7 +881,7 @@ class Component extends DCLogic {
         // Deliver the auth result to the main window through every available channel.
         // (postMessage for a live opener; localStorage for the storage-event listener
         //  and the polling fallback used when the opener reference is unavailable.)
-        try { if (window.opener && window.opener !== window) window.opener.postMessage({ __sl_auth: 'spotify', code: code, error: error }, '*'); } catch (e) {}
+        try { if (window.opener && window.opener !== window) window.opener.postMessage({ __sl_auth: 'spotify', code: code, error: error }, location.origin); } catch (e) {}
         try { localStorage.setItem('sl_sp_auth_msg', JSON.stringify({ code: code || '', error: error || '', t: Date.now() })); } catch (e) {}
         // Strip the ?code=... from the popup's address bar immediately.
         try { history.replaceState({}, '', this.REDIRECT()); } catch (e) {}
@@ -873,10 +909,10 @@ class Component extends DCLogic {
   // Overwrites the popup document with a self-contained confirmation screen shown when the
   // browser won't auto-close the popup after Spotify sign-in. No app chrome, no auth code.
   renderAuthPopupClosed = (ok) => {
-    try { document.title = ok ? 'Connected — you can close this window' : 'Sign-in cancelled'; } catch (e) {}
-    var title = ok ? 'You’re connected' : 'Sign-in cancelled';
+    try { document.title = ok ? 'Sign-in received — return to Stagelight' : 'Sign-in cancelled'; } catch (e) {}
+    var title = ok ? 'Sign-in received' : 'Sign-in cancelled';
     var msg = ok
-      ? 'Spotify is linked. You can close this window and return to Stagelight — your setlist is ready to build.'
+      ? 'Return to Stagelight to check the connection. You can close this window.'
       : 'No problem. Close this window and return to Stagelight to try again or use the demo library.';
     var icon = ok ? '✓' : '✕';
     var accent = ok ? '#1db954' : '#ff9f0a';
@@ -915,6 +951,7 @@ class Component extends DCLogic {
     } catch (e) {}
   };
   onAuthStorage = (e) => { if (e.key !== 'sl_sp_auth_msg' || !e.newValue) return; var d; try { d = JSON.parse(e.newValue); } catch (x) { return; } try { localStorage.removeItem('sl_sp_auth_msg'); } catch (x) {} if (d && d.error) { this.setState({ authError: this.spotifyErr(d.error) }); return; } if (d && d.code) this.exchangeSpotifyCode(d.code); }; onAuthMessage = (e) => {
+    if (e.origin !== location.origin || !this._popup || e.source !== this._popup) return;
     const d = e.data; if (!d || d.__sl_auth !== 'spotify') return;
     if (d.error) { this.setState({ authError: this.spotifyErr(d.error) }); return; }
     if (d.code) this.exchangeSpotifyCode(d.code);
@@ -937,7 +974,10 @@ class Component extends DCLogic {
       const dev = localStorage.getItem('sl_am_devtoken');
       if (dev) { this.setState({ amDevToken: dev }); this.rehydrateApple(dev); }
     } catch (e) {}
-    try { var saved = JSON.parse(localStorage.getItem('sl_setup') || 'null'); if (saved && typeof saved === 'object') this.setState(saved); else { var si = this.VARIANTS.findIndex(function (v) { return v.mode === 'shader'; }); if (si >= 0) this.setState({ variantIdx: si }); } } catch (e) {}
+    try {
+      const saved = JSON.parse(localStorage.getItem('sl_setup') || 'null');
+      this.restorePrefs(saved);
+    } catch (e) { this.restorePrefs(null); }
     this._persistT = setInterval(() => { if (this.state.phase === 'setup') this.savePrefs(); }, 1500);
     this._tick = setInterval(() => {
       if (this.state.phase === 'presenting' && !this.state.paused) this.setState({ now: Date.now() });
@@ -958,6 +998,8 @@ class Component extends DCLogic {
     window.addEventListener('keydown', this._onKey);
   }
   componentWillUnmount() {
+    this.stopAudio();
+    clearTimeout(this._sdkReadyTimer);
     clearInterval(this._tick); clearInterval(this._persistT);
     window.removeEventListener('keydown', this._onKey);
     window.removeEventListener('message', this.onAuthMessage); window.removeEventListener('storage', this.onAuthStorage);
@@ -1195,6 +1237,7 @@ class Component extends DCLogic {
   onAudioChange = (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
+    e.target.value = '';
     const url = URL.createObjectURL(f);
     const tr = { service: 'local', title: f.name.replace(/\.[^.]+$/, ''), artist: 'Local file', dur: '', secs: 0, cover: 'linear-gradient(135deg,#bdc3c7,#2c3e50)', url };
     this.addTrack(tr);
@@ -1208,10 +1251,11 @@ class Component extends DCLogic {
     const cur = queue[this.state.currentIdx] || this.state.track;
     if (!cur) return; // no music selected -> stay silent (no ambient bed)
     // Fresh playback run: clear the "finished" flags so the Now Playing pill shows again.
-    this._reachedLast = false; this._lastSpUri = null;
+    this._reachedLast = false; this._lastSpProgress = false; this._lastSpUri = null;
     if (this.state.musicEnded) this.setState({ musicEnded: false });
     if (cur && cur.service === 'spotify' && this.state.spReady) { this.playSpotifyQueue(queue.filter((x) => x && x.service === 'spotify' && x.uri).map((x) => x.uri)); return; }
     if (cur && cur.service === 'apple' && this.state.connected.apple) { this.playApple(cur.id); return; }
+    if (cur.service === 'spotify') { this.setState({ authError: 'Spotify player not ready. Stop and reconnect Spotify.' }); return; }
     const firstLocal = queue.findIndex((x) => x && x.url);
     if (firstLocal >= 0 && this.audio) { this.playLocalAt(firstLocal); return; }
     try {
@@ -1234,26 +1278,29 @@ class Component extends DCLogic {
     } catch (e) {}
   }
   async playSpotifyQueue(uris) {
-    if (!uris || !uris.length) { return; }
-    await this.playSpotify(uris[0]);
-    // Add the rest to Spotify's own playback queue; the Web Playback SDK auto-advances and player_state_changed keeps "Now playing" in sync.
+    if (!uris || !uris.length) return;
     try {
-      const token = await this.ensureSpToken(); const id = this.state.spDeviceId;
-      // Turn repeat off so the setlist doesn't loop back to song 1 after the last track.
-      try { await fetch('https://api.spotify.com/v1/me/player/repeat?' + new URLSearchParams({ state: 'off', device_id: id }).toString(), { method: 'PUT', headers: { Authorization: 'Bearer ' + token } }); } catch (e) {}
-      for (let i = 1; i < uris.length; i++) {
-        await fetch('https://api.spotify.com/v1/me/player/queue?' + new URLSearchParams({ uri: uris[i], device_id: id }).toString(), { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
-      }
-    } catch (e) {}
+      const id = this.state.spDeviceId;
+      if (!id) throw new Error('Spotify player not ready. Wait, then retry.');
+      await this.spotifyRequest('https://api.spotify.com/v1/me/player/repeat?' + new URLSearchParams({ state: 'off', device_id: id }), { method: 'PUT' });
+      await this.spotifyRequest('https://api.spotify.com/v1/me/player/shuffle?' + new URLSearchParams({ state: 'false', device_id: id }), { method: 'PUT' });
+      if (!await this.playSpotify(uris[0], uris)) return;
+      for (const uri of uris.slice(100)) await this.spotifyRequest('https://api.spotify.com/v1/me/player/queue?' + new URLSearchParams({ uri, device_id: id }), { method: 'POST' });
+    } catch (e) { this.setState({ authError: e.message }); }
   }
   playLocalAt(i) {
     const q = this.state.queue || []; const t = q[i];
     if (!t || !t.url || !this.audio) return;
-    const moreLocal = q.filter((x) => x && x.url).length > 1;
-    this.audio.loop = !moreLocal;
-    this.audio.onended = moreLocal ? (() => { let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++; if (n < q.length) { if (this.designSequence().length > 1) this.advanceDesign(); this.playLocalAt(n); } else { this.setState({ musicEnded: true }); } }) : null;
+    this.audio.loop = false;
+    this.audio.onended = () => {
+      clearInterval(this._fade);
+      let n = i + 1; while (n < q.length && !(q[n] && q[n].url)) n++;
+      if (n < q.length) { if (this.designSequence().length > 1) this.advanceDesign(); this.playLocalAt(n); }
+      else this.setState({ musicEnded: true, previewPlaying: false });
+    };
+    this.audio.onerror = () => this.setState({ authError: 'Audio could not play. Upload the file again.', previewPlaying: false });
     this.audio.src = t.url; this.audio.volume = 0; this.audio.currentTime = 0;
-    const p = this.audio.play(); if (p && p.catch) p.catch(() => {});
+    const p = this.audio.play(); if (p && p.catch) p.catch(() => { clearInterval(this._fade); this.setState({ authError: 'Audio playback blocked. Press Space to pause, then resume.', previewPlaying: false }); });
     let v = 0; clearInterval(this._fade);
     this._fade = setInterval(() => { v = Math.min(0.85, v + 0.05); this.audio.volume = v; if (v >= 0.85) clearInterval(this._fade); }, 120);
     this.setState({ currentIdx: i, track: t });
@@ -1275,10 +1322,35 @@ class Component extends DCLogic {
     this.voices = null;
   }
 
+  restorePrefs(saved) {
+    const fallback = Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader'));
+    if (!saved || typeof saved !== 'object' || Array.isArray(saved)) { this.setState({ variantIdx: fallback }); return; }
+    const patch = {};
+    for (const key of ['title', 'subtitle', 'colorSource', 'source', 'npStyle']) if (typeof saved[key] === 'string') patch[key] = saved[key];
+    for (const [key, values] of Object.entries({ source: ['spotify', 'upload'], colorSource: ['logo', 'album'], npStyle: ['pill', 'stage', 'minimal', 'spectrum'] })) if (patch[key] && !values.includes(patch[key])) delete patch[key];
+    for (const key of ['autoMatch', 'showEvent', 'showNowPlaying', 'showMusicIcon', 'fullscreenOnStart', 'multiSelect']) if (typeof saved[key] === 'boolean') patch[key] = saved[key];
+    if (typeof saved.logo === 'string') patch.logo = saved.logo;
+    for (const key of ['palette', 'overrides']) {
+      if (saved[key] && typeof saved[key] === 'object' && !Array.isArray(saved[key])) {
+        const colors = {};
+        for (const slot of Object.keys(this.DEFAULT_PAL)) if (typeof saved[key][slot] === 'string') colors[slot] = saved[key][slot];
+        patch[key] = key === 'palette' ? { ...this.DEFAULT_PAL, ...colors } : colors;
+      }
+    }
+    patch.minutes = Number.isFinite(saved.minutes) ? Math.max(1, Math.min(60, saved.minutes)) : 5;
+    patch.variantIdx = Number.isInteger(saved.variantIdx) && this.VARIANTS[saved.variantIdx] ? saved.variantIdx : fallback;
+    patch.selectedVariants = Array.isArray(saved.selectedVariants) ? [...new Set(saved.selectedVariants.filter((i) => Number.isInteger(i) && this.VARIANTS[i]))] : [];
+    if (Number.isFinite(saved.glassOpacity)) patch.glassOpacity = Math.max(0, Math.min(1, saved.glassOpacity));
+    const queue = Array.isArray(saved.queue) ? saved.queue : [];
+    patch.queue = queue.filter((t) => t && typeof t === 'object' && t.service !== 'local' && !String(t.url || '').startsWith('blob:'));
+    patch.currentIdx = 0; patch.track = patch.queue[0] || null;
+    if (saved.hadLocalTracks || patch.queue.length !== queue.length) patch.authError = 'Uploaded audio must be selected again after reopening this page.';
+    this.setState(patch);
+  }
   savePrefs() {
     try {
       var s = this.state;
-      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, queue: s.queue, currentIdx: s.currentIdx, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, selectedVariants: s.selectedVariants, multiSelect: s.multiSelect, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, hadLocalTracks: s.queue.some((t) => t.service === 'local' || String(t.url || '').startsWith('blob:')), queue: s.queue.filter((t) => t.service !== 'local' && !String(t.url || '').startsWith('blob:')), currentIdx: 0, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, selectedVariants: s.selectedVariants, multiSelect: s.multiSelect, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
       if (data === this._lastPrefs) return;
       this._lastPrefs = data;
       localStorage.setItem('sl_setup', data);
@@ -1319,7 +1391,10 @@ class Component extends DCLogic {
     var i = this.state.currentIdx + dir; if (i < 0) i = 0; if (i > q.length - 1) i = q.length - 1;
     if (i === this.state.currentIdx) return;
     var t = q[i];
-    this.setState({ currentIdx: i, track: t, paused: false, playing: true });
+    const now = Date.now();
+    const target = this.state.paused ? this.state.target + (now - (this._pauseAt || now)) : this.state.target;
+    this._reachedLast = false; this._lastSpProgress = false; this._lastSpUri = null;
+    this.setState({ currentIdx: i, track: t, paused: false, playing: true, musicEnded: false, target, now });
     if (this.state.phase === 'presenting') {
       if (this.designSequence().length > 1) this.advanceDesign();
       try {
@@ -1338,6 +1413,8 @@ class Component extends DCLogic {
     try { if (this.state.fullscreenOnStart && this.root && this.root.requestFullscreen) { const r = this.root.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
   };
   exit = () => {
+    clearTimeout(this._dtrTimer);
+    const overlay = document.getElementById('sl-dtr'); if (overlay) overlay.remove();
     this.stopAudio();
     if (document.fullscreenElement && document.exitFullscreen) { try { document.exitFullscreen().catch(() => {}); } catch (e) {} }
     this.setState({ phase: 'setup', playing: false, musicEnded: false });
