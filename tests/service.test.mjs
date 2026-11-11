@@ -163,6 +163,7 @@ test('SDK startup, intentional pause, manual back, and real setlist end stay dis
     disconnect() {}
   }};
   app.loadScript = async () => {};
+  app.spotifyRequest = async () => ({ok:true});
   app.state.queue = [{service:'spotify',uri:'spotify:track:one'}, {service:'spotify',uri:'spotify:track:two'}];
   app.state.phase = 'presenting';
   await app.initSpotifyPlayer();
@@ -228,4 +229,17 @@ test('OAuth return uses first-party capture when Safari hides query access from 
   assert.equal(JSON.parse(storage.get('sl_sp_auth_msg')).code,'returned-code');
   assert.equal(cleaned,true); assert.equal(closed,true);
   assert.equal(context.window.__slAuthCallback,undefined);
+});
+
+test('owner Premium rejection is explicit and never reports a ready connection', async () => {
+  const {app,context}=setup();
+  app.state.spToken='token'; app.state.spExpires=Date.now()+60000;
+  app.state.connected.spotify=true;
+  context.fetch=async()=>({ok:false,status:403,text:async()=> 'Active premium subscription required for the owner of the app. When the subscription status changes, it can take a few hours before requests are allowed again.'});
+  app.loadScript=()=>assert.fail('Do not start SDK for an account Spotify rejects');
+  await app.initSpotifyPlayer();
+  assert.equal(app.state.spReady,false);
+  assert.equal(app.state.connected.spotify,false);
+  assert.match(app.state.authError,/owns this developer app/);
+  assert.match(app.state.authError,/few hours/);
 });

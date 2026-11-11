@@ -560,6 +560,7 @@ class Component extends DCLogic {
   // Checked roughly in order of likelihood; falls back to a generic message.
   spotifyErr(raw) {
     const s = String((raw && raw.message) || raw || '').toLowerCase();
+    if (/premium.*owner|owner.*premium/.test(s)) return 'Spotify requires active Premium on the account that owns this developer app. Access may take a few hours to return after renewal. Audio uploads still work.';
     if (/premium|account_error/.test(s)) return 'Spotify needs a Premium account to play full songs. You can use the demo library or upload your own audio instead.';
     if (/access_denied|cancel/.test(s)) return 'Spotify sign-in was cancelled. Try again, or use the demo library or upload below.';
     if (/not registered|dashboard|forbidden|invalid client|user may not|403/.test(s)) return 'This Spotify account does not have access yet. Ask the organizer to add it, or use the demo library or upload below.';
@@ -649,7 +650,11 @@ class Component extends DCLogic {
     const response = await fetch(url, { ...options, signal: AbortSignal.timeout(15000), headers: { ...options.headers, Authorization: 'Bearer ' + token } });
     if (!response.ok) {
       if (response.status === 401) { this.setState({ spExpires: 0 }); throw new Error('Spotify session expired. Try again or reconnect Spotify.'); }
-      if (response.status === 403) throw new Error('Spotify denied access. Check Premium, app access, and playlist ownership or permissions.');
+      if (response.status === 403) {
+        const detail = typeof response.text === 'function' ? await response.text() : '';
+        if (/premium.*owner|owner.*premium/i.test(detail)) throw new Error(this.spotifyErr(detail));
+        throw new Error('Spotify denied access. Check Premium, app access, and playlist ownership or permissions.');
+      }
       if (response.status === 429) throw new Error('Spotify is busy. Wait ' + (response.headers.get('Retry-After') || 'a few') + ' seconds, then retry.');
       throw new Error('Spotify request failed (' + response.status + '). Try again.');
     }
@@ -657,6 +662,8 @@ class Component extends DCLogic {
   }
   initSpotifyPlayer = async () => {
     try {
+      if (this.spPlayer) return;
+      await this.spotifyRequest('https://api.spotify.com/v1/me');
       const ready = window.Spotify ? Promise.resolve() : new Promise((resolve, reject) => {
         this._sdkReadyTimer = setTimeout(() => reject(new Error('Spotify player timed out. Try again.')), 15000);
         window.onSpotifyWebPlaybackSDKReady = () => { clearTimeout(this._sdkReadyTimer); resolve(); };
@@ -706,7 +713,7 @@ class Component extends DCLogic {
       });
       this.spPlayer = player;
       if (!await player.connect()) { player.disconnect(); this.spPlayer = null; throw new Error('Spotify player could not connect. Try again.'); }
-    } catch (e) { clearTimeout(this._sdkReadyTimer); if (this.spPlayer) { try { this.spPlayer.disconnect(); } catch (_) {} this.spPlayer = null; } this.setState({ spReady: false, spDeviceId: null, authError: 'Spotify player error: ' + (e && e.message || e) }); }
+    } catch (e) { clearTimeout(this._sdkReadyTimer); if (this.spPlayer) { try { this.spPlayer.disconnect(); } catch (_) {} this.spPlayer = null; } this.setState((s) => ({ connected: { ...s.connected, spotify: false }, spReady: false, spDeviceId: null, authError: 'Spotify player error: ' + (e && e.message || e) })); }
   };
   spotifyVolume() {
     var stored = parseFloat(localStorage.getItem('stagelight_volume'));
@@ -1585,7 +1592,7 @@ class Component extends DCLogic {
     const isSpotify = src === 'spotify';
 
     const cm = isSpotify
-      ? { title: 'Connect Spotify', note: 'Sign in with your Spotify Premium account to play full songs during your event. A small popup will ask you to approve access — no password is shared with us. No Premium account? Use the demo library or upload your own audio below.', placeholder: 'Spotify Client ID', btn: 'Connect Spotify', bg: '#1db954', label: 'Spotify connected', ready: st.spReady }
+      ? { title: 'Connect Spotify', note: 'Sign in with your Spotify Premium account to play full songs during your event. A small popup will ask you to approve access — no password is shared with us. No Premium account? Use the demo library or upload your own audio below.', placeholder: 'Spotify Client ID', btn: 'Connect Spotify', bg: '#1db954', label: st.spReady ? 'Spotify ready' : 'Spotify signed in · player starting', ready: st.spReady }
       : { title: 'Connect Apple Music', note: 'Requires a MusicKit developer token (Apple Developer Program) and an active Apple Music subscription.', placeholder: 'Apple Music developer token (JWT)', btn: 'Connect Apple Music', bg: '#fa2d48', label: 'Apple Music connected', ready: connected };
 
     // Highlight any track that's already in the playlist. The results/demo rows below compare
