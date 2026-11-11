@@ -212,3 +212,20 @@ test('blocked popup exits before PKCE and leaves a useful error', async () => {
   await app.connectSpotify();
   assert.match(app.state.authError,/blocked/);
 });
+
+test('OAuth return uses first-party capture when Safari hides query access from React', () => {
+  const {app,context,storage}=setup();
+  const capture=html.match(/<script id="sl-auth-capture">([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(capture);
+  context.location.search='?code=returned-code&state=sl_spotify_popup';
+  vm.runInContext(capture,context);
+  Object.defineProperty(context.location,'search',{get(){throw new Error('Query access blocked');}});
+  let cleaned=false,closed=false;
+  context.history={replaceState(){cleaned=true;}};
+  context.window.close=()=>{closed=true;};
+  app.renderAuthPopupClosed=()=>{};
+  assert.equal(app.handleAuthRedirect(),true);
+  assert.equal(JSON.parse(storage.get('sl_sp_auth_msg')).code,'returned-code');
+  assert.equal(cleaned,true); assert.equal(closed,true);
+  assert.equal(context.window.__slAuthCallback,undefined);
+});

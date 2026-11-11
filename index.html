@@ -6,6 +6,14 @@
 <title>Stagelight — Event waiting screen</title>
 <meta name="description" content="Build an event countdown with animated designs, your logo, and music.">
 <link rel="icon" href="./assets/favicon-32.png">
+<script id="sl-auth-capture">
+// Capture OAuth on the first-party parser stack, before React loads from its CDN.
+// Safari can hide callback query parameters from third-party script call stacks.
+(() => {
+  const params = new URLSearchParams(location.search);
+  window.__slAuthCallback = { code: params.get('code'), error: params.get('error'), state: params.get('state') };
+})();
+</script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -875,9 +883,10 @@ class Component extends DCLogic {
   copyRedirect = () => { try { navigator.clipboard.writeText(this.REDIRECT()); } catch (e) {} this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1400); };
   handleAuthRedirect = () => {
     try {
-      const p = new URLSearchParams(location.search);
-      const code = p.get('code'), error = p.get('error');
-      const isPopup = p.get('state') === 'sl_spotify_popup' || window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
+      const callback = window.__slAuthCallback || {};
+      delete window.__slAuthCallback;
+      const { code, error, state } = callback;
+      const isPopup = state === 'sl_spotify_popup' || window.name === 'sl_spotify_auth' || (window.opener && window.opener !== window); if (isPopup && (code || error)) {
         // Deliver the auth result to the main window through every available channel.
         // (postMessage for a live opener; localStorage for the storage-event listener
         //  and the polling fallback used when the opener reference is unavailable.)
@@ -899,7 +908,7 @@ class Component extends DCLogic {
       if (code && localStorage.getItem('sl_sp_verifier')) {
         this.exchangeSpotifyCode(code);
         history.replaceState({}, '', this.REDIRECT());
-      } else if (error && p.get('state') === 'sl_spotify_popup') {
+      } else if (error && state === 'sl_spotify_popup') {
         this.setState({ authError: this.spotifyErr(error) });
         history.replaceState({}, '', this.REDIRECT());
       }
