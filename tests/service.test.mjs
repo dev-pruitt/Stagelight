@@ -366,3 +366,20 @@ test('inactive Spotify state cannot overwrite Audius playback or completion', as
   listeners.player_state_changed({paused:true,position:0,track_window:{current_track:{uri:'spotify:track:old',name:'Old Spotify song'}}});
   assert.equal(app.state.track.title,'Audius song'); assert.equal(app.state.musicEnded,true);
 });
+
+test('presentation clock follows observed music, including buffering and manual timers',()=>{
+  const {app}=setup();app.state.phase='presenting';app.state.autoMatch=true;app._clockSeconds=120;
+  app.updateMusicClock({remaining:117,elapsed:3,playing:true});assert.equal(app.state.target-app.state.now,117000);
+  app.updateMusicClock({remaining:117,elapsed:3,playing:false});assert.equal(app.state.target-app.state.now,117000);assert.equal(app.state.playing,false);
+  app.state.autoMatch=false;app.updateMusicClock({remaining:40,elapsed:3,playing:true});assert.equal(app.state.target-app.state.now,117000);
+  app.updateMusicClock({remaining:0,elapsed:120,playing:false});assert.equal(app.state.target,app.state.now);
+});
+test('Spotify clock holds until playback is observed and reads actual track progress',()=>{
+  const {app}=setup();app.state.phase='presenting';app.state.autoMatch=true;
+  app.state.queue=[{service:'spotify',uri:'spotify:track:one',secs:10},{service:'spotify',uri:'spotify:track:two',secs:20}];
+  app.state.track=app.state.queue[0];app.state.target=50000;app.state.now=20000;
+  app.tickPresentationClock();assert.equal(app.state.target-app.state.now,30000);
+  const frame={paused:false,position:2500,track_window:{current_track:{uri:'spotify:track:one',duration_ms:10500}}};
+  app.updateSpotifyClock(frame);assert.equal(app.state.target-app.state.now,30000);
+  app._spotifyClockReady=true;app.updateSpotifyClock(frame);assert.equal(app.state.target-app.state.now,28000);
+});

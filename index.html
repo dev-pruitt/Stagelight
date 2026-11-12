@@ -14,6 +14,7 @@
   window.__slAuthCallback = { code: params.get('code'), error: params.get('error'), state: params.get('state') };
 })();
 </script>
+<script src="./media-player.js?v=0d6c25b50a3c"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -435,6 +436,7 @@
 
   <sc-if value="{{ authError }}"><div role="alert" style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:100002;max-width:90vw;padding:12px 18px;border-radius:12px;background:#311b1b;color:#fff;font-size:13px;">{{ authError }}</div></sc-if>
   <audio ref="{{ setAudio }}"></audio>
+  <audio ref="{{ setBlendAudio }}"></audio>
 
 </div>
 </x-dc>
@@ -676,9 +678,10 @@ class Component extends DCLogic {
       player.addListener('ready', ({ device_id }) => this.setState({ spDeviceId: device_id, spReady: true }));
       player.addListener('not_ready', () => this.setState({ spReady: false }));
       ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach((ev) => player.addListener(ev, (e) => this.setState({ authError: this.spotifyErr((e && e.message) || ev) }))); player.addListener('player_state_changed', (st) => {
-        if (this.state.track && this.state.track.service === 'audius') return;
+        if (this.state.track && ['audius', 'local'].includes(this.state.track.service)) return;
         if (!st || !st.track_window || !st.track_window.current_track) return;
         var ct = st.track_window.current_track; var uri = ct.uri;
+        if (uri === this._spotifyClockUri && !st.paused) this._spotifyClockReady = true;
         var sec = Math.round((ct.duration_ms || 0) / 1000);
         var patch = { title: ct.name, artist: (ct.artists || []).map((a) => a.name).join(', '), dur: sec ? this.fmt(sec) : '', secs: sec };
         var img = ct.album && ct.album.images && ct.album.images[0];
@@ -711,6 +714,7 @@ class Component extends DCLogic {
           var track = follow ? nq[idx] : ((s.track && s.track.uri === uri) ? Object.assign({}, s.track, patch) : s.track);
           return { queue: nq, results: (s.results || []).map(apply), track: track, currentIdx: follow ? idx : s.currentIdx, musicEnded: ended };
         });
+        if (ended && this.state.autoMatch) this.updateMusicClock({ remaining: 0, elapsed: this._clockSeconds || 0, playing: false });
         if (this.state.colorSource === 'album' && patch.cover) this.applyAlbumPalette({ cover: patch.cover });
         if (!ended && this.state.phase === 'presenting' && prevUri && uri !== prevUri && this.designSequence().length > 1) this.advanceDesign();
       });
@@ -771,6 +775,7 @@ class Component extends DCLogic {
   }
   async playSpotify(uri, uris = [uri]) {
     try {
+      this._spotifyClockReady = false; this._spotifyClockUri = uri;
       const id = this.state.spDeviceId;
       if (!id || !this.state.spReady) throw new Error('Spotify player not ready. Wait, then retry.');
       if (this.spPlayer && this.spPlayer.activateElement) await this.spPlayer.activateElement();
@@ -1058,7 +1063,7 @@ class Component extends DCLogic {
     } catch (e) { this.restorePrefs(null); }
     this._persistT = setInterval(() => { if (this.state.phase === 'setup') this.savePrefs(); }, 1500);
     this._tick = setInterval(() => {
-      if (this.state.phase === 'presenting' && !this.state.paused) this.setState({ now: Date.now() });
+      this.tickPresentationClock();
     }, 250);
     this._onKey = (e) => {
       const tag = (e.target && e.target.tagName) || '';
@@ -1093,6 +1098,7 @@ class Component extends DCLogic {
 
   setRoot = (el) => { this.root = el; };
   setAudio = (el) => { this.audio = el; };
+  setBlendAudio = (el) => { this.blendAudio = el; };
 
 
   // ---------- color ----------
@@ -1283,7 +1289,7 @@ class Component extends DCLogic {
   toggleMultiSelect = () => this.setState((s) => ({ multiSelect: !s.multiSelect, selectedVariants: !s.multiSelect ? [] : null, shuffledDesigns: [], designQueueIdx: 0 }));
 
   setSource = (src) => { this.stopCurrentPreview(); this._audiusSearchRun = (this._audiusSearchRun || 0) + 1; this.setState({ source: src, results: [], searchQuery: '', authError: '', previewPlaying: false, searching: false }); if (src === 'audius') this.searchAudius(''); };
-  stopCurrentPreview() { this._audioRun = (this._audioRun || 0) + 1; const tr = this.state.track; if (tr) { if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} } } }
+  stopCurrentPreview() { if (this._mixer) { this._mixer.stop(); this._mixer = null; } this._audioRun = (this._audioRun || 0) + 1; const tr = this.state.track; if (tr) { if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} } } }
   addTrack = (t) => {
     const queue = this.state.queue || [];
     const key = this.selKey(t);
@@ -1324,6 +1330,64 @@ class Component extends DCLogic {
     try { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => { const sec = Math.round(a.duration || 0); if (sec > 0) this.patchTrackByUrl(url, { secs: sec, dur: this.fmt(sec) }); }; a.src = url; } catch (e2) {}
   };
 
+  updateMusicClock(sample) {
+    if (this.state.phase !== 'presenting') return;
+    const remaining = this.state.autoMatch ? sample.remaining : Math.max(0, this._clockSeconds - sample.elapsed);
+    const now = Date.now();
+    this.setState({ now, target: now + remaining * 1000, playing: !!sample.playing && !this.state.paused });
+  }
+  holdMusicClock() {
+    const remaining = Math.max(0, this.state.target - this.state.now), now = Date.now();
+    this.setState({ now, target: now + remaining, playing: false });
+  }
+  updateSpotifyClock(st) {
+    const uri = st && st.track_window && st.track_window.current_track && st.track_window.current_track.uri;
+    const index = this.state.queue.findIndex(t => t.service === 'spotify' && t.uri === uri);
+    if (index < 0 || !this._spotifyClockReady) return;
+    const position = Math.max(0, (st.position || 0) / 1000);
+    const duration = st.track_window.current_track.duration_ms / 1000;
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    const now = Date.now(), last = this._spClockSample;
+    if (st.paused && position === 0 && last && last.uri === uri && last.position > 0) return;
+    const delta = last && last.uri === uri ? Math.max(0, position - last.position) : position;
+    this._spClockElapsed = (this._spClockElapsed || 0) + delta;
+    this._spClockSample = { uri, position, now };
+    const following = this.state.queue.slice(index + 1).reduce((sum, t) => sum + this.trackSecs(t), 0);
+    this.updateMusicClock({ remaining: Math.max(0, duration - position) + following, elapsed: this._spClockElapsed, playing: !st.paused });
+  }
+  tickPresentationClock() {
+    if (this.state.phase !== 'presenting') return;
+    if (this._mixer && !this.state.musicEnded) { this._mixer.tick(); return; }
+    const track = this.state.track;
+    if (track && track.service === 'spotify' && !this.state.musicEnded) {
+      this.holdMusicClock();
+      if (this._spotifyClockPoll || !this.spPlayer || typeof this.spPlayer.getCurrentState !== 'function') return;
+      const run = this._presentationRun;
+      this._spotifyClockPoll = run;
+      this.spPlayer.getCurrentState().then(st => {
+        if (run === this._presentationRun && this.state.phase === 'presenting') this.updateSpotifyClock(st);
+      }).catch(() => {}).finally(() => { if (this._spotifyClockPoll === run) this._spotifyClockPoll = null; });
+      return;
+    }
+    if (!this.state.paused) this.setState({ now: Date.now() });
+  }
+  startMediaMix(index) {
+    if (!this.audio || !this.blendAudio || !window.StagelightMixer) { this.setState({ authError: 'Music player is not ready. Reload and try again.' }); return false; }
+    const elapsed = this._mixer ? this._mixer.elapsed() : 0;
+    if (this._mixer) this._mixer.stop();
+    this.stopSpotify(); this.stopApple();
+    const tracks = this.state.queue.map(t => ({ ...t, secs: this.trackSecs(t), url: t.service === 'audius' ? this.audiusStreamUrl(t.id) : t.url }));
+    const mixer = new window.StagelightMixer({
+      audio: [this.audio, this.blendAudio], tracks, volume: () => this.spotifyVolume(),
+      onTrack: i => { if (this._mixer !== mixer) return; this.setState({ currentIdx: i, track: this.state.queue[i], musicEnded: false }); if (i !== index && this.designSequence().length > 1) this.advanceDesign(); },
+      onClock: clock => { if (this._mixer === mixer) this.updateMusicClock(clock); },
+      onEnded: () => { if (this._mixer === mixer) this.setState({ musicEnded: true, previewPlaying: false }); },
+      onError: message => { if (this._mixer === mixer) this.setState({ authError: message, previewPlaying: false }); }
+    });
+    this._mixer = mixer;
+    return mixer.start(index, elapsed);
+  }
+
   // ---------- audio engine ----------
   startAudio() {
     const queue = this.state.queue || [];
@@ -1332,7 +1396,7 @@ class Component extends DCLogic {
     // Fresh playback run: clear the "finished" flags so the Now Playing pill shows again.
     this._reachedLast = false; this._lastSpProgress = false; this._lastSpUri = null;
     if (this.state.musicEnded) this.setState({ musicEnded: false });
-    if (cur.service === 'audius') { this.playAudiusAt(this.state.currentIdx); return; }
+    if (cur.service === 'audius' || cur.service === 'local') { this.startMediaMix(this.state.currentIdx); return; }
     if (cur && cur.service === 'spotify' && this.state.spReady) { this.playSpotifyQueue(queue.filter((x) => x && x.service === 'spotify' && x.uri).map((x) => x.uri)); return; }
     if (cur && cur.service === 'apple' && this.state.connected.apple) { this.playApple(cur.id); return; }
     if (cur.service === 'spotify') { this.setState({ authError: 'Spotify player not ready. Stop and reconnect Spotify.' }); return; }
@@ -1386,6 +1450,8 @@ class Component extends DCLogic {
     this.setState({ currentIdx: i, track: t });
   }
   stopAudio() {
+    this._presentationRun = (this._presentationRun || 0) + 1;
+    if (this._mixer) { this._mixer.stop(); this._mixer = null; }
     this._audioRun = (this._audioRun || 0) + 1;
     clearInterval(this._fade);
     this.stopSpotify(); this.stopApple();
@@ -1454,6 +1520,16 @@ class Component extends DCLogic {
   setIridStrength = (e) => this.setState({ iridStrength: parseFloat(e.target.value) });
   togglePause = () => {
     if (this.state.phase !== 'presenting') return;
+    if (this._mixer && !this.state.musicEnded) {
+      const paused = !this.state.paused; this.setState({ paused, playing: !paused });
+      if (paused) this._mixer.pause(); else this._mixer.resume();
+      return;
+    }
+    if (this.state.track && this.state.track.service === 'spotify' && !this.state.musicEnded && this.spPlayer) {
+      const paused = !this.state.paused; this.setState({ paused, playing: !paused });
+      try { if (paused) this.spPlayer.pause(); else this.spPlayer.resume(); } catch (_) {}
+      return;
+    }
     if (!this.state.paused) {
       this._pauseAt = Date.now();
       this.setState({ paused: true, playing: false });
@@ -1462,8 +1538,8 @@ class Component extends DCLogic {
       try { if (this.actx && this.actx.state === 'running') this.actx.suspend(); } catch (e) {}
     } else {
       this.setState({ target: this.state.target + (Date.now() - (this._pauseAt || Date.now())), now: Date.now(), paused: false, playing: true });
-      try { if (this.spPlayer && this.state.track && this.state.track.service === 'spotify') this.spPlayer.resume(); } catch (e) {}
-      try { if (this.audio && this.audio.src) { var p = this.audio.play(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
+      try { if (this.spPlayer && this.state.track && this.state.track.service === 'spotify' && !this.state.musicEnded) this.spPlayer.resume(); } catch (e) {}
+      try { if (this.audio && this.audio.src && !this.state.musicEnded) { var p = this.audio.play(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
       try { if (this.actx && this.actx.state === 'suspended') this.actx.resume(); } catch (e) {}
     }
   };
@@ -1481,7 +1557,7 @@ class Component extends DCLogic {
       try {
         if (t.service === 'spotify' && this.state.spReady) this.playSpotify(t.uri);
         else if (t.service === 'apple' && this.state.connected.apple) this.playApple(t.id);
-        else if (t.service === 'audius') this.playAudiusAt(i);
+        else if (t.service === 'audius' || t.service === 'local') this.startMediaMix(i);
         else if (t.url) this.playLocalAt(i);
       } catch (e) {}
     }
@@ -1489,7 +1565,10 @@ class Component extends DCLogic {
   };
   beginEvent = () => {
     if (this.state.queue.some(t => t.service === 'audius') && this.state.queue.some(t => t.service !== 'audius')) { this.setState({ authError: 'Use an Audius-only playlist for this presentation. Remove songs from other sources first.' }); return; }
-    const target = Date.now() + this.countdownSecs() * 1000;
+    if (new Set(this.state.queue.map(track => track.service)).size > 1) { this.setState({ authError: 'Choose songs from one music source for each presentation.' }); return; }
+    this.stopAudio();
+    this._clockSeconds = this.countdownSecs(); this._spClockSample = null; this._spClockElapsed = 0; this._spotifyClockReady = false;
+    const target = Date.now() + this._clockSeconds * 1000;
     const seq = this.designSequence();
     this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, paused: false, currentIdx: 0, track: (this.state.queue[0] || this.state.track), designQueueIdx: 0, variantIdx: seq.length ? seq[0] : this.state.variantIdx });
     try { this.startAudio(); } catch (e) {}
@@ -1544,7 +1623,7 @@ class Component extends DCLogic {
   }
 
   fmt(totalSec) {
-    if (totalSec < 0) totalSec = 0;
+    totalSec = Math.ceil(Math.max(0, totalSec));
     const h = Math.floor(totalSec / 3600);
     const m = Math.floor((totalSec % 3600) / 60);
     const s = totalSec % 60;
@@ -1556,7 +1635,7 @@ class Component extends DCLogic {
   parseDur(str) { const p = String(str || '').split(':').map((n) => parseInt(n, 10) || 0); let s = 0; for (let i = 0; i < p.length; i++) s = s * 60 + p[i]; return s; }
   trackSecs(t) { return t ? (typeof t.secs === 'number' && t.secs > 0 ? t.secs : this.parseDur(t.dur)) : 0; }
   selKey(t) { return !t ? '' : (t.service === 'spotify' ? ('s' + t.uri) : (t.service === 'apple' ? ('a' + t.id) : ((t.service || '') + (t.id || t.url || t.title)))); }
-  queueSecs() { return (this.state.queue || []).reduce((a, t) => a + this.trackSecs(t), 0); }
+  queueSecs() { const q = this.state.queue || []; const tracks = q.map(t => ({ secs: this.trackSecs(t) })); return q.length && q.every(t => t.service === 'audius' || t.service === 'local') && window.StagelightMixer ? window.StagelightMixer.length(tracks) : tracks.reduce((sum, t) => sum + t.secs, 0); }
   countdownSecs() { const total = this.queueSecs(); return (this.state.autoMatch && this.state.queue.length && total > 0) ? total : this.state.minutes * 60; }
   patchTrackByUri(uri, patch) { const upd = (list) => (list || []).map((x) => (x && x.uri === uri ? Object.assign({}, x, patch) : x)); this.setState((s) => ({ track: (s.track && s.track.uri === uri) ? Object.assign({}, s.track, patch) : s.track, results: upd(s.results), queue: upd(s.queue) })); if (this.state.colorSource === 'album' && patch.cover) { var cur = (this.state.queue && this.state.queue[this.state.currentIdx]) || this.state.track; if (cur && cur.uri === uri) this.applyAlbumPalette({ cover: patch.cover }); } }
   patchTrackByUrl(url, patch) { const upd = (list) => (list || []).map((x) => (x && x.url === url ? Object.assign({}, x, patch) : x)); this.setState((s) => ({ track: (s.track && s.track.url === url) ? Object.assign({}, s.track, patch) : s.track, queue: upd(s.queue) })); }
@@ -1751,7 +1830,7 @@ class Component extends DCLogic {
       queueList, hasQueue: queueList.length > 0, queueCount: queueList.length, queueTotal: this.fmt(totalSecs),
       canPreview, togglePreview: this.togglePreview, previewLabel: st.previewPlaying ? '\u23f8 Stop' : '\u25b6 Preview',
       authError: st.authError,
-      musicFootnote: isAudius ? 'Music from Audius. Some songs may be unavailable. Choose songs from one source per presentation.' : isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Requires Spotify Premium.' : (isUpload ? 'Drop or select an audio file. It plays in sync with your countdown.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
+      musicFootnote: isAudius ? 'Songs blend for up to 3 seconds. Countdown follows playback. Music from Audius.' : isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Requires Spotify Premium.' : (isUpload ? 'Choose audio files. Songs blend for up to 3 seconds; the countdown follows playback.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
       npStyle: st.npStyle || 'pill',
       npStyleButtons: ['pill', 'stage', 'minimal', 'spectrum'].map((s) => { const active = (st.npStyle || 'pill') === s; return { label: s.charAt(0).toUpperCase() + s.slice(1), onClick: () => this.setNpStyle(s), bg: active ? pal.accent : 'var(--sl-card)', color: active ? '#fff' : 'var(--sl-text)', border: active ? pal.accent : 'var(--sl-border-md)' }; }),
       showNP: !!npTrack && st.showNowPlaying && !st.musicEnded,
@@ -1774,7 +1853,7 @@ class Component extends DCLogic {
       eqPlay: st.playing ? 'running' : 'paused',
       beginEvent: this.beginEvent, resetSetup: this.resetSetup, toggleFs: this.toggleFs,
       fsBg: st.fullscreenOnStart ? 'rgba(10,132,255,0.10)' : 'var(--sl-card)', fsColor: st.fullscreenOnStart ? '#0a84ff' : 'var(--sl-text-sub)', fsBorder: st.fullscreenOnStart ? 'rgba(10,132,255,0.4)' : 'var(--sl-border-md)',
-      setRoot: this.setRoot, setAudio: this.setAudio,
+      setRoot: this.setRoot, setAudio: this.setAudio, setBlendAudio: this.setBlendAudio,
       // about
       showAbout: st.showAbout, openAbout: this.openAbout, closeAbout: this.closeAbout, stopAbout: this.stopAbout, version: this.VERSION,
     };

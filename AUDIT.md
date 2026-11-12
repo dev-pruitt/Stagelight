@@ -1,5 +1,5 @@
-2026-11-12: Audius added. Free search, previews, saved playlists.
-Browser: real audio, pause/resume, skip, next song, finish, reload pass.
-26 checks pass. Paid, gated, and unavailable Audius tracks are excluded.
-Spotify playback repair remains. Apple Music stays hidden.
-Live site: audio advanced 20 seconds without sign-in. Published bytes match.
+2026-11-12: countdown follows actual playback; loading holds the timer.
+Audius/uploads blend up to 3 seconds. Order kept; overlap deducted.
+Browser: delayed load, pause during fade, real overlap, 7-second finish pass.
+35 checks pass. Spotify clock uses SDK progress; Spotify has normal transitions.
+Apple Music stays hidden. Live verification follows deployment.
