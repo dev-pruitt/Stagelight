@@ -383,3 +383,12 @@ test('Spotify clock holds until playback is observed and reads actual track prog
   app.updateSpotifyClock(frame);assert.equal(app.state.target-app.state.now,30000);
   app._spotifyClockReady=true;app.updateSpotifyClock(frame);assert.equal(app.state.target-app.state.now,28000);
 });
+
+
+test('starting immediately after selecting songs saves the whole playlist',()=>{
+  const {app,storage}=setup();
+  app.state.source='audius';app.state.queue=[{service:'audius',id:'first',secs:10},{service:'audius',id:'second',secs:20}];
+  app.startAudio=()=>{};app.beginEvent();
+  const saved=JSON.parse(storage.get('sl_setup'));
+  assert.equal(saved.queue.length,2);assert.equal(saved.queue[1].id,'second');assert.equal(app.state.phase,'presenting');
+});

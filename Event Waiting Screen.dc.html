@@ -1566,6 +1566,7 @@ class Component extends DCLogic {
   beginEvent = () => {
     if (this.state.queue.some(t => t.service === 'audius') && this.state.queue.some(t => t.service !== 'audius')) { this.setState({ authError: 'Use an Audius-only playlist for this presentation. Remove songs from other sources first.' }); return; }
     if (new Set(this.state.queue.map(track => track.service)).size > 1) { this.setState({ authError: 'Choose songs from one music source for each presentation.' }); return; }
+    this.savePrefs();
     this.stopAudio();
     this._clockSeconds = this.countdownSecs(); this._spClockSample = null; this._spClockElapsed = 0; this._spotifyClockReady = false;
     const target = Date.now() + this._clockSeconds * 1000;
