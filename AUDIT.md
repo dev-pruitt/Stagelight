@@ -2,4 +2,4 @@
 Browser: real audio, pause/resume, skip, next song, finish, reload pass.
 26 checks pass. Paid, gated, and unavailable Audius tracks are excluded.
 Spotify playback repair remains. Apple Music stays hidden.
-Published playback verification follows deployment.
+Live site: audio advanced 20 seconds without sign-in. Published bytes match.
