@@ -767,30 +767,13 @@ class Component extends DCLogic {
     this._onStagelightVolume = (e) => this.setSpotifyVolume(e.detail && typeof e.detail.volume === 'number' ? e.detail.volume : this.spotifyVolume(), true);
     window.addEventListener('stagelight:volume', this._onStagelightVolume);
   }
-  async activateSpotifyDevice() {
-    const id = this.state.spDeviceId;
-    if (!id) throw new Error('Spotify player not ready. Wait, then retry.');
-    // Unlock browser audio while the click gesture is still available.
-    if (this.spPlayer && this.spPlayer.activateElement) await this.spPlayer.activateElement();
-    await this.spotifyRequest('https://api.spotify.com/v1/me/player', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ device_ids: [id], play: false })
-    });
-    // Transfer acknowledgement does not prove the device is active yet.
-    for (let attempt = 0; attempt < 20; attempt++) {
-      if (this.state.spDeviceId !== id) throw new Error('Spotify player changed. Try playback again.');
-      const response = await this.spotifyRequest('https://api.spotify.com/v1/me/player/devices');
-      const data = await response.json();
-      if ((data.devices || []).some(device => device.id === id && device.is_active)) return id;
-      if (attempt < 19) await new Promise(resolve => setTimeout(resolve, 500));
-    }
-    throw new Error('Spotify player did not become active. Reconnect Spotify, then try playback again.');
-  }
-  async playSpotify(uri, uris = [uri], activeDeviceId) {
+  async playSpotify(uri, uris = [uri]) {
     try {
-      const id = activeDeviceId || await this.activateSpotifyDevice();
+      const id = this.state.spDeviceId;
+      if (!id || !this.state.spReady) throw new Error('Spotify player not ready. Wait, then retry.');
+      if (this.spPlayer && this.spPlayer.activateElement) await this.spPlayer.activateElement();
       this.attachSpotifyVolumeControl();
-      await this.spotifyRequest('https://api.spotify.com/v1/me/player/play?device_id=' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uris: uris.slice(0, 100) }) });
+      await this.spotifyRequest('https://api.spotify.com/v1/me/player/play?device_id=' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uris: uris.slice(0, 100), offset: { position: 0 }, position_ms: 0 }) });
       this.setState({ authError: '' });
       if (this.spPlayer) {
         let v = 0;
@@ -1314,10 +1297,11 @@ class Component extends DCLogic {
   async playSpotifyQueue(uris) {
     if (!uris || !uris.length) return;
     try {
-      const id = await this.activateSpotifyDevice();
+      // Starting an explicit track activates the SDK device. Repeat/shuffle cannot activate it.
+      if (!await this.playSpotify(uris[0], uris)) return;
+      const id = this.state.spDeviceId;
       await this.spotifyRequest('https://api.spotify.com/v1/me/player/repeat?' + new URLSearchParams({ state: 'off', device_id: id }), { method: 'PUT' });
       await this.spotifyRequest('https://api.spotify.com/v1/me/player/shuffle?' + new URLSearchParams({ state: 'false', device_id: id }), { method: 'PUT' });
-      if (!await this.playSpotify(uris[0], uris, id)) return;
       for (const uri of uris.slice(100)) await this.spotifyRequest('https://api.spotify.com/v1/me/player/queue?' + new URLSearchParams({ uri, device_id: id }), { method: 'POST' });
     } catch (e) { this.setState({ authError: e.message }); }
   }

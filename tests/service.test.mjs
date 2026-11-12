@@ -108,7 +108,7 @@ test('token refresh shares one request; expired tokens never masquerade as usabl
 
 test('playback failure stays visible and preview never claims success', async () => {
   const {app,context} = setup();
-  app.state.spToken = 'token'; app.state.spExpires = Date.now()+60000; app.state.spDeviceId = 'device';
+  app.state.spToken = 'token'; app.state.spExpires = Date.now()+60000; app.state.spDeviceId = 'device'; app.state.spReady=true;
   app.state.track = {service:'spotify',uri:'spotify:track:one'};
   context.fetch = async () => ({ok:false,status:403});
   await app.togglePreview();
@@ -117,63 +117,51 @@ test('playback failure stays visible and preview never claims success', async ()
   await assert.rejects(app.spotifyRequest('https://example.com/steal'), /Invalid Spotify/);
 });
 
-test('inactive Spotify device is transferred and observed before setlist controls', async () => {
+test('inactive Spotify device starts its explicit queue before repeat/shuffle controls', async () => {
   const {app,context} = setup();
-  app.state.spToken='token'; app.state.spExpires=Date.now()+60000; app.state.spDeviceId='device';
+  app.state.spToken='token'; app.state.spExpires=Date.now()+60000; app.state.spDeviceId='device'; app.state.spReady=true;
   const requests=[];
-  let active=false, polls=0;
+  let active=false;
   app.spPlayer={activateElement:()=>{requests.push({url:'unlock'});}};
-  context.setTimeout=fn=>{fn(); return 1;};
   context.fetch=async (url,options)=>{
     requests.push({url,options});
     const path=new URL(url).pathname;
-    if(path==='/v1/me/player') {
-      assert.deepEqual(JSON.parse(options.body),{device_ids:['device'],play:false});
-      return {ok:true};
-    }
-    if(path==='/v1/me/player/devices') {
-      active=++polls>=2;
-      return {ok:true,json:async()=>({devices:[{id:'device',is_active:active}]})};
-    }
-    assert.equal(active,true,'controls must not reach an inactive device');
+    if(path==='/v1/me/player/play') active=true;
+    else assert.equal(active,true,'settings cannot activate the device');
+    assert.notEqual(path,'/v1/me/player','transfer endpoint fails for this account');
     return {ok:true};
   };
   await app.playSpotifyQueue(['spotify:track:one','spotify:track:two']);
   assert.equal(requests[0].url,'unlock');
-  assert.equal(polls,2);
-  assert.match(requests[4].url,/repeat.*state=off/);
-  assert.match(requests[5].url,/shuffle.*state=false/);
-  assert.deepEqual(JSON.parse(requests[6].options.body).uris,['spotify:track:one','spotify:track:two']);
+  assert.match(requests[1].url,/play\?device_id=device/);
+  assert.deepEqual(JSON.parse(requests[1].options.body),{uris:['spotify:track:one','spotify:track:two'],offset:{position:0},position_ms:0});
+  assert.match(requests[2].url,/repeat.*state=off/);
+  assert.match(requests[3].url,/shuffle.*state=false/);
   assert.equal(app.state.authError,'');
 });
 
-test('preview also activates its own Spotify device before playing', async () => {
-  const {app,context}=setup();
-  app.state.spDeviceId='preview-device';
+test('preview unlocks browser audio and targets its own Spotify device', async () => {
+  const {app}=setup();
+  app.state.spDeviceId='preview-device'; app.state.spReady=true;
   const calls=[];
   app.spPlayer={activateElement:()=>{calls.push('unlock');}};
-  app.spotifyRequest=async (url,options)=>{
-    calls.push(new URL(url).pathname);
-    if(url.endsWith('/devices')) return {json:async()=>({devices:[{id:'preview-device',is_active:true}]})};
-    return {ok:true};
-  };
+  app.spotifyRequest=async url=>{calls.push(url);return {ok:true};};
   assert.equal(await app.playSpotify('spotify:track:one'),true);
-  assert.deepEqual(calls,['unlock','/v1/me/player','/v1/me/player/devices','/v1/me/player/play']);
+  assert.deepEqual(calls,['unlock','https://api.spotify.com/v1/me/player/play?device_id=preview-device']);
 });
 
-test('unobserved device stays failed and receives no playback commands', async () => {
-  const {app,context}=setup();
-  app.state.spDeviceId='device';
-  context.setTimeout=fn=>{fn(); return 1;};
-  const calls=[];
-  app.spotifyRequest=async url=>{
-    calls.push(new URL(url).pathname);
-    return {json:async()=>({devices:[{id:'other-device',is_active:true}]})};
-  };
+test('offline device or failed playback sends no subsequent setlist commands', async () => {
+  const {app}=setup();
+  app.state.spDeviceId='stale';
+  let calls=0;
+  app.spotifyRequest=async()=>{calls++;throw new Error('Spotify player is unavailable.');};
   await app.playSpotifyQueue(['spotify:track:one']);
-  assert.match(app.state.authError,/did not become active/);
-  assert.equal(calls.includes('/v1/me/player/play'),false);
-  assert.equal(calls.includes('/v1/me/player/repeat'),false);
+  assert.equal(calls,0);
+  assert.match(app.state.authError,/not ready/);
+  app.state.spReady=true;
+  await app.playSpotifyQueue(['spotify:track:one']);
+  assert.equal(calls,1);
+  assert.match(app.state.authError,/unavailable/);
 });
 
 test('player 404 identifies unavailable device without disguising catalog 404', async () => {
