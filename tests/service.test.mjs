@@ -403,3 +403,34 @@ test('Spotify presentation startup cannot send a late pause after the new play c
   app.beginEvent();assert.deepEqual(commands,['play']);
   app.exit();assert.deepEqual(commands,['play','pause'],'Exit must still stop Spotify');
 });
+
+test('jittery sync frames never count backwards or replay a second rapidly',()=>{
+  const {app,context}=setup();context.clockNow=10000;vm.runInContext('Date.now = () => clockNow',context);
+  app.state.phase='presenting';app.state.autoMatch=true;app.state.now=10000;app.state.target=20000;
+  const changes=[];let previous=10;let renders=0;
+  const setState=app.setState.bind(app);app.setState=(...args)=>{renders++;return setState(...args);};
+  for(let i=0;i<=30;i++){
+    context.clockNow=10000+i*200;
+    app.updateMusicClock({remaining:10-i*0.2+(i===0?0:(i%2?0.22:-0.22)),elapsed:i*0.2,playing:true});
+    const seconds=Math.ceil((app.state.target-app.state.now)/1000);
+    assert.ok(seconds<=previous,'sync noise must not count upwards');
+    assert.ok(previous-seconds<=1,'ordinary drift must not skip digits');
+    if(seconds!==previous)changes.push(context.clockNow);
+    previous=seconds;
+  }
+  for(let i=1;i<changes.length;i++)assert.ok(changes[i]-changes[i-1]>=700,'digits need a steady cadence');
+  assert.ok(renders<12,'sync polling must not re-render every sample');
+  context.clockNow+=200;app.updateMusicClock({remaining:12,elapsed:0,playing:true});
+  assert.ok(Math.ceil((app.state.target-app.state.now)/1000)<=previous,'even a stale outlier must not rewind the display');
+});
+
+test('smooth clock holds while paused and waits for observed completion before zero',()=>{
+  const {app,context}=setup();context.clockNow=1000;vm.runInContext('Date.now = () => clockNow',context);
+  app.state.phase='presenting';app.state.autoMatch=true;app.state.now=1000;app.state.target=2000;
+  app.updateMusicClock({remaining:1,elapsed:0,playing:true});
+  context.clockNow=2500;app.paintMusicClock();assert.equal(Math.ceil((app.state.target-app.state.now)/1000),1);
+  app.updateMusicClock({remaining:0.5,elapsed:0.5,playing:false});
+  const held=Math.ceil((app.state.target-app.state.now)/1000);
+  context.clockNow=10000;app.paintMusicClock();assert.equal(Math.ceil((app.state.target-app.state.now)/1000),held);
+  app.updateMusicClock({remaining:0,elapsed:1,playing:false});assert.equal(app.state.target,app.state.now);
+});

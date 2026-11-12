@@ -26,8 +26,8 @@
 @keyframes stSweepB { 0%{transform:translate(13%,-9%) scale(1.03);opacity:.6} 50%{transform:translate(-15%,11%) scale(.98);opacity:1} 100%{transform:translate(13%,-9%) scale(1.03);opacity:.6} }
 @keyframes stSweepC { 0%{transform:translate(-11%,-12%) scale(.99);opacity:.65} 50%{transform:translate(14%,12%) scale(1.05);opacity:1} 100%{transform:translate(-11%,-12%) scale(.99);opacity:.65} }
 @keyframes stNPFloat { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-12px)} }
-@keyframes cdSlideIn  { 0%{transform:translateY(-55%) scale(0.88);opacity:0} 55%{transform:translateY(5%) scale(1.01);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
-@keyframes cdSlideInB { 0%{transform:translateY(-55%) scale(0.88);opacity:0} 55%{transform:translateY(5%) scale(1.01);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
+@keyframes cdSlideIn  { 0%{opacity:0.65} 100%{opacity:1} }
+@keyframes cdSlideInB { 0%{opacity:0.65} 100%{opacity:1} }
 </style>
 </helmet>
 <div ref="{{ setRoot }}" style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
@@ -213,7 +213,7 @@ class Component extends DCLogic {
     const glassNPFloatStyle = _npBase + 'animation:stNPFloat 4s ease-in-out infinite;';
     const actualNPStyle = npFloat ? glassNPFloatStyle : glassNPStyle;
 
-    // Liquid Glass countdown — Apple-style: each digit slides in from above on change.
+    // Countdown digits fade gently without moving the number baseline.
     // Toggle between two identical keyframes so CSS animation restarts on digit change
     // without requiring DOM element re-creation.
     if (!this._cdFlipKey) this._cdFlipKey = {};
@@ -229,7 +229,7 @@ class Component extends DCLogic {
         if (ch !== this._prevCDChars[i]) this._cdFlipKey[i] = !this._cdFlipKey[i];
         this._prevCDChars[i] = ch;
         const anim = this._cdFlipKey[i] ? 'cdSlideInB' : 'cdSlideIn';
-        countdownCells.push({ ch, style: 'font-size:15cqmin;font-weight:200;color:var(--st-ink,' + ink + ');display:inline-block;animation:' + anim + ' 0.48s cubic-bezier(.22,1,.36,1) both;transition:color 0.4s ease;' });
+        countdownCells.push({ ch, style: 'font-size:15cqmin;font-weight:200;color:var(--st-ink,' + ink + ');display:inline-block;animation:' + anim + ' 0.16s ease-out both;transition:color 0.4s ease;' });
       }
     }
 

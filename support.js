@@ -1288,7 +1288,7 @@
       if (r.fetched) return;
       r.fetched = true;
       const url = COMPONENT_DIR + "/" + encodeURIComponent(name) + ".dc.html";
-      fetch(url).then((res) => {
+      fetch(url, { cache: "no-cache" }).then((res) => {
         if (!res.ok) {
           console.error(
             "[dc-runtime] sibling fetch for <" + name + "/> failed:",

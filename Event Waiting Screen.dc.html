@@ -15,7 +15,7 @@
 })();
 </script>
 <script src="./media-player.js?v=0d6c25b50a3c"></script>
-<script src="./support.js"></script>
+<script src="./support.js?v=b34cb3174231"></script>
 </head>
 <body>
 <x-dc>
@@ -1065,6 +1065,7 @@ class Component extends DCLogic {
     this._tick = setInterval(() => {
       this.tickPresentationClock();
     }, 250);
+    this._displayTick = setInterval(() => { if (this.state.phase === 'presenting') this.paintMusicClock(); }, 50);
     this._onKey = (e) => {
       const tag = (e.target && e.target.tagName) || '';
       if (this.state.phase === 'setup') {
@@ -1084,7 +1085,7 @@ class Component extends DCLogic {
     this._audiusSearchRun = (this._audiusSearchRun || 0) + 1;
     this.stopAudio();
     clearTimeout(this._sdkReadyTimer);
-    clearInterval(this._tick); clearInterval(this._persistT);
+    clearInterval(this._tick); clearInterval(this._displayTick); clearInterval(this._persistT);
     window.removeEventListener('keydown', this._onKey);
     window.removeEventListener('message', this.onAuthMessage); window.removeEventListener('storage', this.onAuthStorage);
     window.removeEventListener('focus', this.reconcileSpotifyAuth); document.removeEventListener('visibilitychange', this.reconcileSpotifyAuth);
@@ -1330,15 +1331,39 @@ class Component extends DCLogic {
     try { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => { const sec = Math.round(a.duration || 0); if (sec > 0) this.patchTrackByUrl(url, { secs: sec, dur: this.fmt(sec) }); }; a.src = url; } catch (e2) {}
   };
 
+  paintMusicClock(now = Date.now()) {
+    const clock = this._visualClock;
+    if (!clock || this.state.phase !== 'presenting') return;
+    let remaining = Math.max(0, clock.remaining - (clock.playing ? Math.max(0, now - clock.at) / 1000 : 0));
+    if (remaining <= 0 && !clock.finished) remaining = 0.001;
+    const previous = Math.max(0, Math.ceil((this.state.target - this.state.now) / 1000));
+    // Small sync corrections must never count a displayed second backwards.
+    if (!clock.jump) remaining = Math.min(remaining, previous);
+    const second = Math.ceil(remaining);
+    if (second !== previous || this.state.playing !== clock.playing || clock.jump) this.setState({ now, target: now + remaining * 1000, playing: clock.playing });
+    clock.jump = false;
+  }
   updateMusicClock(sample) {
     if (this.state.phase !== 'presenting') return;
     const remaining = this.state.autoMatch ? sample.remaining : Math.max(0, this._clockSeconds - sample.elapsed);
-    const now = Date.now();
-    this.setState({ now, target: now + remaining * 1000, playing: !!sample.playing && !this.state.paused });
+    if (!Number.isFinite(remaining)) return;
+    const now = Date.now(), playing = !!sample.playing && !this.state.paused;
+    const last = this._visualClock;
+    const elapsed = last ? Math.max(0, now - last.at) / 1000 : 0;
+    const predicted = last ? Math.max(0, last.remaining - (last.playing ? elapsed : 0)) : remaining;
+    const error = remaining - predicted;
+    const jump = !last || remaining <= 0;
+    let next = remaining;
+    if (!jump) {
+      if (!playing || !last.playing) next = Math.min(predicted, remaining);
+      else next = predicted + Math.max(-elapsed * 0.15, Math.min(elapsed * 0.15, error));
+    }
+    this._visualClock = { at: now, remaining: Math.max(0, next), playing, jump, finished: remaining <= 0 };
+    this.paintMusicClock(now);
   }
   holdMusicClock() {
-    const remaining = Math.max(0, this.state.target - this.state.now), now = Date.now();
-    this.setState({ now, target: now + remaining, playing: false });
+    if (this._visualClock) this.paintMusicClock();
+    else if (this.state.playing) this.setState({ playing: false });
   }
   updateSpotifyClock(st) {
     const uri = st && st.track_window && st.track_window.current_track && st.track_window.current_track.uri;
@@ -1552,6 +1577,7 @@ class Component extends DCLogic {
     const now = Date.now();
     const target = this.state.paused ? this.state.target + (now - (this._pauseAt || now)) : this.state.target;
     this._reachedLast = false; this._lastSpProgress = false; this._lastSpUri = null;
+    this._visualClock = null;
     this.setState({ currentIdx: i, track: t, paused: false, playing: true, musicEnded: false, target, now });
     if (this.state.phase === 'presenting') {
       if (this.designSequence().length > 1) this.advanceDesign();
@@ -1569,6 +1595,7 @@ class Component extends DCLogic {
     if (new Set(this.state.queue.map(track => track.service)).size > 1) { this.setState({ authError: 'Choose songs from one music source for each presentation.' }); return; }
     this.savePrefs();
     this.stopAudio({ preserveSpotify: this.state.queue[0] && this.state.queue[0].service === 'spotify' });
+    this._visualClock = null;
     this._clockSeconds = this.countdownSecs(); this._spClockSample = null; this._spClockElapsed = 0; this._spotifyClockReady = false;
     const target = Date.now() + this._clockSeconds * 1000;
     const seq = this.designSequence();

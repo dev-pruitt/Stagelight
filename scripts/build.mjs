@@ -1,10 +1,15 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 const sourcePath = new URL('../Event Waiting Screen.dc.html', import.meta.url);
-const hash = createHash('sha256').update(readFileSync(new URL('../media-player.js', import.meta.url))).digest('hex').slice(0, 12);
 const original = readFileSync(sourcePath, 'utf8');
-const updated = original.replace(/media-player\.js(?:\?v=[a-f0-9]+)?/, 'media-player.js?v=' + hash);
-if (process.argv.includes('--check') && original !== updated) throw new Error('Media player changed. Run node scripts/build.mjs.');
+let updated = original;
+for (const [name, dependencies] of Object.entries({ 'media-player.js': ['media-player.js'], 'support.js': ['support.js', 'EventStage.dc.html'] })) {
+  const hash = createHash('sha256');
+  for (const file of dependencies) hash.update(readFileSync(new URL('../' + file, import.meta.url)));
+  const pattern = name.replaceAll('.', '\\.') + '(?:\\?v=[a-f0-9]+)?';
+  updated = updated.replace(new RegExp(pattern), name + '?v=' + hash.digest('hex').slice(0, 12));
+}
+if (process.argv.includes('--check') && original !== updated) throw new Error('Display assets changed. Run node scripts/build.mjs.');
 if (!process.argv.includes('--check') && original !== updated) writeFileSync(sourcePath, updated);
 const source = Buffer.from(updated);
 const target = new URL('../index.html', import.meta.url);
