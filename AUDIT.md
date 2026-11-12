@@ -1,5 +1,5 @@
-2026-11-12: countdown follows actual playback; loading holds the timer.
-Audius/uploads blend up to 3 seconds. Order kept; overlap deducted.
-Browser: delayed load, pause during fade, real overlap, 7-second finish pass.
-36 checks pass. Spotify clock uses SDK progress; Spotify has normal transitions.
-Live Audius crossfade verified. Playlists save before playback. Apple hidden.
+2026-11-12: Spotify startup preserves its SDK player until Play.
+Exit still stops playback. Audius/uploads retain their crossfade players.
+37 checks pass, including the Spotify startup pause regression.
+The timer continues reading actual playback progress.
+Apple Music stays hidden.

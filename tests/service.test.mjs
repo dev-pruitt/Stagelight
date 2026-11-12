@@ -392,3 +392,14 @@ test('starting immediately after selecting songs saves the whole playlist',()=>{
   const saved=JSON.parse(storage.get('sl_setup'));
   assert.equal(saved.queue.length,2);assert.equal(saved.queue[1].id,'second');assert.equal(app.state.phase,'presenting');
 });
+
+
+test('Spotify presentation startup cannot send a late pause after the new play command',()=>{
+  const {app}=setup();const commands=[];
+  app.state.queue=[{service:'spotify',uri:'spotify:track:one',secs:10}];
+  app.state.track=app.state.queue[0];app.state.spReady=true;
+  app.spPlayer={pause(){commands.push('pause');return Promise.resolve();}};
+  app.startAudio=()=>{commands.push('play');};
+  app.beginEvent();assert.deepEqual(commands,['play']);
+  app.exit();assert.deepEqual(commands,['play','pause'],'Exit must still stop Spotify');
+});

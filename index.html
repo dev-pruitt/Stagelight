@@ -1449,12 +1449,13 @@ class Component extends DCLogic {
     this._fade = setInterval(() => { v = Math.min(0.85, v + 0.05); this.audio.volume = v; if (v >= 0.85) clearInterval(this._fade); }, 120);
     this.setState({ currentIdx: i, track: t });
   }
-  stopAudio() {
+  stopAudio({ preserveSpotify = false } = {}) {
     this._presentationRun = (this._presentationRun || 0) + 1;
     if (this._mixer) { this._mixer.stop(); this._mixer = null; }
     this._audioRun = (this._audioRun || 0) + 1;
     clearInterval(this._fade);
-    this.stopSpotify(); this.stopApple();
+    if (preserveSpotify) clearInterval(this._spFade); else this.stopSpotify();
+    this.stopApple();
     if (this.audio) { try { this.audio.pause(); } catch (e) {} }
     if (this.actx && this.master) {
       try {
@@ -1567,7 +1568,7 @@ class Component extends DCLogic {
     if (this.state.queue.some(t => t.service === 'audius') && this.state.queue.some(t => t.service !== 'audius')) { this.setState({ authError: 'Use an Audius-only playlist for this presentation. Remove songs from other sources first.' }); return; }
     if (new Set(this.state.queue.map(track => track.service)).size > 1) { this.setState({ authError: 'Choose songs from one music source for each presentation.' }); return; }
     this.savePrefs();
-    this.stopAudio();
+    this.stopAudio({ preserveSpotify: this.state.queue[0] && this.state.queue[0].service === 'spotify' });
     this._clockSeconds = this.countdownSecs(); this._spClockSample = null; this._spClockElapsed = 0; this._spotifyClockReady = false;
     const target = Date.now() + this._clockSeconds * 1000;
     const seq = this.designSequence();
