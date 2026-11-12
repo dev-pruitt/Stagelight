@@ -287,3 +287,82 @@ test('owner Premium rejection is explicit and never reports a ready connection',
   assert.match(app.state.authError,/owns this developer app/);
   assert.match(app.state.authError,/few hours/);
 });
+
+test('Audius search keeps free playable tracks and stable IDs, never gated content', async () => {
+  const {app,context}=setup(); app.state.source='audius';
+  const base={id:'one',title:'Same title',user:{name:'Artist'},duration:123,is_streamable:true,artwork:{'150x150':'https://art.example/cover.jpg'}};
+  let requested;
+  context.fetch=async url=>{requested=new URL(url);return {ok:true,json:async()=>({data:[base,{...base,id:'two'},{...base,id:'paid',is_stream_gated:true},{...base,id:'blocked',is_streamable:false},{...base,id:'condition',stream_conditions:{}},{...base,id:'missing',is_available:false}]})};};
+  await app.searchAudius('lofi & chill');
+  assert.equal(requested.searchParams.get('query'),'lofi & chill');
+  assert.equal(requested.origin,'https://api.audius.co');
+  assert.equal(app.state.results.length,2);
+  assert.equal(app.state.results[0].secs,123);
+  assert.notEqual(app.selKey(app.state.results[0]),app.selKey(app.state.results[1]));
+  assert.equal(app.state.results[0].url,undefined,'stream URL must be derived at playback');
+});
+
+test('late Audius search cannot overwrite a different source or newer results', async () => {
+  const {app,context}=setup(); app.state.source='audius';
+  let finish;
+  context.fetch=()=>new Promise(resolve=>{finish=resolve;});
+  const search=app.searchAudius('old');
+  app.setSource('upload');
+  finish({ok:true,json:async()=>({data:[]})});
+  await search;
+  assert.equal(app.state.source,'upload'); assert.equal(app.state.authError,''); assert.equal(app.state.searching,false);
+});
+
+test('Audius queue advances in order, finishes once, and restores from IDs', async () => {
+  const {app}=setup();
+  app.state.queue=[{service:'audius',id:'first',title:'One',secs:2},{service:'audius',id:'second',title:'Two',secs:3}];
+  app.state.source='audius'; app.state.phase='presenting';
+  app.audio={play:async()=>{},pause(){}};
+  assert.equal(await app.playAudiusAt(0),true);
+  assert.match(app.audio.src,/tracks\/first\/stream\?app_name=Stagelight$/);
+  assert.equal(app.audio.loop,false);
+  app.audio.onended(); await Promise.resolve();
+  assert.equal(app.state.currentIdx,1); assert.match(app.audio.src,/tracks\/second\/stream/);
+  app.audio.onended(); assert.equal(app.state.musicEnded,true);
+  app.restorePrefs({source:'audius',queue:app.state.queue});
+  assert.equal(app.state.source,'audius'); assert.equal(app.state.queue[0].id,'first');
+});
+
+test('Audius preview ends without advancing; failures never claim playback', async () => {
+  const {app}=setup();
+  app.state.queue=[{service:'audius',id:'first'},{service:'audius',id:'second'}];
+  app.state.track=app.state.queue[0]; app.audio={play:async()=>{},pause(){}};
+  await app.togglePreview(); assert.equal(app.state.previewPlaying,true);
+  app.audio.onended(); assert.equal(app.state.currentIdx,0); assert.equal(app.state.previewPlaying,false); assert.equal(app.state.musicEnded,false);
+  app.audio.play=async()=>{throw new Error('media unavailable');};
+  await app.togglePreview(); assert.equal(app.state.previewPlaying,false); assert.match(app.state.authError,/Audius could not play/);
+});
+
+test('stopped Audius startup cannot report a late success or fault', async () => {
+  const {app}=setup();
+  app.state.queue=[{service:'audius',id:'first'}]; app.state.track=app.state.queue[0];
+  let reject;
+  app.audio={play:()=>new Promise((_,fail)=>{reject=fail;}),pause(){}};
+  const pending=app.togglePreview(); app.stopAudio(); reject(new Error('cancelled'));
+  await pending; assert.equal(app.state.previewPlaying,false); assert.equal(app.state.authError,'');
+});
+
+test('Audius pause/resume leaves Spotify stopped and mixed queues cannot start', () => {
+  const {app}=setup(); let spotifyResumes=0,plays=0;
+  app.spPlayer={pause(){},resume(){spotifyResumes++;}};
+  app.audio={pause(){},src:'audius',play(){plays++;return Promise.resolve();}};
+  app.state.track={service:'audius',id:'first'}; app.state.phase='presenting';
+  app.togglePause(); app.togglePause(); assert.equal(plays,1); assert.equal(spotifyResumes,0);
+  app.state.phase='setup'; app.state.queue=[app.state.track,{service:'spotify',uri:'spotify:track:two'}];
+  app.beginEvent(); assert.equal(app.state.phase,'setup'); assert.match(app.state.authError,/Audius-only/);
+});
+
+test('inactive Spotify state cannot overwrite Audius playback or completion', async () => {
+  const {app,context}=setup(); const listeners={};
+  context.window.Spotify={Player:class{addListener(n,f){listeners[n]=f;} async connect(){return true;}}};
+  app.loadScript=async()=>{}; app.spotifyRequest=async()=>({ok:true});
+  await app.initSpotifyPlayer();
+  app.state.track={service:'audius',id:'one',title:'Audius song'}; app.state.musicEnded=true;
+  listeners.player_state_changed({paused:true,position:0,track_window:{current_track:{uri:'spotify:track:old',name:'Old Spotify song'}}});
+  assert.equal(app.state.track.title,'Audius song'); assert.equal(app.state.musicEnded,true);
+});

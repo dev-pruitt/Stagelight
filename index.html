@@ -297,7 +297,7 @@
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sl-text);font-weight:600;"><span style="width:7px;height:7px;border-radius:50%;background:{{ readyColor }};"></span>{{ connectedLabel }}</div>
-                <button onClick="{{ disconnectSource }}" style="border:none;background:none;color:#86868b;font-size:11.5px;cursor:pointer;padding:0;" style-hover="color:#1d1d1f;">Disconnect</button>
+                <sc-if value="{{ showDisconnect }}"><button onClick="{{ disconnectSource }}" style="border:none;background:none;color:#86868b;font-size:11.5px;cursor:pointer;padding:0;" style-hover="color:#1d1d1f;">Disconnect</button></sc-if>
               </div>
               <div style="display:flex;gap:6px;">
                 <input value="{{ searchQuery }}" onInput="{{ setSearchQuery }}" onKeyDown="{{ onSearchKey }}" placeholder="{{ searchPlaceholder }}" style="flex:1;min-width:0;padding:10px 12px;border:1px solid var(--sl-border-md);border-radius:10px;font-size:13px;background:var(--sl-card);color:var(--sl-text);" />
@@ -306,6 +306,7 @@
               <sc-if value="{{ searchHint }}" hint-placeholder-val="{{ false }}">
                 <div style="font-size:11px;color:var(--sl-text-xs);line-height:1.45;">{{ searchHint }}</div>
               </sc-if>
+              <sc-if value="{{ showAudius }}"><a href="https://audius.co" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--sl-text-sub);">Explore Audius ↗</a></sc-if>
               <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;flex-direction:column;gap:2px;border:1px solid var(--sl-border);border-radius:14px;background:var(--sl-card);overflow:hidden;max-height:262px;overflow-y:auto;">
                   <sc-for list="{{ results }}" as="t" hint-placeholder-count="3">
@@ -675,6 +676,7 @@ class Component extends DCLogic {
       player.addListener('ready', ({ device_id }) => this.setState({ spDeviceId: device_id, spReady: true }));
       player.addListener('not_ready', () => this.setState({ spReady: false }));
       ['initialization_error', 'authentication_error', 'account_error', 'playback_error'].forEach((ev) => player.addListener(ev, (e) => this.setState({ authError: this.spotifyErr((e && e.message) || ev) }))); player.addListener('player_state_changed', (st) => {
+        if (this.state.track && this.state.track.service === 'audius') return;
         if (!st || !st.track_window || !st.track_window.current_track) return;
         var ct = st.track_window.current_track; var uri = ct.uri;
         var sec = Math.round((ct.duration_ms || 0) / 1000);
@@ -728,7 +730,7 @@ class Component extends DCLogic {
     // which fires every 120 ms and would immediately hit Spotify's rate limit)
     if (callApi) {
       const token = this.state.spToken;
-      if (token) {
+      if (token && this.state.track && this.state.track.service === 'spotify') {
         fetch('https://api.spotify.com/v1/me/player/volume?volume_percent=' + Math.round(vol * 100),
           { method: 'PUT', headers: { Authorization: 'Bearer ' + token } }
         ).catch(() => {});
@@ -845,9 +847,66 @@ class Component extends DCLogic {
   }
   stopApple() { clearInterval(this._amFade); try { if (window.MusicKit) window.MusicKit.getInstance().pause(); } catch (e) {} }
 
+  // ----- Audius public catalog -----
+  audiusStreamUrl(id) {
+    if (typeof id !== 'string' || !/^[A-Za-z0-9_-]+$/.test(id)) throw new Error('Invalid Audius track. Search for the song again.');
+    return 'https://api.audius.co/v1/tracks/' + encodeURIComponent(id) + '/stream?app_name=Stagelight';
+  }
+  async searchAudius(query) {
+    const run = this._audiusSearchRun = (this._audiusSearchRun || 0) + 1;
+    this.setState({ searching: true, authError: '' });
+    try {
+      const url = new URL('https://api.audius.co/v1/tracks/' + (query ? 'search' : 'trending'));
+      url.search = new URLSearchParams({ app_name: 'Stagelight', limit: '30', ...(query ? { query } : { time: 'week' }) });
+      const response = await fetch(url.href, { signal: AbortSignal.timeout(15000) });
+      if (!response.ok) throw new Error(response.status === 429 ? 'Audius is busy. Wait a moment, then search again.' : 'Audius search is unavailable. Try again shortly.');
+      const body = await response.json();
+      if (!Array.isArray(body.data)) throw new Error('Audius returned an unreadable song list. Try again shortly.');
+      const results = body.data.filter(t => t && t.is_streamable === true && t.is_available !== false && !t.is_stream_gated && !t.stream_conditions && !t.is_delete && !t.is_unlisted && /^[A-Za-z0-9_-]+$/.test(t.id || '')).map(t => {
+        const secs = Number.isFinite(t.duration) ? Math.max(0, Math.round(t.duration)) : 0;
+        let cover = 'linear-gradient(135deg,#7e1bcc,#2e89ff)';
+        try { const image = new URL(t.artwork && t.artwork['150x150']); if (image.protocol === 'https:') cover = 'center/cover url("' + image.href.replace(/["'()\\]/g, c => encodeURIComponent(c)) + '")'; } catch (_) {}
+        return { service: 'audius', id: t.id, title: t.title || 'Untitled', artist: t.user && t.user.name || 'Unknown artist', cover, secs, dur: secs ? this.fmt(secs) : '' };
+      });
+      if (run !== this._audiusSearchRun || this.state.source !== 'audius') return;
+      this.setState({ results, searching: false, authError: results.length ? '' : 'No free playable songs found. Try another song or artist.' });
+    } catch (e) {
+      if (run !== this._audiusSearchRun || this.state.source !== 'audius') return;
+      this.setState({ searching: false, authError: e.name === 'TimeoutError' ? 'Audius search timed out. Try again.' : e.message });
+    }
+  }
+  async playAudiusAt(index, preview = false) {
+    const track = (this.state.queue || [])[index];
+    if (!track || track.service !== 'audius' || !this.audio) return false;
+    const run = this._audioRun = (this._audioRun || 0) + 1;
+    const audio = this.audio;
+    clearInterval(this._fade);
+    this.stopSpotify(); this.stopApple();
+    audio.loop = false;
+    const fail = () => {
+      if (run !== this._audioRun) return;
+      this.setState({ authError: 'Audius could not play this song. Try another track or retry playback.', previewPlaying: false });
+    };
+    audio.onerror = fail;
+    audio.onended = () => {
+      if (run !== this._audioRun) return;
+      if (!preview && this.state.phase === 'presenting' && index + 1 < this.state.queue.length) {
+        if (this.designSequence().length > 1) this.advanceDesign();
+        this.playAudiusAt(index + 1);
+      } else this.setState({ musicEnded: !preview, previewPlaying: false });
+    };
+    try {
+      audio.src = this.audiusStreamUrl(track.id);
+      audio.currentTime = 0; audio.volume = this.spotifyVolume();
+      this.setState({ currentIdx: index, track, musicEnded: false, authError: '' });
+      await audio.play();
+      return run === this._audioRun;
+    } catch (e) { fail(); return false; }
+  }
+
   // ----- search / preview / auth plumbing -----
   runSearch = async () => {
-    const q = (this.state.searchQuery || '').trim(); if (!q) return; if (this.state.source === 'spotify') { this.addSpotifyLink(); return; }
+    const q = (this.state.searchQuery || '').trim(); if (this.state.source === 'audius') return this.searchAudius(q); if (!q) return; if (this.state.source === 'spotify') { this.addSpotifyLink(); return; }
     this.setState({ searching: true, authError: '' });
     try {
       let results = [];
@@ -863,11 +922,13 @@ class Component extends DCLogic {
   togglePreview = async () => {
     const tr = this.state.track; if (!tr) return;
     if (this.state.previewPlaying) {
+      this._audioRun = (this._audioRun || 0) + 1;
       if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} }
       this.setState({ previewPlaying: false }); return;
     }
     if (tr.service === 'spotify') { if (!await this.playSpotify(tr.uri)) return; }
     else if (tr.service === 'apple') await this.playApple(tr.id);
+    else if (tr.service === 'audius') { if (!await this.playAudiusAt(this.state.currentIdx, true)) return; }
     else if (tr.url && this.audio) { this.audio.src = tr.url; this.audio.volume = 0.85; try { await this.audio.play(); } catch (e) { this.setState({ authError: 'Audio could not play. Upload the file again.', previewPlaying: false }); return; } }
     this.setState({ previewPlaying: true });
   };
@@ -1015,6 +1076,7 @@ class Component extends DCLogic {
     window.addEventListener('keydown', this._onKey);
   }
   componentWillUnmount() {
+    this._audiusSearchRun = (this._audiusSearchRun || 0) + 1;
     this.stopAudio();
     clearTimeout(this._sdkReadyTimer);
     clearInterval(this._tick); clearInterval(this._persistT);
@@ -1220,8 +1282,8 @@ class Component extends DCLogic {
   // Entering multiselect selects nothing; leaving clears the selection back to single-design.
   toggleMultiSelect = () => this.setState((s) => ({ multiSelect: !s.multiSelect, selectedVariants: !s.multiSelect ? [] : null, shuffledDesigns: [], designQueueIdx: 0 }));
 
-  setSource = (src) => this.setState({ source: src, results: [], searchQuery: '', authError: '' });
-  stopCurrentPreview() { const tr = this.state.track; if (tr) { if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} } } }
+  setSource = (src) => { this.stopCurrentPreview(); this._audiusSearchRun = (this._audiusSearchRun || 0) + 1; this.setState({ source: src, results: [], searchQuery: '', authError: '', previewPlaying: false, searching: false }); if (src === 'audius') this.searchAudius(''); };
+  stopCurrentPreview() { this._audioRun = (this._audioRun || 0) + 1; const tr = this.state.track; if (tr) { if (tr.service === 'spotify') this.stopSpotify(); else if (tr.service === 'apple') this.stopApple(); else if (this.audio) { try { this.audio.pause(); } catch (e) {} } } }
   addTrack = (t) => {
     const queue = this.state.queue || [];
     const key = this.selKey(t);
@@ -1270,6 +1332,7 @@ class Component extends DCLogic {
     // Fresh playback run: clear the "finished" flags so the Now Playing pill shows again.
     this._reachedLast = false; this._lastSpProgress = false; this._lastSpUri = null;
     if (this.state.musicEnded) this.setState({ musicEnded: false });
+    if (cur.service === 'audius') { this.playAudiusAt(this.state.currentIdx); return; }
     if (cur && cur.service === 'spotify' && this.state.spReady) { this.playSpotifyQueue(queue.filter((x) => x && x.service === 'spotify' && x.uri).map((x) => x.uri)); return; }
     if (cur && cur.service === 'apple' && this.state.connected.apple) { this.playApple(cur.id); return; }
     if (cur.service === 'spotify') { this.setState({ authError: 'Spotify player not ready. Stop and reconnect Spotify.' }); return; }
@@ -1323,6 +1386,7 @@ class Component extends DCLogic {
     this.setState({ currentIdx: i, track: t });
   }
   stopAudio() {
+    this._audioRun = (this._audioRun || 0) + 1;
     clearInterval(this._fade);
     this.stopSpotify(); this.stopApple();
     if (this.audio) { try { this.audio.pause(); } catch (e) {} }
@@ -1344,7 +1408,7 @@ class Component extends DCLogic {
     if (!saved || typeof saved !== 'object' || Array.isArray(saved)) { this.setState({ variantIdx: fallback }); return; }
     const patch = {};
     for (const key of ['title', 'subtitle', 'colorSource', 'source', 'npStyle']) if (typeof saved[key] === 'string') patch[key] = saved[key];
-    for (const [key, values] of Object.entries({ source: ['spotify', 'upload'], colorSource: ['logo', 'album'], npStyle: ['pill', 'stage', 'minimal', 'spectrum'] })) if (patch[key] && !values.includes(patch[key])) delete patch[key];
+    for (const [key, values] of Object.entries({ source: ['spotify', 'audius', 'upload'], colorSource: ['logo', 'album'], npStyle: ['pill', 'stage', 'minimal', 'spectrum'] })) if (patch[key] && !values.includes(patch[key])) delete patch[key];
     for (const key of ['autoMatch', 'showEvent', 'showNowPlaying', 'showMusicIcon', 'fullscreenOnStart', 'multiSelect']) if (typeof saved[key] === 'boolean') patch[key] = saved[key];
     if (typeof saved.logo === 'string') patch.logo = saved.logo;
     for (const key of ['palette', 'overrides']) {
@@ -1398,7 +1462,7 @@ class Component extends DCLogic {
       try { if (this.actx && this.actx.state === 'running') this.actx.suspend(); } catch (e) {}
     } else {
       this.setState({ target: this.state.target + (Date.now() - (this._pauseAt || Date.now())), now: Date.now(), paused: false, playing: true });
-      try { if (this.spPlayer) this.spPlayer.resume(); } catch (e) {}
+      try { if (this.spPlayer && this.state.track && this.state.track.service === 'spotify') this.spPlayer.resume(); } catch (e) {}
       try { if (this.audio && this.audio.src) { var p = this.audio.play(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
       try { if (this.actx && this.actx.state === 'suspended') this.actx.resume(); } catch (e) {}
     }
@@ -1417,12 +1481,14 @@ class Component extends DCLogic {
       try {
         if (t.service === 'spotify' && this.state.spReady) this.playSpotify(t.uri);
         else if (t.service === 'apple' && this.state.connected.apple) this.playApple(t.id);
+        else if (t.service === 'audius') this.playAudiusAt(i);
         else if (t.url) this.playLocalAt(i);
       } catch (e) {}
     }
     if (this.state.colorSource === 'album') this.applyAlbumPalette(t);
   };
   beginEvent = () => {
+    if (this.state.queue.some(t => t.service === 'audius') && this.state.queue.some(t => t.service !== 'audius')) { this.setState({ authError: 'Use an Audius-only playlist for this presentation. Remove songs from other sources first.' }); return; }
     const target = Date.now() + this.countdownSecs() * 1000;
     const seq = this.designSequence();
     this.setState({ phase: 'presenting', target, now: Date.now(), playing: true, paused: false, currentIdx: 0, track: (this.state.queue[0] || this.state.track), designQueueIdx: 0, variantIdx: seq.length ? seq[0] : this.state.variantIdx });
@@ -1489,7 +1555,7 @@ class Component extends DCLogic {
   // ---------- playlist helpers ----------
   parseDur(str) { const p = String(str || '').split(':').map((n) => parseInt(n, 10) || 0); let s = 0; for (let i = 0; i < p.length; i++) s = s * 60 + p[i]; return s; }
   trackSecs(t) { return t ? (typeof t.secs === 'number' && t.secs > 0 ? t.secs : this.parseDur(t.dur)) : 0; }
-  selKey(t) { return !t ? '' : (t.service === 'spotify' ? ('s' + t.uri) : (t.service === 'apple' ? ('a' + t.id) : ((t.service || '') + (t.url || t.title)))); }
+  selKey(t) { return !t ? '' : (t.service === 'spotify' ? ('s' + t.uri) : (t.service === 'apple' ? ('a' + t.id) : ((t.service || '') + (t.id || t.url || t.title)))); }
   queueSecs() { return (this.state.queue || []).reduce((a, t) => a + this.trackSecs(t), 0); }
   countdownSecs() { const total = this.queueSecs(); return (this.state.autoMatch && this.state.queue.length && total > 0) ? total : this.state.minutes * 60; }
   patchTrackByUri(uri, patch) { const upd = (list) => (list || []).map((x) => (x && x.uri === uri ? Object.assign({}, x, patch) : x)); this.setState((s) => ({ track: (s.track && s.track.uri === uri) ? Object.assign({}, s.track, patch) : s.track, results: upd(s.results), queue: upd(s.queue) })); if (this.state.colorSource === 'album' && patch.cover) { var cur = (this.state.queue && this.state.queue[this.state.currentIdx]) || this.state.track; if (cur && cur.uri === uri) this.applyAlbumPalette({ cover: patch.cover }); } }
@@ -1574,7 +1640,7 @@ class Component extends DCLogic {
       };
     });
 
-    const srcDefs = [{ id: 'spotify', label: 'Spotify' }, { id: 'upload', label: 'Upload' }];
+    const srcDefs = [{ id: 'spotify', label: 'Spotify' }, { id: 'audius', label: 'Audius' }, { id: 'upload', label: 'Upload' }];
     const sources = srcDefs.map((s) => ({
       label: s.label, soon: !!s.soon, onClick: s.soon ? (() => {}) : (() => this.setSource(s.id)),
       cursor: s.soon ? 'not-allowed' : 'pointer',
@@ -1586,13 +1652,14 @@ class Component extends DCLogic {
 
     const src = st.source;
     const isUpload = src === 'upload';
-    const connected = !isUpload && st.connected[src];
+    const isAudius = src === 'audius';
+    const connected = isAudius || (!isUpload && st.connected[src]);
     const showConnect = !isUpload && !connected && !st.useDemo;
     const showSearch = !isUpload && connected;
     const showDemo = !isUpload && !connected && st.useDemo;
     const isSpotify = src === 'spotify';
 
-    const cm = isSpotify
+    const cm = isAudius ? { label: 'Audius · free music', ready: true } : isSpotify
       ? { title: 'Connect Spotify', note: 'Sign in with your Spotify Premium account to play full songs during your event. A small popup will ask you to approve access — no password is shared with us. No Premium account? Use the demo library or upload your own audio below.', placeholder: 'Spotify Client ID', btn: 'Connect Spotify', bg: '#1db954', label: st.spReady ? 'Spotify ready' : 'Spotify signed in · player starting', ready: st.spReady }
       : { title: 'Connect Apple Music', note: 'Requires a MusicKit developer token (Apple Developer Program) and an active Apple Music subscription.', placeholder: 'Apple Music developer token (JWT)', btn: 'Connect Apple Music', bg: '#fa2d48', label: 'Apple Music connected', ready: connected };
 
@@ -1604,10 +1671,10 @@ class Component extends DCLogic {
     const results = st.results.map((t) => ({ ...t, onClick: () => this.pickTrack(t), bg: curKey === selKey(t) ? this.rgba(accentArr, 0.08) : 'var(--sl-card)', check: curKey === selKey(t) ? '\u2713' : '' }));
     const demoLib = (isSpotify ? this.SPOTIFY : this.APPLE).map((t) => { const obj = { ...t, service: 'mock' }; return { ...obj, onClick: () => this.pickTrack(obj), bg: curKey === selKey(obj) ? this.rgba(accentArr, 0.08) : 'var(--sl-card)', check: curKey === selKey(obj) ? '\u2713' : '' }; });
 
-    const svcSub = { spotify: 'Spotify', apple: 'Apple Music', local: 'Local file', mock: 'Demo library' };
+    const svcSub = { audius: 'Audius', spotify: 'Spotify', apple: 'Apple Music', local: 'Local file', mock: 'Demo library' };
     const npTrack = (st.queue && st.queue[st.currentIdx]) || st.track;
     const selectedSub = npTrack ? (svcSub[npTrack.service] || npTrack.artist || '') : '';
-    const canPreview = !!npTrack && ((npTrack.service === 'spotify' && st.spReady) || (npTrack.service === 'apple' && st.connected.apple) || (npTrack.service === 'local'));
+    const canPreview = !!npTrack && ((npTrack.service === 'spotify' && st.spReady) || (npTrack.service === 'apple' && st.connected.apple) || (npTrack.service === 'local') || (npTrack.service === 'audius'));
     const qlen = (st.queue || []).length;
     const queueList = (st.queue || []).map((t, i) => { const key = this.selKey(t); const s = this.trackSecs(t); return { num: String(i + 1), cover: t.cover, title: t.title, sub: svcSub[t.service] || t.artist || '', dur: t.dur || (s ? this.fmt(s) : '··:··'), numColor: i === st.currentIdx ? pal.accent : '#a1a1a6', upDisabled: i <= 0, downDisabled: i >= qlen - 1, upColor: i > 0 ? '#86868b' : '#d1d1d6', downColor: i < qlen - 1 ? '#86868b' : '#d1d1d6', onUp: () => this.moveTrack(i, i - 1), onDown: () => this.moveTrack(i, i + 1), onRemove: () => this.removeFromQueue(key) }; });
     const totalSecs = this.queueSecs();
@@ -1667,7 +1734,7 @@ class Component extends DCLogic {
       glassLabel: Math.round((st.glassOpacity !== undefined ? st.glassOpacity : 0.65) * 100) + '%',
       setGlass: this.setGlass,
       // music
-      sources, showConnect, showSearch, showDemo, showUpload: isUpload,
+      sources, showConnect, showSearch, showDemo, showAudius: isAudius, showDisconnect: !isAudius, showUpload: isUpload,
       connectTitle: cm.title, connectNote: cm.note, connectBtnLabel: cm.btn, connectBtnBg: cm.bg,
       credPlaceholder: cm.placeholder, credValue: isSpotify ? st.spClientId : st.amDevToken, showCred: !isSpotify,
       onCredInput: isSpotify ? this.setSpClientId : this.setAmDevToken,
@@ -1675,8 +1742,8 @@ class Component extends DCLogic {
       showRedirect: false, redirectUri: this.REDIRECT(), copyRedirect: this.copyRedirect, copyLabel: st.copied ? 'Copied' : 'Copy',
       connectedLabel: cm.label, readyColor: cm.ready ? '#34c759' : '#ff9f0a',
       searchQuery: st.searchQuery, setSearchQuery: this.setSearchQuery, onSearchKey: this.onSearchKey, runSearch: this.runSearch,
-      searchLabel: st.searching ? '\u2026' : (isSpotify ? 'Add' : 'Search'), searchPlaceholder: isSpotify ? 'Paste a Spotify track or playlist link' : ('Search Apple Music' + '\u2026'),
-      searchHint: isSpotify ? 'Paste a track or full playlist link — all tracks import automatically.' : '',
+      searchLabel: st.searching ? '\u2026' : (isSpotify ? 'Add' : 'Search'), searchPlaceholder: isAudius ? 'Search songs or artists' : isSpotify ? 'Paste a Spotify track or playlist link' : ('Search Apple Music' + '\u2026'),
+      searchHint: isAudius ? 'Free public tracks. No account needed. Search, then select songs to add them.' : isSpotify ? 'Paste a track or full playlist link — all tracks import automatically.' : '',
       results, hasResults: results.length > 0, emptyResults: !st.searching && results.length === 0 && !!st.searchQuery && !st.authError && !isSpotify, emptyMsg: 'No results \u2014 try another search.',
       demoLibrary: demoLib, toggleDemo: this.toggleDemo, disconnectSource: this.disconnectSource,
       onAudioChange: this.onAudioChange,
@@ -1684,7 +1751,7 @@ class Component extends DCLogic {
       queueList, hasQueue: queueList.length > 0, queueCount: queueList.length, queueTotal: this.fmt(totalSecs),
       canPreview, togglePreview: this.togglePreview, previewLabel: st.previewPlaying ? '\u23f8 Stop' : '\u25b6 Preview',
       authError: st.authError,
-      musicFootnote: isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Requires Spotify Premium.' : (isUpload ? 'Drop or select an audio file. It plays in sync with your countdown.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
+      musicFootnote: isAudius ? 'Music from Audius. Some songs may be unavailable. Choose songs from one source per presentation.' : isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Requires Spotify Premium.' : (isUpload ? 'Drop or select an audio file. It plays in sync with your countdown.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
       npStyle: st.npStyle || 'pill',
       npStyleButtons: ['pill', 'stage', 'minimal', 'spectrum'].map((s) => { const active = (st.npStyle || 'pill') === s; return { label: s.charAt(0).toUpperCase() + s.slice(1), onClick: () => this.setNpStyle(s), bg: active ? pal.accent : 'var(--sl-card)', color: active ? '#fff' : 'var(--sl-text)', border: active ? pal.accent : 'var(--sl-border-md)' }; }),
       showNP: !!npTrack && st.showNowPlaying && !st.musicEnded,
