@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.stagelight.t64.org/sitemap.xml

@@ -1,5 +1,5 @@
-2026-11-12: sync corrections ease in; the countdown never ticks backwards.
-Digits fade briefly. Vertical bounce removed.
-Browser: steady 7-to-0 countdown finished with audio in 7.06 seconds.
-39 checks pass. Playback and crossfades retained; Apple Music hidden.
-Display assets are versioned and revalidated after updates.
+2026-11-12: public landing at `/`; app at `/app.html`. Both generated from source.
+New visitors start with free Audius. Saved Spotify setups still restore.
+Spotify's root callback retained; callback relay and old app links tested.
+45 checks pass. Desktop/compact layouts, silent demo, app navigation, Audius playback pass.
+Canonical URLs, share metadata, robots.txt, and sitemap derive from CNAME.

@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../app.html', import.meta.url), 'utf8');
 const logic = html.match(/<script[^>]*data-dc-script[^>]*>([\s\S]*?)<\/script>/)[1];
 function setup() {
   const storage = new Map();
@@ -27,7 +27,7 @@ function setup() {
 }
 
 test('all shipped component scripts parse', () => {
-  for (const name of ['index.html', 'Event Waiting Screen.dc.html', 'EventStage.dc.html']) {
+  for (const name of ['app.html', 'Event Waiting Screen.dc.html', 'EventStage.dc.html']) {
     const text = readFileSync(new URL('../' + name, import.meta.url), 'utf8');
     for (const match of text.matchAll(/<script[^>]*data-dc-script[^>]*>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
   }
@@ -433,4 +433,24 @@ test('smooth clock holds while paused and waits for observed completion before z
   const held=Math.ceil((app.state.target-app.state.now)/1000);
   context.clockNow=10000;app.paintMusicClock();assert.equal(Math.ceil((app.state.target-app.state.now)/1000),held);
   app.updateMusicClock({remaining:0,elapsed:1,playing:false});assert.equal(app.state.target,app.state.now);
+});
+
+test('Spotify keeps its registered root callback after the app moves to its own URL',()=>{
+  const {app,context}=setup();context.location.pathname='/app.html';
+  assert.equal(app.REDIRECT(),'https://www.stagelight.t64.org/');
+});
+test('new visitors start with free Audius; saved Spotify setups still restore',()=>{
+  const {app,context}=setup();assert.equal(app.state.source,'audius');
+  context.location.search='?source=audius';
+  const capture=html.match(/<script id="sl-auth-capture">([\s\S]*?)<\/script>/)[1];
+  vm.runInContext(capture,context);assert.equal(context.window.__slLaunchSource,'audius');
+  app.restorePrefs({source:'spotify',queue:[{service:'spotify',uri:'spotify:track:one'}]});
+  assert.equal(app.state.source,'spotify');assert.equal(app.state.queue[0].uri,'spotify:track:one');
+});
+
+
+test('old GitHub app links reach the canonical app instead of losing their route',()=>{
+  const {app,context}=setup();let destination;
+  Object.assign(context.location,{hostname:'dev-pruitt.github.io',search:'?source=audius',hash:'#setup',replace:url=>{destination=url;}});
+  app.componentDidMount();assert.equal(destination,'https://www.stagelight.t64.org/app.html?source=audius#setup');
 });
