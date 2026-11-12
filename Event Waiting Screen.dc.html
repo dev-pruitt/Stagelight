@@ -1574,7 +1574,7 @@ class Component extends DCLogic {
       };
     });
 
-    const srcDefs = [{ id: 'spotify', label: 'Spotify' }, { id: 'apple', label: 'Apple Music', soon: true }, { id: 'upload', label: 'Upload' }];
+    const srcDefs = [{ id: 'spotify', label: 'Spotify' }, { id: 'upload', label: 'Upload' }];
     const sources = srcDefs.map((s) => ({
       label: s.label, soon: !!s.soon, onClick: s.soon ? (() => {}) : (() => this.setSource(s.id)),
       cursor: s.soon ? 'not-allowed' : 'pointer',
