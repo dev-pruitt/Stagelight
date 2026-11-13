@@ -14,7 +14,7 @@
 @keyframes stFloatC { 0%{transform:translate(0,0) scale(0.93)} 50%{transform:translate(14%,19%) scale(1.34)} 100%{transform:translate(0,0) scale(0.93)} }
 @keyframes stEq { 0%,100%{transform:scaleY(0.25)} 50%{transform:scaleY(1)} }
 @keyframes stPulse { 0%,100%{opacity:0.55} 50%{opacity:1} }
-@keyframes stHint { 0%{opacity:0} 12%{opacity:0.45} 72%{opacity:0.45} 100%{opacity:0} }
+@keyframes stHint { 0%{opacity:0} 12%{opacity:1} 72%{opacity:1} 100%{opacity:0} }
 @keyframes stRise { 0%{transform:translateY(16px)} 100%{transform:translateY(0)} }
 @keyframes stDrift1 { 0%{transform:translate(0,0);opacity:0.15} 50%{transform:translate(6%,-9%);opacity:1} 100%{transform:translate(0,0);opacity:0.15} }
 @keyframes stDrift2 { 0%{transform:translate(0,0);opacity:1} 50%{transform:translate(-7%,-6%);opacity:0.2} 100%{transform:translate(0,0);opacity:1} }
@@ -55,20 +55,20 @@
 
     <sc-if value="{{ showCountdown }}" hint-placeholder-val="{{ true }}">
       <div ref="{{ setCDBox }}" style="{{ glassCountdownStyle }}">
-        <div style="font-size:2.1cqmin;text-transform:uppercase;letter-spacing:0.42em;font-weight:600;color:var(--st-ink,{{ ink }});opacity:0.55;padding-left:0.42em;transition:color 0.4s ease;">{{ label }}</div>
+        <div style="font-size:2.1cqmin;text-transform:uppercase;letter-spacing:0.42em;font-weight:600;color:var(--st-ink,{{ ink }});opacity:0.9;padding-left:0.42em;">{{ label }}</div>
         <div style="display:flex;align-items:baseline;font-variant-numeric:tabular-nums;line-height:0.95;letter-spacing:0.01em;overflow:hidden;">
           <sc-for list="{{ countdownCells }}" as="d" hint-placeholder-count="5">
             <span style="{{ d.style }}">{{ d.ch }}</span>
           </sc-for>
         </div>
-        <div style="font-size:2.7cqmin;font-weight:400;color:var(--st-ink,{{ ink }});opacity:0.65;max-width:70cqw;transition:color 0.4s ease;">{{ title }}</div>
+        <div style="font-size:2.7cqmin;font-weight:400;color:var(--st-ink,{{ ink }});opacity:0.9;max-width:70cqw;">{{ title }}</div>
       </div>
     </sc-if>
 
     <sc-if value="{{ showAmbient }}" hint-placeholder-val="{{ false }}">
-      <div style="{{ glassAmbientStyle }}">
-        <div style="font-size:6.4cqmin;font-weight:300;color:var(--st-ink,{{ ink }});animation:stPulse 3.4s ease-in-out infinite;letter-spacing:0.005em;transition:color 0.4s ease;">{{ subtitle }}</div>
-        <div style="font-size:2.6cqmin;font-weight:400;color:var(--st-ink,{{ ink }});opacity:0.5;transition:color 0.4s ease;">{{ title }}</div>
+      <div ref="{{ setAmbientBox }}" style="{{ glassAmbientStyle }}">
+        <div style="font-size:6.4cqmin;font-weight:300;color:var(--st-ink,{{ ink }});letter-spacing:0.005em;">{{ subtitle }}</div>
+        <div style="font-size:2.6cqmin;font-weight:400;color:var(--st-ink,{{ ink }});opacity:0.9;">{{ title }}</div>
       </div>
     </sc-if>
 
@@ -86,8 +86,8 @@
       <sc-if value="{{ npIsPill }}" hint-placeholder-val="{{ true }}">
         <div style="width:6.2cqmin;height:6.2cqmin;border-radius:1.6cqmin;background:{{ track.cover }};flex:none;box-shadow:0 1cqmin 2cqmin rgba(0,0,0,0.12);"></div>
         <div style="display:flex;flex-direction:column;gap:0.5cqh;min-width:0;text-align:left;">
-          <div style="font-size:2.3cqmin;font-weight:600;color:var(--st-ink,{{ ink }});white-space:nowrap;transition:color 0.4s ease;">{{ track.title }}</div>
-          <div style="font-size:2cqmin;color:var(--st-ink,{{ ink }});opacity:0.5;white-space:nowrap;transition:color 0.4s ease;">{{ track.artist }}</div>
+          <div style="font-size:2.3cqmin;font-weight:600;color:var(--st-ink,{{ ink }});white-space:nowrap;">{{ track.title }}</div>
+          <div style="font-size:2cqmin;color:var(--st-ink,{{ ink }});opacity:0.9;white-space:nowrap;">{{ track.artist }}</div>
         </div>
         <div style="display:flex;align-items:flex-end;gap:0.6cqmin;height:4cqmin;margin-left:1.2cqmin;">
           <div style="width:0.8cqmin;height:100%;background:{{ accent }};border-radius:1cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out infinite;animation-play-state:{{ eqPlay }};"></div>
@@ -100,9 +100,9 @@
       <sc-if value="{{ npIsStage }}" hint-placeholder-val="{{ false }}">
         <div style="width:8cqmin;height:8cqmin;border-radius:50%;background:{{ track.cover }};flex:none;box-shadow:0 0 3cqmin 0.8cqmin {{ accent }}44,0 1cqmin 3cqmin rgba(0,0,0,0.22);"></div>
         <div style="display:flex;flex-direction:column;gap:0.5cqh;min-width:0;">
-          <div style="font-size:2.7cqmin;font-weight:700;color:var(--st-ink,{{ ink }});white-space:nowrap;letter-spacing:-0.015em;transition:color 0.4s ease;">{{ track.title }}</div>
+          <div style="font-size:2.7cqmin;font-weight:700;color:var(--st-ink,{{ ink }});white-space:nowrap;letter-spacing:-0.015em;">{{ track.title }}</div>
           <div style="display:flex;align-items:center;gap:1cqmin;">
-            <div style="font-size:1.9cqmin;color:{{ accent }};white-space:nowrap;font-weight:600;transition:color 0.4s ease;">{{ track.artist }}</div>
+            <div style="font-size:1.9cqmin;color:var(--st-ink,{{ ink }});white-space:nowrap;font-weight:600;">{{ track.artist }}</div>
             <div style="display:flex;align-items:flex-end;gap:0.4cqmin;height:2.2cqmin;">
               <div style="width:0.6cqmin;height:100%;background:{{ accent }};border-radius:0.5cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out infinite;animation-play-state:{{ eqPlay }};"></div>
               <div style="width:0.6cqmin;height:100%;background:{{ accent }};border-radius:0.5cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out 0.2s infinite;animation-play-state:{{ eqPlay }};"></div>
@@ -114,7 +114,7 @@
       </sc-if>
 
       <sc-if value="{{ npIsMinimal }}" hint-placeholder-val="{{ false }}">
-        <div style="font-size:2.2cqmin;font-weight:500;color:var(--st-ink,{{ ink }});white-space:nowrap;transition:color 0.4s ease;">{{ track.title }}<span style="opacity:0.42;"> · {{ track.artist }}</span></div>
+        <div style="font-size:2.2cqmin;font-weight:500;color:var(--st-ink,{{ ink }});white-space:nowrap;">{{ track.title }}<span style="opacity:0.9;"> · {{ track.artist }}</span></div>
         <div style="display:flex;align-items:flex-end;gap:0.5cqmin;height:3.2cqmin;margin-left:0.8cqmin;">
           <div style="width:0.7cqmin;height:100%;background:{{ accent }};border-radius:1cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out infinite;animation-play-state:{{ eqPlay }};"></div>
           <div style="width:0.7cqmin;height:100%;background:{{ accent }};border-radius:1cqmin;transform-origin:bottom;animation:stEq 0.9s ease-in-out 0.3s infinite;animation-play-state:{{ eqPlay }};"></div>
@@ -130,8 +130,8 @@
             <div style="width:0.75cqmin;height:100%;background:{{ accent }};border-radius:0.5cqmin;transform-origin:bottom;animation:stEq 0.68s ease-in-out 0s infinite;animation-play-state:{{ eqPlay }};"></div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:0.4cqh;min-width:0;text-align:center;">
-            <div style="font-size:2.4cqmin;font-weight:700;color:var(--st-ink,{{ ink }});white-space:nowrap;letter-spacing:-0.01em;transition:color 0.4s ease;">{{ track.title }}</div>
-            <div style="font-size:1.9cqmin;color:var(--st-ink,{{ ink }});opacity:0.5;white-space:nowrap;transition:color 0.4s ease;">{{ track.artist }}</div>
+            <div style="font-size:2.4cqmin;font-weight:700;color:var(--st-ink,{{ ink }});white-space:nowrap;letter-spacing:-0.01em;">{{ track.title }}</div>
+            <div style="font-size:1.9cqmin;color:var(--st-ink,{{ ink }});opacity:0.9;white-space:nowrap;">{{ track.artist }}</div>
           </div>
           <div style="display:flex;align-items:flex-end;gap:0.45cqmin;height:4cqmin;flex:none;">
             <div style="width:0.75cqmin;height:100%;background:{{ accent }};border-radius:0.5cqmin;transform-origin:bottom;animation:stEq 0.68s ease-in-out 0s infinite;animation-play-state:{{ eqPlay }};"></div>
@@ -147,7 +147,7 @@
 
 
   <sc-if value="{{ showExitHint }}" hint-placeholder-val="{{ false }}">
-    <div style="position:absolute;top:5cqh;left:50%;transform:translateX(-50%);font-size:1.9cqmin;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;color:var(--st-ink,{{ ink }});opacity:0;animation:stHint 6.5s ease-in-out 1.2s both;">Press Esc to exit</div>
+    <div style="position:absolute;top:5cqh;left:50%;transform:translateX(-50%);font-size:1.9cqmin;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;color:#ffffff;background:rgba(0,0,0,0.78);padding:0.8cqmin 1.5cqmin;border-radius:1cqmin;opacity:0;animation:stHint 6.5s ease-in-out 1.2s both;">Press Esc to exit</div>
   </sc-if>
 
 </div>
@@ -173,8 +173,11 @@ class Component extends DCLogic {
     const hlA2  = (g * 0.16).toFixed(3);
     const siA   = (g * 0.22).toFixed(3);
     const shA   = (g * 0.13).toFixed(3);
+    const initialDark = this._parseLuminance(p.ink || '#1d1d1f') < 0.2;
+    const contrastSurface = initialDark ? 'rgba(255,255,255,0.84)' : 'rgba(0,0,0,0.78)';
+    const contrastLayer = 'linear-gradient(var(--st-surface,' + contrastSurface + '),var(--st-surface,' + contrastSurface + '))';
     const glassBase = g > 0.01
-      ? ';background:linear-gradient(175deg,rgba(255,255,255,' + bgA + ') 0%,rgba(255,255,255,' + bgA2 + ') 100%);'
+      ? ';background:' + contrastLayer + ',linear-gradient(175deg,rgba(255,255,255,' + bgA + ') 0%,rgba(255,255,255,' + bgA2 + ') 100%);'
       + 'backdrop-filter:blur(' + blur + 'px) saturate(2.0) brightness(1.02);'
       + '-webkit-backdrop-filter:blur(' + blur + 'px) saturate(2.0) brightness(1.02);'
       + 'border:1px solid rgba(255,255,255,' + bdA + ');'
@@ -183,10 +186,10 @@ class Component extends DCLogic {
       + 'inset 0 -1px 0 rgba(255,255,255,' + hlA2 + '),'
       + 'inset 1px 0 0 rgba(255,255,255,' + siA + '),'
       + 'inset -1px 0 0 rgba(255,255,255,' + siA + ');'
-      : '';
-    const glassPadCD = g > 0.01 ? '3.5cqmin 8cqmin' : '0';
-    const glassPadAM = g > 0.01 ? '3cqmin 7cqmin' : '0';
-    const glassR = g > 0.01 ? ';border-radius:3.5cqmin' : '';
+      : ';background:' + contrastLayer;
+    const glassPadCD = g > 0.01 ? '3.5cqmin 8cqmin' : '1.8cqmin 3cqmin';
+    const glassPadAM = g > 0.01 ? '3cqmin 7cqmin' : '1.8cqmin 3cqmin';
+    const glassR = g > 0.01 ? ';border-radius:3.5cqmin' : ';border-radius:1.5cqmin';
     const glassCountdownStyle = 'display:flex;flex-direction:column;align-items:center;gap:2.4cqh;animation:stRise 1.2s cubic-bezier(.2,.7,.2,1) both;padding:' + glassPadCD + glassR + glassBase;
     const glassAmbientStyle = 'display:flex;flex-direction:column;align-items:center;gap:2cqh;padding:' + glassPadAM + glassR + glassBase;
     const glassLogoOnlyStyle = 'display:flex;align-items:center;justify-content:center;padding:' + glassPadCD + glassR + glassBase + ';animation:stRise 1.1s cubic-bezier(.2,.7,.2,1) both;';
@@ -201,7 +204,7 @@ class Component extends DCLogic {
     const npRadius = '999px';
     const npAlign  = 'center';
     const _npGlassMat = g > 0.01
-      ? 'background:linear-gradient(175deg,rgba(255,255,255,' + bgA + ') 0%,rgba(255,255,255,' + bgA2 + ') 100%);'
+      ? 'background:' + contrastLayer + ',linear-gradient(175deg,rgba(255,255,255,' + bgA + ') 0%,rgba(255,255,255,' + bgA2 + ') 100%);'
       + 'backdrop-filter:blur(' + blur + 'px) saturate(2.0) brightness(1.02);'
       + '-webkit-backdrop-filter:blur(' + blur + 'px) saturate(2.0) brightness(1.02);'
       + 'border:1px solid rgba(255,255,255,' + bdA + ');'
@@ -210,7 +213,7 @@ class Component extends DCLogic {
       + 'inset 0 -1px 0 rgba(255,255,255,' + hlA2 + '),'
       + 'inset 1px 0 0 rgba(255,255,255,' + siA + '),'
       + 'inset -1px 0 0 rgba(255,255,255,' + siA + ');'
-      : '';
+      : 'background:' + contrastLayer + ';';
     const _npBase = 'position:absolute;bottom:6cqh;left:0;right:0;margin:0 auto;display:flex;align-items:' + npAlign + ';gap:2.2cqmin;padding:' + npPad + ';border-radius:' + npRadius + ';width:max-content;' + _npGlassMat + 'z-index:2;';
     const glassNPStyle = _npBase + 'animation:stRise 1s cubic-bezier(.2,.7,.2,1) both;';
     const npFloat = !!(p.showMusicIcon);
@@ -223,22 +226,22 @@ class Component extends DCLogic {
     if (!this._cdFlipKey) this._cdFlipKey = {};
     if (!this._prevCDChars) this._prevCDChars = {};
     const ct = p.countdownText || '';
-    const ink = p.ink || '#1d1d1f';
+    const ink = initialDark ? '#14161e' : '#ffffff';
     const countdownCells = [];
     for (let i = 0; i < ct.length; i++) {
       const ch = ct[i];
       if (ch === ':') {
-        countdownCells.push({ ch, style: 'font-size:11cqmin;font-weight:' + digitWeight + ';color:var(--st-ink,' + ink + ');opacity:0.42;padding:0 0.5cqmin;align-self:center;margin-bottom:0.5cqmin;display:inline-block;transition:color 0.4s ease;' });
+        countdownCells.push({ ch, style: 'font-size:11cqmin;font-weight:' + digitWeight + ';color:var(--st-ink,' + ink + ');opacity:0.9;padding:0 0.5cqmin;align-self:center;margin-bottom:0.5cqmin;display:inline-block;' });
       } else {
         if (ch !== this._prevCDChars[i]) this._cdFlipKey[i] = !this._cdFlipKey[i];
         this._prevCDChars[i] = ch;
         const anim = this._cdFlipKey[i] ? 'cdSlideInB' : 'cdSlideIn';
-        countdownCells.push({ ch, style: 'font-size:15cqmin;font-weight:' + digitWeight + ';color:var(--st-ink,' + ink + ');display:inline-block;animation:' + anim + ' 0.16s ease-out both;transition:color 0.4s ease;' });
+        countdownCells.push({ ch, style: 'font-size:15cqmin;font-weight:' + digitWeight + ';color:var(--st-ink,' + ink + ');display:inline-block;animation:' + anim + ' 0.16s ease-out both;' });
       }
     }
 
     return {
-      displayFamily, sceneClass,
+      ink, displayFamily, sceneClass,
       setCanvas: this.setCanvas, shaderDisplay: on ? 'block' : 'none', iridOn, blobOverlay: !on && !iridOn && !p.sceneMode,
       showLogoImg: !!(p.hasLogo || p.logo) && !iridOn,
       showLogoAbove: !!(p.hasLogo || p.logo) && !iridOn && !!(p.showCountdown || p.showAmbient),
@@ -246,7 +249,7 @@ class Component extends DCLogic {
       setIridFrame: this.setIridFrame,
       setNPBar: this.setNPBar,
       setRoot: this.setRoot,
-      setCDBox: this.setCDBox,
+      setCDBox: this.setCDBox, setAmbientBox: this.setAmbientBox,
       // Liquid Glass
       glassCountdownStyle, glassAmbientStyle, glassLogoOnlyStyle, glassNPStyle, actualNPStyle,
       // NP widget style flags
@@ -290,6 +293,7 @@ class Component extends DCLogic {
   };
 
   setCDBox = (el) => { this._cdBox = el || null; };
+  setAmbientBox = (el) => { this._ambientBox = el || null; };
 
   _startAdaptiveInkLoop() {
     if (this._inkInterval) return;
@@ -300,67 +304,61 @@ class Component extends DCLogic {
     if (this._inkInterval) { clearInterval(this._inkInterval); this._inkInterval = null; }
   }
 
+  _contrastChoice(luminance, previous) {
+    if (!Number.isFinite(luminance) || luminance < 0) return previous || 'light';
+    if (previous === 'dark' && luminance >= 0.14) return 'dark';
+    if (previous === 'light' && luminance <= 0.24) return 'light';
+    return luminance > 0.179 ? 'dark' : 'light';
+  }
+
   _tickAdaptiveInk() {
     const p = this.props || {};
-    const baseInk = p.ink || '#1d1d1f';
-    const inkLum = this._parseLuminance(baseInk);
-    const apply = (boxEl) => {
-      if (!boxEl) return;
-      const rect = boxEl.getBoundingClientRect();
-      if (rect.width < 1 || rect.height < 1) return;
-      const bgLum = this._sampleLuminanceAt(rect);
-      if (bgLum < 0) { boxEl.style.removeProperty('--st-ink'); return; }
-      if (bgLum > 0.52 && inkLum > 0.52) {
-        boxEl.style.setProperty('--st-ink', '#1d1d1f');
-      } else if (bgLum < 0.45 && inkLum < 0.45) {
-        boxEl.style.setProperty('--st-ink', '#ffffff');
-      } else {
-        boxEl.style.removeProperty('--st-ink');
-      }
-    };
-    apply(this._cdBox);
-    apply(this._npBar);
+    const sceneKey = [p.shader || '', p.sceneMode || '', p.bg || '', p.ink || ''].join('|');
+    for (const box of [this._cdBox, this._ambientBox, this._npBar]) {
+      if (!box) continue;
+      const rect = box.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) continue;
+      const changed = box._stScene !== sceneKey;
+      if (changed) { box._stScene = sceneKey; box._stPolarity = this._parseLuminance(p.ink || '#1d1d1f') < 0.2 ? 'dark' : 'light'; box._stPending = null; }
+      const sample = this._sampleLuminanceAt(rect);
+      const lum = sample >= 0 ? sample : this._estimateBackgroundLuminance();
+      const next = this._contrastChoice(lum, changed ? null : box._stPolarity);
+      // Require two consecutive samples before changing an animated scene's polarity.
+      if (changed || next === box._stPolarity || box._stPending === next) { box._stPolarity = next; box._stPending = null; }
+      else box._stPending = next;
+      const dark = box._stPolarity === 'dark';
+      box.style.setProperty('--st-ink', dark ? '#14161e' : '#ffffff');
+      box.style.setProperty('--st-surface', dark ? 'rgba(255,255,255,0.84)' : 'rgba(0,0,0,0.78)');
+    }
   }
 
   _sampleLuminanceAt(rect) {
-    if (this._gl && this._canvas) {
-      const c = this._canvas;
-      const cr = c.getBoundingClientRect();
-      if (cr.width > 0 && cr.height > 0) {
-        const sx = c.width / cr.width, sy = c.height / cr.height;
-        const px = Math.round((rect.left - cr.left + rect.width / 2) * sx);
-        const py = c.height - Math.round((rect.top - cr.top + rect.height / 2) * sy);
-        if (px >= 0 && px < c.width && py >= 0 && py < c.height) {
-          const buf = new Uint8Array(4);
-          try { this._gl.readPixels(px, py, 1, 1, this._gl.RGBA, this._gl.UNSIGNED_BYTE, buf); }
-          catch(e) { return -1; }
-          const r = buf[0]/255, g = buf[1]/255, b = buf[2]/255;
-          const lin = x => x <= 0.04045 ? x/12.92 : Math.pow((x+0.055)/1.055, 2.4);
-          return 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
-        }
+    if (!this._gl || !this._canvas || !(this.props && this.props.shader)) return -1;
+    const c = this._canvas, cr = c.getBoundingClientRect();
+    if (cr.width <= 0 || cr.height <= 0) return -1;
+    const samples = [], buf = new Uint8Array(4);
+    try {
+      for (const fx of [0.15,0.5,0.85]) for (const fy of [0.15,0.5,0.85]) {
+        const x = Math.round((rect.left-cr.left+rect.width*fx)*c.width/cr.width);
+        const y = c.height-1-Math.round((rect.top-cr.top+rect.height*fy)*c.height/cr.height);
+        if (x<0 || x>=c.width || y<0 || y>=c.height) continue;
+        this._gl.readPixels(x,y,1,1,this._gl.RGBA,this._gl.UNSIGNED_BYTE,buf);
+        if (!buf[3]) continue;
+        samples.push(this._parseLuminance('rgb('+buf[0]+','+buf[1]+','+buf[2]+')'));
       }
-    }
-    if (!this._rootEl) return -1;
-    const blobs = this._rootEl.querySelectorAll('.st-blob');
-    if (!blobs.length) return -1;
-    let wSum = 0, lumSum = 0;
-    const boxArea = rect.width * rect.height;
-    for (const blob of blobs) {
-      const inner = blob.firstElementChild;
-      if (!inner) continue;
-      const br = blob.getBoundingClientRect();
-      const ow = Math.max(0, Math.min(rect.right, br.right) - Math.max(rect.left, br.left));
-      const oh = Math.max(0, Math.min(rect.bottom, br.bottom) - Math.max(rect.top, br.top));
-      const area = ow * oh;
-      if (area < 1) continue;
-      const bg = getComputedStyle(inner).backgroundImage || '';
-      const lum = this._parseLuminanceFromGradient(bg);
-      const alpha = this._parsePeakAlpha(bg);
-      const w = (area / boxArea) * alpha;
-      lumSum += lum * w;
-      wSum += w;
-    }
-    return wSum > 0.01 ? lumSum / wSum : -1;
+    } catch (_) { return -1; }
+    if (!samples.length) return -1;
+    samples.sort((a,b)=>a-b);
+    return samples[Math.floor(samples.length/2)];
+  }
+
+  _estimateBackgroundLuminance() {
+    // CSS gradients cannot be read as pixels. Estimate their palette; the local
+    // contrast backing keeps text readable even when that estimate is wrong.
+    const bg = String((this.props || {}).bg || '');
+    const colors = bg.match(/rgba?\([^)]*\)|#[a-fA-F0-9]{3,8}\b/g) || [];
+    const values = colors.map(c=>this._parseLuminance(c)).filter(Number.isFinite).sort((a,b)=>a-b);
+    return values.length ? values[Math.floor(values.length/2)] : -1;
   }
 
   _parseLuminanceFromGradient(bgStr) {
@@ -415,7 +413,7 @@ class Component extends DCLogic {
     this.teardownGL();
     if (this._iridFrame) { this._iridFrame.onload = null; this._iridFrame = null; }
     this._npBar = null;
-    this._cdBox = null;
+    this._cdBox = null; this._ambientBox = null;
     this._rootEl = null;
   }
 
