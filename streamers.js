@@ -1,0 +1,9 @@
+(() => {
+ const stage=document.getElementById('stream-stage'),timer=document.getElementById('stream-timer'),button=document.getElementById('stream-play'),label=document.getElementById('stream-label'),status=document.getElementById('stream-status');
+ let running=false,elapsed=0,anchor=0,frame;
+ function draw(){const seconds=Math.max(0,Math.ceil(20-elapsed-(running?(performance.now()-anchor)/1000:0)));timer.textContent='00:'+String(seconds).padStart(2,'0');if(!seconds){running=false;elapsed=20;button.textContent='↻ Replay preview';button.setAttribute('aria-pressed','false');label.textContent='TIME TO GO LIVE';status.textContent='Preview complete. Open Stagelight to build your own.';stage.classList.remove('is-playing');}if(running)frame=requestAnimationFrame(draw);}
+ button.addEventListener('click',()=>{if(running){elapsed+=(performance.now()-anchor)/1000;running=false;cancelAnimationFrame(frame);button.textContent='▶ Resume preview';status.textContent='Preview paused. Sound is off.';}else{if(elapsed>=20)elapsed=0;running=true;anchor=performance.now();button.textContent='Ⅱ Pause preview';label.textContent='STREAM STARTING SOON';status.textContent='Preview running. Sound is off.';}button.setAttribute('aria-pressed',String(running));stage.classList.toggle('is-playing',running);draw();});
+ const palettes={violet:['#6e3bd1','#d3ff64'],cyan:['#007b99','#83f6ef'],pink:['#9e225e','#ff9acb']};
+ document.querySelectorAll('[data-palette]').forEach(b=>b.addEventListener('click',()=>{const p=palettes[b.dataset.palette];stage.style.setProperty('--glow',p[0]);stage.style.setProperty('--accent',p[1]);document.querySelectorAll('[data-palette]').forEach(s=>s.setAttribute('aria-pressed',String(s===b)));}));
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&running)button.click();});
+})();

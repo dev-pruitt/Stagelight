@@ -31,14 +31,18 @@ const landing = readFileSync(new URL('../landing.html', import.meta.url), 'utf8'
 const help = readFileSync(new URL('../help-template.html', import.meta.url), 'utf8')
   .replaceAll('__SITE_URL__', base).replaceAll('__STYLE_HASH__', digest('landing.css')).replaceAll('__HELP_HASH__', digest('help.css'))
   .replace('content="noindex,follow"', 'content="index,follow"');
+const streamers = readFileSync(new URL('../streamers-template.html', import.meta.url), 'utf8')
+  .replaceAll('__SITE_URL__', base).replaceAll('__STREAM_STYLE_HASH__', digest('streamers.css')).replaceAll('__STREAM_SCRIPT_HASH__', digest('streamers.js'))
+  .replace('content="noindex,follow"', 'content="index,follow"');
 const outputs = {
+  'streamers.html': streamers,
   'help.html': help,
   'index.html': landing,
   'robots.txt': 'User-agent: *\nAllow: /\nSitemap: ' + base + 'sitemap.xml\n',
   'sitemap.xml': '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + base + '</loc></url><url><loc>' + base + 'help.html</loc></url></urlset>\n'
 };
 for (const guide of meetingGuides) outputs['help-' + guide.slug + '.html'] = renderMeetingGuide(guide, base, digest('landing.css'), digest('help.css'));
-outputs['sitemap.xml'] = outputs['sitemap.xml'].replace('</urlset>', meetingGuides.map(g => '<url><loc>' + base + 'help-' + g.slug + '.html</loc></url>').join('') + '</urlset>');
+outputs['sitemap.xml'] = outputs['sitemap.xml'].replace('</urlset>', '<url><loc>' + base + 'streamers.html</loc></url>' + meetingGuides.map(g => '<url><loc>' + base + 'help-' + g.slug + '.html</loc></url>').join('') + '</urlset>');
 for (const [file, content] of Object.entries(outputs)) {
   const url = new URL('../' + file, import.meta.url);
   if (process.argv.includes('--check')) { if (readFileSync(url, 'utf8') !== content) throw new Error(file + ' needs rebuilding.'); }
