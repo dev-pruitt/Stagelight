@@ -1,3 +1,4 @@
+import { screenshot } from './guide-screenshots.mjs';
 export const platforms = {
   zoom: {
     image: 'zoom-sharing-controls.png', alt: 'Zoom screen-sharing toolbar with New Share and Stop Share controls.', caption: 'Example Zoom sharing toolbar. Stop Share ends the broadcast. Controls vary by version.', credit: 'Zoom Support', imageSource: 'https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0060596',
@@ -29,11 +30,11 @@ export function platformSections(guide) {
   const p = platforms[guide.slug];
   return `<nav class="help-topics" aria-label="Choose your device"><a href="#desktop">Computer app</a><a href="#browser">Web browser</a><a href="#mobile">Phone or tablet</a></nav>
 <section class="help-card"><h2>Which app do I need?</h2><p>Stagelight is a website. There is no Stagelight download to install. “Downloaded app” below means your meeting app.</p><p>${p.desktop}</p></section>
-<figure class="guide-image"><img src="./assets/help/${p.image}" alt="${p.alt}" loading="lazy"><figcaption>${p.caption} <span>Image: <a href="${p.imageSource}" target="_blank" rel="noopener">${p.credit}</a>.</span></figcaption></figure>`;
+`;
 }
 export function mobileSections(guide) {
   const p = platforms[guide.slug];
-  return `<section id="browser" class="help-card"><p class="eyebrow">NO MEETING APP DOWNLOAD</p><h2>Computer browser</h2><p>${p.browser}</p></section>
-<section id="mobile"><p class="eyebrow">DOWNLOADED MEETING APP + STAGELIGHT IN YOUR BROWSER</p><h2>Phone or tablet</h2><div class="help-card"><h3>Android</h3><p>${p.android}</p><h3 class="guide-subhead">iPhone &amp; iPad</h3><p>${p.ios}</p>${p.extra ? `<p>${p.extra}</p>` : ''}</div><div class="help-card mobile-note"><h3>Test on your device first</h3><p>These are the meeting provider’s sharing steps. Stagelight playback while switching between mobile apps is not verified. Your phone may pause music or limit screen audio. If that happens, present from a computer.</p><p>Mobile sharing can expose your whole screen and notifications. Enable Do Not Disturb and stop sharing before opening anything private.</p></div></section>
+  return `<section id="browser" class="help-card"><p class="eyebrow">NO MEETING APP DOWNLOAD</p><h2>Computer browser</h2><ol><li>${p.browser}</li><li>Select Stagelight in the browser picker.</li><li>Enable tab audio, then Share.</li><li>Return to Stagelight and begin.</li></ol>${screenshot('meetAudio')}<p class="help-note">Example Chrome picker shown for Meet. Teams and Zoom use a similar browser dialog with their own site name.</p></section>
+<section id="mobile"><p class="eyebrow">DOWNLOADED MEETING APP + STAGELIGHT IN YOUR BROWSER</p><h2>Phone or tablet</h2><div class="help-card"><h3>Android</h3><ol>${p.android.split('. ').map(t => `<li>${t}</li>`).join('')}</ol>${screenshot(guide.slug === 'zoom' ? 'zoomMobile' : guide.slug === 'teams' ? 'teamsMobile' : 'meetAndroid')}<h3 class="guide-subhead">iPhone &amp; iPad</h3><ol>${p.ios.split('. ').map(t => `<li>${t}</li>`).join('')}</ol>${screenshot(guide.slug === 'zoom' ? 'zoomMobile' : guide.slug === 'teams' ? 'teamsMobile' : 'meetIOS')}${p.extra ? `<p>${p.extra}</p>` : ''}</div><div class="help-card mobile-note"><h3>Test on your device first</h3><p>These are the meeting provider’s sharing steps. Stagelight playback while switching between mobile apps is not verified. Your phone may pause music or limit screen audio. If that happens, present from a computer.</p><p>Mobile sharing can expose your whole screen and notifications. Enable Do Not Disturb and stop sharing before opening anything private.</p></div></section>
 <p class="help-note">Based on <a href="${p.source}" target="_blank" rel="noopener">${guide.name} sharing documentation ↗</a>. Button names can vary by version and device.</p>`;
 }
