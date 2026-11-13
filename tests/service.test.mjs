@@ -488,3 +488,34 @@ test('font rendering and CSS design are shared by preview and presentation', () 
   assert.equal(values.displayWeight,600);assert.equal(values.shaderMode,'');assert.equal(values.blobs.length,0);
   assert.equal((html.match(/scene-mode="\{\{ sceneMode \}\}" display-family="\{\{ displayFamily \}\}"/g)||[]).length,2);
 });
+
+test('reset undo restores setup and uploaded tracks without restoring playback or authentication', () => {
+ const {app,storage}=setup();app.stopCurrentPreview=()=>{};
+ app.state.title='Friday stream';app.state.displayFont='mono';app.state.source='upload';
+ app.state.queue=[{service:'local',url:'blob:session-file',title:'Intro',secs:90}];app.state.track=app.state.queue[0];
+ app.state.selectedVariants=[17,18];app.state.multiSelect=true;app.state.previewPlaying=true;
+ app.state.spToken='existing-token';
+ app.resetSetup();assert.equal(app.state.queue.length,0);assert.equal(app.state.hasUndoReset,true);
+ assert.equal(JSON.parse(storage.get('sl_setup')).title,'Team All-Hands');
+ assert.equal(Object.hasOwn(app._resetSnapshot,'spToken'),false);
+ app.state.spToken='refreshed-token';app.undoReset();
+ assert.equal(app.state.title,'Friday stream');assert.equal(app.state.displayFont,'mono');
+ assert.equal(app.state.queue[0].url,'blob:session-file');assert.equal(app.state.previewPlaying,false);
+ assert.equal(app.state.selectedVariants.join(','),'17,18');assert.equal(app.state.spToken,'refreshed-token');
+ assert.equal(app.state.hasUndoReset,false);assert.equal(JSON.parse(storage.get('sl_setup')).title,'Friday stream');
+});
+
+test('failed saving warns and retries unchanged data once storage is available', () => {
+ const {app,context,storage}=setup();const write=context.localStorage.setItem;
+ context.localStorage.setItem=()=>{throw new Error('Quota exceeded');};
+ app.savePrefs();assert.ok(app.state.saveError);assert.equal(app._lastPrefs,undefined);
+ context.localStorage.setItem=write;app.savePrefs();
+ assert.equal(app.state.saveError,'');assert.equal(JSON.parse(storage.get('sl_setup')).title,app.state.title);
+});
+
+test('leaving setup saves the latest edit before the periodic save interval', () => {
+ const {app,storage}=setup();app.state.title='Last second edit';app.saveBeforeLeave();
+ assert.equal(JSON.parse(storage.get('sl_setup')).title,'Last second edit');
+ app.state.phase='presenting';app.state.title='Do not replace setup';app.saveBeforeLeave();
+ assert.equal(JSON.parse(storage.get('sl_setup')).title,'Last second edit');
+});
