@@ -284,6 +284,7 @@
             </sc-for>
           </div>
 
+          <sc-if value="{{ showSpotifyBeta }}"><div style="padding:10px 12px;border:1px solid var(--sl-border-md);border-radius:10px;background:var(--sl-card);color:var(--sl-text);font-size:12px;line-height:1.5;"><strong>Spotify Beta · Approved accounts only.</strong><br />Spotify Premium required. Use Audius or Upload if your account is not approved.</div></sc-if>
           <sc-if value="{{ showConnect }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;flex-direction:column;gap:11px;padding:18px 16px;border:1px solid var(--sl-border);border-radius:14px;background:var(--sl-card);">
               <div style="font-size:13.5px;font-weight:600;">{{ connectTitle }}</div>
@@ -1790,7 +1791,7 @@ class Component extends DCLogic {
       };
     });
 
-    const srcDefs = [{ id: 'spotify', label: 'Spotify' }, { id: 'audius', label: 'Audius' }, { id: 'upload', label: 'Upload' }];
+    const srcDefs = [{ id: 'spotify', label: 'Spotify · Beta' }, { id: 'audius', label: 'Audius' }, { id: 'upload', label: 'Upload' }];
     const sources = srcDefs.map((s) => ({
       label: s.label, soon: !!s.soon, onClick: s.soon ? (() => {}) : (() => this.setSource(s.id)),
       cursor: s.soon ? 'not-allowed' : 'pointer',
@@ -1810,7 +1811,7 @@ class Component extends DCLogic {
     const isSpotify = src === 'spotify';
 
     const cm = isAudius ? { label: 'Audius · free music', ready: true } : isSpotify
-      ? { title: 'Connect Spotify', note: 'Sign in with your Spotify Premium account to play full songs during your event. A small popup will ask you to approve access — no password is shared with us. No Premium account? Use the demo library or upload your own audio below.', placeholder: 'Spotify Client ID', btn: 'Connect Spotify', bg: '#1db954', label: st.spReady ? 'Spotify ready' : 'Spotify signed in · player starting', ready: st.spReady }
+      ? { title: 'Connect Spotify Beta', note: 'Access is limited to accounts approved for Stagelight. You also need Spotify Premium. Signing in does not add an unapproved account. Audius and uploads are available without approval.', placeholder: 'Spotify Client ID', btn: 'Connect Spotify', bg: '#1db954', label: st.spReady ? 'Spotify ready' : 'Spotify signed in · player starting', ready: st.spReady }
       : { title: 'Connect Apple Music', note: 'Requires a MusicKit developer token (Apple Developer Program) and an active Apple Music subscription.', placeholder: 'Apple Music developer token (JWT)', btn: 'Connect Apple Music', bg: '#fa2d48', label: 'Apple Music connected', ready: connected };
 
     // Highlight any track that's already in the playlist. The results/demo rows below compare
@@ -1888,7 +1889,7 @@ class Component extends DCLogic {
       glassLabel: Math.round((st.glassOpacity !== undefined ? st.glassOpacity : 0.65) * 100) + '%',
       setGlass: this.setGlass,
       // music
-      sources, showConnect, showSearch, showDemo, showAudius: isAudius, showDisconnect: !isAudius, showUpload: isUpload,
+      sources, showSpotifyBeta: isSpotify, showConnect, showSearch, showDemo, showAudius: isAudius, showDisconnect: !isAudius, showUpload: isUpload,
       connectTitle: cm.title, connectNote: cm.note, connectBtnLabel: cm.btn, connectBtnBg: cm.bg,
       credPlaceholder: cm.placeholder, credValue: isSpotify ? st.spClientId : st.amDevToken, showCred: !isSpotify,
       onCredInput: isSpotify ? this.setSpClientId : this.setAmDevToken,
@@ -1905,7 +1906,7 @@ class Component extends DCLogic {
       queueList, hasQueue: queueList.length > 0, queueCount: queueList.length, queueTotal: this.fmt(totalSecs),
       canPreview, togglePreview: this.togglePreview, previewLabel: st.previewPlaying ? '\u23f8 Stop' : '\u25b6 Preview',
       authError: st.authError,
-      musicFootnote: isAudius ? 'Songs blend for up to 3 seconds. Countdown follows playback. Music from Audius.' : isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Requires Spotify Premium.' : (isUpload ? 'Choose audio files. Songs blend for up to 3 seconds; the countdown follows playback.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
+      musicFootnote: isAudius ? 'Songs blend for up to 3 seconds. Countdown follows playback. Music from Audius.' : isSpotify ? 'Paste a track or playlist link to build your setlist — whole playlists import in one go. Beta: approved accounts only. Spotify Premium required.' : (isUpload ? 'Choose audio files. Songs blend for up to 3 seconds; the countdown follows playback.' : 'Connected accounts play full tracks. The demo library and generated ambient bed need no account.'),
       npStyle: st.npStyle || 'pill',
       npStyleButtons: ['pill', 'stage', 'minimal', 'spectrum'].map((s) => { const active = (st.npStyle || 'pill') === s; return { label: s.charAt(0).toUpperCase() + s.slice(1), onClick: () => this.setNpStyle(s), bg: active ? pal.accent : 'var(--sl-card)', color: active ? '#fff' : 'var(--sl-text)', border: active ? pal.accent : 'var(--sl-border-md)' }; }),
       showNP: !!npTrack && st.showNowPlaying && !st.musicEnded,
