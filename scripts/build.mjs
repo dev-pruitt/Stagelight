@@ -27,10 +27,14 @@ const digest = file => createHash('sha256').update(readFileSync(new URL('../' + 
 const landing = readFileSync(new URL('../landing.html', import.meta.url), 'utf8')
   .replaceAll('__SITE_URL__', base).replaceAll('__STYLE_HASH__', digest('landing.css')).replaceAll('__SCRIPT_HASH__', digest('landing.js'))
   .replace('content="noindex,follow"', 'content="index,follow"');
+const help = readFileSync(new URL('../help-template.html', import.meta.url), 'utf8')
+  .replaceAll('__SITE_URL__', base).replaceAll('__STYLE_HASH__', digest('landing.css')).replaceAll('__HELP_HASH__', digest('help.css'))
+  .replace('content="noindex,follow"', 'content="index,follow"');
 const outputs = {
+  'help.html': help,
   'index.html': landing,
   'robots.txt': 'User-agent: *\nAllow: /\nSitemap: ' + base + 'sitemap.xml\n',
-  'sitemap.xml': '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + base + '</loc></url></urlset>\n'
+  'sitemap.xml': '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + base + '</loc></url><url><loc>' + base + 'help.html</loc></url></urlset>\n'
 };
 for (const [file, content] of Object.entries(outputs)) {
   const url = new URL('../' + file, import.meta.url);
