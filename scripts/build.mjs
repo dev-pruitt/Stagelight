@@ -1,3 +1,4 @@
+import { meetingGuides, renderMeetingGuide } from './meeting-guides.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 const sourcePath = new URL('../Event Waiting Screen.dc.html', import.meta.url);
@@ -36,6 +37,8 @@ const outputs = {
   'robots.txt': 'User-agent: *\nAllow: /\nSitemap: ' + base + 'sitemap.xml\n',
   'sitemap.xml': '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + base + '</loc></url><url><loc>' + base + 'help.html</loc></url></urlset>\n'
 };
+for (const guide of meetingGuides) outputs['help-' + guide.slug + '.html'] = renderMeetingGuide(guide, base, digest('landing.css'), digest('help.css'));
+outputs['sitemap.xml'] = outputs['sitemap.xml'].replace('</urlset>', meetingGuides.map(g => '<url><loc>' + base + 'help-' + g.slug + '.html</loc></url>').join('') + '</urlset>');
 for (const [file, content] of Object.entries(outputs)) {
   const url = new URL('../' + file, import.meta.url);
   if (process.argv.includes('--check')) { if (readFileSync(url, 'utf8') !== content) throw new Error(file + ' needs rebuilding.'); }
