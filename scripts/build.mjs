@@ -6,7 +6,7 @@ const sourcePath = new URL('../Event Waiting Screen.dc.html', import.meta.url);
 const original = readFileSync(sourcePath, 'utf8');
 const domain = readFileSync(new URL('../CNAME', import.meta.url), 'utf8').trim();
 let updated = original.replace(/var CANON = '[^']+'/, "var CANON = '" + domain + "'");
-for (const [name, dependencies] of Object.entries({ 'media-player.js': ['media-player.js'], 'support.js': ['support.js', 'EventStage.dc.html'] })) {
+for (const [name, dependencies] of Object.entries({ 'display-designs.css': ['display-designs.css'], 'media-player.js': ['media-player.js'], 'support.js': ['support.js', 'EventStage.dc.html'] })) {
   const hash = createHash('sha256');
   for (const file of dependencies) hash.update(readFileSync(new URL('../' + file, import.meta.url)));
   const pattern = name.replaceAll('.', '\\.') + '(?:\\?v=[a-f0-9]+)?';

@@ -454,3 +454,37 @@ test('old GitHub app links reach the canonical app instead of losing their route
   Object.assign(context.location,{hostname:'dev-pruitt.github.io',search:'?source=audius',hash:'#setup',replace:url=>{destination=url;}});
   app.componentDidMount();assert.equal(destination,'https://www.stagelight.t64.org/app.html?source=audius#setup');
 });
+
+test('design filters keep stable identities and preserve a selected sequence', () => {
+  const {app}=setup();
+  const original=['Soft Mesh','Halo','Aurora','Field','Aurora Flow','Silk Drift','Lava Cells','Stained Glass','Vortex Gate','Prism Rain','Solar Corona','Deep Tide','Neon Grid','Ember','Marble','Plasma Storm','Smoke'];
+  assert.equal(app.VARIANTS.slice(0,original.length).map(v=>v.name).join('|'),original.join('|'));
+  const lobby=app.VARIANTS.findIndex(v=>v.name==='Lobby Glow');
+  app.state.multiSelect=true;app.state.selectedVariants=[4,lobby];app.state.variantIdx=lobby;
+  app.state.designCategory='New';
+  assert.ok(app.visibleDesigns().every(({v})=>v.isNew));
+  app.state.designCategory='Retro gaming';app.state.designSearch='synth';
+  assert.equal(app.visibleDesigns().map(({v})=>v.name).join(','),'Synthwave Highway');
+  assert.equal(app.state.selectedVariants.join(','),'4,'+lobby);
+  assert.equal(app.state.variantIdx,lobby);
+  app.state.designSearch='not a design';assert.equal(app.visibleDesigns().length,0);
+});
+
+test('display font and new designs survive saved setup without accepting arbitrary font CSS', () => {
+  const {app,storage}=setup();
+  const design=app.VARIANTS.findIndex(v=>v.name==='Pixel Arcade');
+  app.setDisplayFont({target:{value:'arcade'}});app.setVariant(design);app.savePrefs();
+  const saved=JSON.parse(storage.get('sl_setup'));
+  const restored=setup().app;restored.restorePrefs(saved);
+  assert.equal(restored.state.displayFont,'arcade');assert.equal(restored.state.variantIdx,design);
+  restored.setDisplayFont({target:{value:'unknown;position:fixed'}});assert.equal(restored.state.displayFont,'arcade');
+  const clean=setup().app;clean.restorePrefs({displayFont:'unknown;position:fixed'});assert.equal(clean.state.displayFont,'modern');
+});
+
+test('font rendering and CSS design are shared by preview and presentation', () => {
+  const {app}=setup();app.state.variantIdx=app.VARIANTS.findIndex(v=>v.name==='Lobby Glow');app.state.displayFont='mono';
+  const values=app.renderVals();
+  assert.equal(values.sceneMode,'lobby');assert.ok(values.displayFamily.includes('monospace'));
+  assert.equal(values.displayWeight,600);assert.equal(values.shaderMode,'');assert.equal(values.blobs.length,0);
+  assert.equal((html.match(/scene-mode="\{\{ sceneMode \}\}" display-family="\{\{ displayFamily \}\}"/g)||[]).length,2);
+});

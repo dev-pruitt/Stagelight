@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stagelight — Event waiting screen</title>
+<link rel="stylesheet" href="./display-designs.css?v=d01d78ad2ff6">
 <meta name="description" content="Build an event countdown with animated designs, your logo, and music.">
 <meta name="robots" content="noindex,follow">
 <link rel="icon" href="./assets/favicon-32.png">
@@ -17,7 +18,7 @@
 })();
 </script>
 <script src="./media-player.js?v=0d6c25b50a3c"></script>
-<script src="./support.js?v=b34cb3174231"></script>
+<script src="./support.js?v=5a21c81e73ff"></script>
 </head>
 <body>
 <x-dc>
@@ -222,18 +223,25 @@
               <button onClick="{{ shuffle }}" style="display:flex;align-items:center;gap:6px;border:1px solid {{ shuffleBorder }};background:{{ shuffleBg }};border-radius:980px;padding:6px 13px;font-size:12.5px;font-weight:600;color:{{ shuffleColor }};cursor:pointer;transition:all .12s ease;">↻ {{ shuffleLabel }}</button>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <sc-for list="{{ variants }}" as="v" hint-placeholder-count="4">
-              <div style="position:relative;">
-                <div onClick="{{ v.onClick }}" style="display:flex;align-items:center;gap:8px;padding:10px 12px;padding-right:30px;border:1.5px solid {{ v.border }};border-radius:12px;background:{{ v.bg }};cursor:pointer;text-align:left;transition:all .12s ease;">
-                  <div style="width:20px;height:20px;border-radius:5px;background:{{ v.swatch }};flex:none;"></div>
-                  <span style="font-size:12px;font-weight:600;color:{{ v.color }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ v.name }}</span>
-                </div>
-                <div onClick="{{ v.onToggleSelect }}" title="{{ v.selTitle }}" style="position:absolute;top:50%;right:7px;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:{{ v.selBg }};border:1.5px solid {{ v.selBorder }};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;cursor:pointer;transition:all .15s ease;flex:none;z-index:1;opacity:{{ v.selOpacity }};pointer-events:{{ v.selPointerEvents }};">{{ v.selMark }}</div>
-              </div>
-            </sc-for>
+          <label for="design-search" style="font-size:12px;color:var(--sl-text-sub);">Find a design</label>
+          <input id="design-search" type="search" placeholder="Search designs…" value="{{ designSearch }}" onInput="{{ setDesignSearch }}" style="width:100%;box-sizing:border-box;border:1px solid var(--sl-border-md);border-radius:9px;padding:9px 11px;background:var(--sl-card);color:var(--sl-text);font:13px inherit;" />
+          <div role="group" aria-label="Design categories" style="display:flex;gap:6px;overflow-x:auto;padding:3px 2px 7px;">
+            <sc-for list="{{ designCategories }}" as="cat"><button type="button" onClick="{{ cat.onClick }}" aria-pressed="{{ cat.selected }}" style="white-space:nowrap;border:1px solid {{ cat.border }};border-radius:99px;padding:6px 10px;background:{{ cat.bg }};color:var(--sl-text);font-size:11px;cursor:pointer;">{{ cat.label }}</button></sc-for>
           </div>
-
+          <div style="font-size:11px;color:var(--sl-text-sub);">{{ designCountLabel }}</div>
+          <div aria-label="Design library" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:300px;overflow-y:auto;padding:2px 5px 4px 2px;scrollbar-gutter:stable;">
+            <sc-for list="{{ variants }}" as="v" hint-placeholder-count="4"><button type="button" onClick="{{ v.onClick }}" aria-pressed="{{ v.highlight }}" aria-label="{{ v.accessibleName }}" style="position:relative;display:flex;flex-direction:column;gap:7px;padding:6px;border:2px solid {{ v.border }};border-radius:11px;background:{{ v.bg }};color:var(--sl-text);text-align:left;cursor:pointer;min-width:0;">
+              <div aria-hidden="true" class="{{ v.thumbClass }}" style="position:relative;isolation:isolate;overflow:hidden;width:100%;aspect-ratio:16/9;border-radius:6px;background:{{ v.swatch }};display:grid;place-items:center;"><span style="position:relative;z-index:2;font:600 16px ui-monospace,monospace;color:{{ v.thumbInk }};">05:00</span></div>
+              <span style="font-size:11.5px;font-weight:600;padding:0 3px;">{{ v.name }}</span><span style="font-size:9px;color:var(--sl-text-sub);padding:0 3px 2px;">{{ v.meta }}</span>
+              <span style="position:absolute;top:10px;right:10px;padding:2px 5px;background:{{ v.badgeBg }};color:{{ v.badgeInk }};border-radius:4px;font-size:9px;font-weight:700;">{{ v.badge }}</span>
+            </button></sc-for>
+          </div>
+          <sc-if value="{{ noDesignResults }}"><p style="font-size:12px;color:var(--sl-text-sub);margin:0;">No designs match. Try another search or category.</p></sc-if>
+          <label for="display-font" style="font-size:12px;font-weight:600;color:var(--sl-text);">Display font</label>
+          <select id="display-font" value="{{ displayFont }}" onChange="{{ setDisplayFont }}" style="width:100%;padding:9px 11px;border:1px solid var(--sl-border-md);border-radius:9px;background:var(--sl-card);color:var(--sl-text);font-size:13px;">
+            <sc-for list="{{ displayFonts }}" as="f"><option value="{{ f.id }}">{{ f.name }}</option></sc-for>
+          </select>
+          <div style="font-size:10px;color:var(--sl-text-sub);">Applies to the countdown and display text.</div>
 
           <!-- Liquid Glass intensity -->
           <div style="display:flex;flex-direction:column;gap:8px;">
@@ -412,7 +420,7 @@
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;background:var(--sl-preview-bg);">
         <div style="position:relative;width:100%;max-width:780px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,0.18),0 2px 6px rgba(0,0,0,0.08);border:1px solid var(--sl-border);">
           <dc-import name="EventStage" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%;"
-            bg="{{ stageBg }}" accent="{{ accent }}" ink="{{ stageInk }}" blobs="{{ blobs }}"
+            scene-mode="{{ sceneMode }}" display-family="{{ displayFamily }}" display-weight="{{ displayWeight }}" bg="{{ stageBg }}" accent="{{ accent }}" ink="{{ stageInk }}" blobs="{{ blobs }}"
             shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}" shader-opts="{{ shaderOpts }}"
             logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
             countdown-text="{{ previewCountdown }}" label="{{ label }}" show-countdown="{{ showEvent }}" show-ambient="{{ false }}"
@@ -429,7 +437,7 @@
   <sc-if value="{{ isPresenting }}" hint-placeholder-val="{{ false }}">
   <div style="position:fixed;inset:0;z-index:50;background:{{ stageBg }};animation:appReveal .7s cubic-bezier(.2,.7,.2,1) both;">
     <dc-import name="EventStage" hint-size="100%,100%" style="position:absolute;inset:0;width:100%;height:100%;"
-      bg="{{ stageBg }}" accent="{{ accent }}" ink="{{ stageInk }}" blobs="{{ liveBlobs }}"
+      scene-mode="{{ sceneMode }}" display-family="{{ displayFamily }}" display-weight="{{ displayWeight }}" bg="{{ stageBg }}" accent="{{ accent }}" ink="{{ stageInk }}" blobs="{{ liveBlobs }}"
       shader="{{ shaderMode }}" shader-cols="{{ shaderCols }}" shader-opts="{{ shaderOpts }}"
       logo="{{ logo }}" has-logo="{{ hasLogo }}" title="{{ title }}" subtitle="{{ subtitle }}"
       countdown-text="{{ liveCountdown }}" label="{{ liveLabel }}" show-countdown="{{ showCountdown }}" show-ambient="{{ showAmbient }}"
@@ -458,6 +466,7 @@ class Component extends DCLogic {
     showMusicIcon: true,
     npStyle: 'pill',
     variantIdx: 0,
+    designCategory: 'All', designSearch: '', displayFont: 'modern',
     selectedVariants: null,
     multiSelect: false,
     shuffledDesigns: [],
@@ -515,7 +524,26 @@ class Component extends DCLogic {
     { name: 'Marble',          count: 0, op: 0, mode: 'shader', shader: 'marble' },
     { name: 'Plasma Storm',    count: 0, op: 0, mode: 'shader', shader: 'plasma' },
     { name: 'Smoke',           count: 0, op: 0, mode: 'shader', shader: 'smoke' },
+    { name: 'Lobby Glow', mode: 'css', count: 0, op: 0, category: 'Streamer', isNew: true, scene: 'lobby', background: 'radial-gradient(ellipse at 15% 10%,#6336b1,transparent 65%),radial-gradient(ellipse at 90% 100%,#35245c,transparent 55%),#120e21', ink: '#f5f3ff' },
+    { name: 'Pixel Arcade', mode: 'css', count: 0, op: 0, category: 'Retro gaming', isNew: true, scene: 'pixel', background: 'linear-gradient(135deg,#181138,#311741)', ink: '#fff4db' },
+    { name: 'Synthwave Highway', mode: 'css', count: 0, op: 0, category: 'Retro gaming', isNew: true, scene: 'synth', background: 'linear-gradient(#130e29 5%,#4d174c 53%,#160f2b 54%)', ink: '#fff1fc' },
+    { name: 'Signal HUD', mode: 'css', count: 0, op: 0, category: 'Streamer', isNew: true, scene: 'hud', background: 'radial-gradient(ellipse at 50% 50%,#14343e,#080f17)', ink: '#d7ffef' },
+    { name: 'Paper Studio', mode: 'css', count: 0, op: 0, category: 'Minimal', isNew: true, scene: 'paper', background: 'radial-gradient(ellipse at 0% 0%,#e2d8fb,transparent 60%),radial-gradient(ellipse at 100% 100%,#d8eff1,transparent 65%),#f8f8fc', ink: '#222436' },
+    { name: 'Midnight Circuit', mode: 'css', count: 0, op: 0, category: 'Streamer', isNew: true, scene: 'circuit', background: 'linear-gradient(145deg,#121c2a,#10101a)', ink: '#e4f5ff' },
   ];
+
+  DISPLAY_FONTS = [
+    { id: 'modern', name: 'Modern sans', family: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", weight: 200 },
+    { id: 'mono', name: 'Code mono', family: "ui-monospace,'SFMono-Regular',Consolas,monospace", weight: 600 },
+    { id: 'arcade', name: 'Retro terminal', family: "'Courier New',Courier,monospace", weight: 700 },
+    { id: 'bold', name: 'Bold headline', family: "Impact,'Arial Narrow',sans-serif", weight: 700 },
+    { id: 'rounded', name: 'Friendly rounded', family: "'Trebuchet MS',Verdana,sans-serif", weight: 600 },
+    { id: 'serif', name: 'Editorial serif', family: "Georgia,'Times New Roman',serif", weight: 400 },
+  ];
+  designGroup(v) { return v.category || (['grid', 'tunnel', 'plasma'].includes(v.shader) ? 'Retro gaming' : 'Ambient'); }
+  visibleDesigns() { const q = this.state.designSearch.trim().toLowerCase(); return this.VARIANTS.map((v,i)=>({v,i})).filter(({v}) => (this.state.designCategory === 'All' || (this.state.designCategory === 'New' ? v.isNew : this.designGroup(v) === this.state.designCategory)) && (!q || (v.name + ' ' + this.designGroup(v)).toLowerCase().includes(q))); }
+  setDesignSearch = (e) => this.setState({ designSearch: e.target.value });
+  setDisplayFont = (e) => { if (this.DISPLAY_FONTS.some(f=>f.id===e.target.value)) this.setState({ displayFont: e.target.value }); };
 
   DEFAULT_PAL = { accent: 'rgb(10,132,255)', accent2: 'rgb(94,92,230)', accent3: 'rgb(50,173,230)', bg: 'rgb(251,251,253)', ink: '#1d1d1f' };
   EMPTY_TRACK = { cover: '', title: '', artist: '' };
@@ -1075,7 +1103,7 @@ class Component extends DCLogic {
     this._onKey = (e) => {
       const tag = (e.target && e.target.tagName) || '';
       if (this.state.phase === 'setup') {
-        if (e.key === 'Enter' && !/INPUT|TEXTAREA/.test(tag)) { e.preventDefault(); this.beginEvent(); }
+        if (e.key === 'Enter' && !/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(tag) && !(e.target && e.target.isContentEditable)) { e.preventDefault(); this.beginEvent(); }
         return;
       }
       if (e.key === 'Escape') { this.exit(); return; }
@@ -1516,6 +1544,7 @@ class Component extends DCLogic {
         patch[key] = key === 'palette' ? { ...this.DEFAULT_PAL, ...colors } : colors;
       }
     }
+    if (this.DISPLAY_FONTS.some(f => f.id === saved.displayFont)) patch.displayFont = saved.displayFont;
     patch.minutes = Number.isFinite(saved.minutes) ? Math.max(1, Math.min(60, saved.minutes)) : 5;
     patch.variantIdx = Number.isInteger(saved.variantIdx) && this.VARIANTS[saved.variantIdx] ? saved.variantIdx : fallback;
     patch.selectedVariants = Array.isArray(saved.selectedVariants) ? [...new Set(saved.selectedVariants.filter((i) => Number.isInteger(i) && this.VARIANTS[i]))] : [];
@@ -1529,7 +1558,7 @@ class Component extends DCLogic {
   savePrefs() {
     try {
       var s = this.state;
-      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, hadLocalTracks: s.queue.some((t) => t.service === 'local' || String(t.url || '').startsWith('blob:')), queue: s.queue.filter((t) => t.service !== 'local' && !String(t.url || '').startsWith('blob:')), currentIdx: 0, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, variantIdx: s.variantIdx, selectedVariants: s.selectedVariants, multiSelect: s.multiSelect, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
+      var data = JSON.stringify({ title: s.title, subtitle: s.subtitle, minutes: s.minutes, autoMatch: s.autoMatch, hadLocalTracks: s.queue.some((t) => t.service === 'local' || String(t.url || '').startsWith('blob:')), queue: s.queue.filter((t) => t.service !== 'local' && !String(t.url || '').startsWith('blob:')), currentIdx: 0, colorSource: s.colorSource, logo: s.logo, palette: s.palette, overrides: s.overrides, showEvent: s.showEvent, showNowPlaying: s.showNowPlaying, showMusicIcon: s.showMusicIcon, displayFont: s.displayFont, variantIdx: s.variantIdx, selectedVariants: s.selectedVariants, multiSelect: s.multiSelect, seed: s.seed, source: s.source, fullscreenOnStart: s.fullscreenOnStart, glassOpacity: s.glassOpacity, npStyle: s.npStyle });
       if (data === this._lastPrefs) return;
       this._lastPrefs = data;
       localStorage.setItem('sl_setup', data);
@@ -1538,7 +1567,7 @@ class Component extends DCLogic {
   resetSetup = () => {
     this.stopCurrentPreview();
     try { localStorage.removeItem('sl_setup'); } catch (e) {} this._lastPrefs = null;
-    this.setState({ logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, npStyle: 'pill', fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '', selectedVariants: null, multiSelect: false, shuffledDesigns: [], designQueueIdx: 0 });
+    this.setState({ designCategory: 'All', designSearch: '', displayFont: 'modern', logo: null, palette: null, overrides: {}, colorSource: 'logo', title: 'Team All-Hands', subtitle: 'We’ll begin shortly', minutes: 5, autoMatch: true, queue: [], currentIdx: 0, track: null, variantIdx: Math.max(0, this.VARIANTS.findIndex((v) => v.mode === 'shader')), showEvent: true, showNowPlaying: true, showMusicIcon: true, npStyle: 'pill', fullscreenOnStart: true, glassOpacity: 0.65, searchQuery: '', results: [], previewPlaying: false, authError: '', selectedVariants: null, multiSelect: false, shuffledDesigns: [], designQueueIdx: 0 });
   };
   toggleFs = () => this.setState((s) => ({ fullscreenOnStart: !s.fullscreenOnStart }));
   openAbout = () => this.setState({ showAbout: true });
@@ -1622,6 +1651,7 @@ class Component extends DCLogic {
 
   buildBlobs(pal, seed, vidx, intensify) {
     const v = this.VARIANTS[vidx];
+    if (v.mode === 'css') return [];
     if (v.mode === 'shader') return [];
     const rng = this.mulberry(seed + vidx * 999);
     const cols = [pal.accent, pal.accent2, pal.accent3];
@@ -1704,6 +1734,10 @@ class Component extends DCLogic {
       shaderMode = 'iridescent';
     }
     // Remembered for the design cross-dissolve veil so it matches the on-screen background.
+    if (stVariant.mode === 'css') {
+      stageBg = stVariant.background; stageInk = stVariant.ink;
+      if (st.palette || Object.keys(st.overrides).length) { const dark = stVariant.scene !== 'paper'; stageBg = 'radial-gradient(ellipse at 0% 0%,' + pal.accent + ',transparent 65%),radial-gradient(ellipse at 100% 100%,' + pal.accent2 + ',transparent 60%),' + (dark ? '#10101a' : pal.bg); stageInk = dark ? '#f5f3ff' : pal.ink; }
+    }
     this._lastStageBg = stageBg;
 
     const accentArr = (pal.accent.match(/[\d.]+/g) || [10, 132, 255]).map(Number);
@@ -1729,18 +1763,20 @@ class Component extends DCLogic {
     const selOrder = multiSelect ? (st.selectedVariants || []) : [];
     const orderPos = new Map(selOrder.map((idx, n) => [idx, n + 1]));
     const shuffleActive = !!(st.shuffledDesigns && st.shuffledDesigns.length > 0);
-    const variants = this.VARIANTS.map((v, i) => {
+    const variants = this.visibleDesigns().map(({v, i}) => {
       const isActive = st.variantIdx === i;
       const seqNum = orderPos.get(i) || 0;
       const inPool = seqNum > 0;
       const highlight = multiSelect ? inPool : isActive;
       return {
-        name: v.name,
+        name: v.name, highlight, accessibleName: v.name + (isActive ? ', current design' : '') + (inPool ? ', sequence ' + seqNum : ''),
+        thumbClass: 'sl-design-thumb st-scene-' + (v.scene || 'ambient'), thumbInk: v.ink || '#ffffff',
+        meta: this.designGroup(v), badge: inPool ? '#' + seqNum : (isActive ? 'Active' : (v.isNew ? 'New' : '')), badgeBg: highlight ? pal.accent : (v.isNew ? '#d3ff64' : 'transparent'), badgeInk: highlight ? '#ffffff' : '#1c2520',
         onClick: multiSelect ? () => this.toggleVariantSelection(i) : () => this.setVariant(i),
         border: highlight ? pal.accent : 'rgba(0,0,0,0.1)',
         bg: highlight ? this.rgba(accentArr, 0.06) : 'var(--sl-card)',
         color: 'var(--sl-text)',
-        swatch: 'linear-gradient(135deg,' + pal.accent + ',' + pal.accent2 + ')',
+        swatch: v.background || ('linear-gradient(135deg,' + pal.accent + ',' + pal.accent2 + ')'),
         isSelected: inPool,
         selBg: inPool ? pal.accent : 'transparent',
         selBorder: inPool ? pal.accent : 'rgba(0,0,0,0.2)',
@@ -1821,6 +1857,10 @@ class Component extends DCLogic {
       eventBodyOpacity: st.showEvent ? 1 : 0.4,
       // design + glass
       variants, shuffle: this.shuffle,
+      designSearch: st.designSearch, setDesignSearch: this.setDesignSearch, noDesignResults: !variants.length, designCountLabel: variants.length + ' of ' + this.VARIANTS.length + ' designs · ' + (this.VARIANTS[st.variantIdx] || this.VARIANTS[0]).name + ' active',
+      designCategories: ['All', 'New', ...new Set(this.VARIANTS.map(v=>this.designGroup(v)))].map(name=>({label:name,selected:st.designCategory===name,onClick:()=>this.setState({designCategory:name}),border:st.designCategory===name?pal.accent:'var(--sl-border-md)',bg:st.designCategory===name?this.rgba(accentArr,.12):'var(--sl-card)'})),
+      displayFont: st.displayFont, displayFonts: this.DISPLAY_FONTS, setDisplayFont: this.setDisplayFont,
+      displayFamily: (this.DISPLAY_FONTS.find(f=>f.id===st.displayFont)||this.DISPLAY_FONTS[0]).family, displayWeight: (this.DISPLAY_FONTS.find(f=>f.id===st.displayFont)||this.DISPLAY_FONTS[0]).weight, sceneMode: stVariant.scene || '',
       shuffleLabel: shuffleActive ? 'Shuffled' : 'Shuffle',
       shuffleBg: shuffleActive ? this.rgba(accentArr, 0.10) : 'var(--sl-card)',
       shuffleColor: shuffleActive ? pal.accent : 'var(--sl-text)',

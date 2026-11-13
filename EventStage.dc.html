@@ -30,8 +30,9 @@
 @keyframes cdSlideInB { 0%{opacity:0.65} 100%{opacity:1} }
 </style>
 </helmet>
-<div ref="{{ setRoot }}" style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;">
+<div ref="{{ setRoot }}" class="{{ sceneClass }}" style="position:relative;width:100%;height:100%;overflow:hidden;background:{{ bg }};container-type:size;font-family:{{ displayFamily }};">
 
+  <div aria-hidden="true" class="st-scene-art"><div class="st-scene-detail"></div></div>
   <canvas ref="{{ setCanvas }}" style="position:absolute;inset:0;width:100%;height:100%;display:{{ shaderDisplay }};"></canvas>
 
   <sc-if value="{{ iridOn }}" hint-placeholder-val="{{ false }}">
@@ -155,6 +156,9 @@
 class Component extends DCLogic {
   renderVals() {
     const p = this.props || {};
+    const displayFamily = p.displayFamily || "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
+    const digitWeight = [200,400,600,700].includes(Number(p.displayWeight)) ? Number(p.displayWeight) : 200;
+    const sceneClass = 'st-scene-' + (['lobby','pixel','synth','hud','paper','circuit'].includes(p.sceneMode) ? p.sceneMode : 'default');
     const on = !!p.shader && p.shader !== 'iridescent';
     const iridOn = p.shader === 'iridescent';
 
@@ -224,17 +228,18 @@ class Component extends DCLogic {
     for (let i = 0; i < ct.length; i++) {
       const ch = ct[i];
       if (ch === ':') {
-        countdownCells.push({ ch, style: 'font-size:11cqmin;font-weight:200;color:var(--st-ink,' + ink + ');opacity:0.42;padding:0 0.5cqmin;align-self:center;margin-bottom:0.5cqmin;display:inline-block;transition:color 0.4s ease;' });
+        countdownCells.push({ ch, style: 'font-size:11cqmin;font-weight:' + digitWeight + ';color:var(--st-ink,' + ink + ');opacity:0.42;padding:0 0.5cqmin;align-self:center;margin-bottom:0.5cqmin;display:inline-block;transition:color 0.4s ease;' });
       } else {
         if (ch !== this._prevCDChars[i]) this._cdFlipKey[i] = !this._cdFlipKey[i];
         this._prevCDChars[i] = ch;
         const anim = this._cdFlipKey[i] ? 'cdSlideInB' : 'cdSlideIn';
-        countdownCells.push({ ch, style: 'font-size:15cqmin;font-weight:200;color:var(--st-ink,' + ink + ');display:inline-block;animation:' + anim + ' 0.16s ease-out both;transition:color 0.4s ease;' });
+        countdownCells.push({ ch, style: 'font-size:15cqmin;font-weight:' + digitWeight + ';color:var(--st-ink,' + ink + ');display:inline-block;animation:' + anim + ' 0.16s ease-out both;transition:color 0.4s ease;' });
       }
     }
 
     return {
-      setCanvas: this.setCanvas, shaderDisplay: on ? 'block' : 'none', iridOn, blobOverlay: !on && !iridOn,
+      displayFamily, sceneClass,
+      setCanvas: this.setCanvas, shaderDisplay: on ? 'block' : 'none', iridOn, blobOverlay: !on && !iridOn && !p.sceneMode,
       showLogoImg: !!(p.hasLogo || p.logo) && !iridOn,
       showLogoAbove: !!(p.hasLogo || p.logo) && !iridOn && !!(p.showCountdown || p.showAmbient),
       showLogoOnly: !!(p.hasLogo || p.logo) && !iridOn && !p.showCountdown && !p.showAmbient,
