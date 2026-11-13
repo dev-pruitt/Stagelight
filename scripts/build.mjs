@@ -1,3 +1,4 @@
+import { streamingHelp, renderStreamingHelp } from './streaming-help.mjs';
 import { meetingGuides, renderMeetingGuide } from './meeting-guides.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -34,15 +35,19 @@ const help = readFileSync(new URL('../help-template.html', import.meta.url), 'ut
 const streamers = readFileSync(new URL('../streamers-template.html', import.meta.url), 'utf8')
   .replaceAll('__SITE_URL__', base).replaceAll('__STREAM_STYLE_HASH__', digest('streamers.css')).replaceAll('__STREAM_SCRIPT_HASH__', digest('streamers.js'))
   .replace('content="noindex,follow"', 'content="index,follow"');
+const report = readFileSync(new URL('../report-template.html', import.meta.url), 'utf8')
+  .replaceAll('__SITE_URL__', base).replaceAll('__STYLE_HASH__', digest('landing.css')).replaceAll('__HELP_HASH__', digest('help.css')).replaceAll('__REPORT_HASH__', digest('report.js'));
 const outputs = {
+  'report.html': report,
   'streamers.html': streamers,
   'help.html': help,
   'index.html': landing,
   'robots.txt': 'User-agent: *\nAllow: /\nSitemap: ' + base + 'sitemap.xml\n',
   'sitemap.xml': '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>' + base + '</loc></url><url><loc>' + base + 'help.html</loc></url></urlset>\n'
 };
+for (const guide of streamingHelp) outputs['help-' + guide.slug + '.html'] = renderStreamingHelp(guide, base, digest('landing.css'), digest('help.css'));
 for (const guide of meetingGuides) outputs['help-' + guide.slug + '.html'] = renderMeetingGuide(guide, base, digest('landing.css'), digest('help.css'));
-outputs['sitemap.xml'] = outputs['sitemap.xml'].replace('</urlset>', '<url><loc>' + base + 'streamers.html</loc></url>' + meetingGuides.map(g => '<url><loc>' + base + 'help-' + g.slug + '.html</loc></url>').join('') + '</urlset>');
+outputs['sitemap.xml'] = outputs['sitemap.xml'].replace('</urlset>', '<url><loc>' + base + 'streamers.html</loc></url>' + [...meetingGuides, ...streamingHelp].map(g => '<url><loc>' + base + 'help-' + g.slug + '.html</loc></url>').join('') + '</urlset>');
 for (const [file, content] of Object.entries(outputs)) {
   const url = new URL('../' + file, import.meta.url);
   if (process.argv.includes('--check')) { if (readFileSync(url, 'utf8') !== content) throw new Error(file + ' needs rebuilding.'); }
